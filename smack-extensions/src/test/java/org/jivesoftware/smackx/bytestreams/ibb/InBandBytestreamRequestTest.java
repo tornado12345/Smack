@@ -24,9 +24,11 @@ import static org.mockito.Mockito.verify;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.packet.XMPPError;
+import org.jivesoftware.smack.packet.StanzaError;
+
 import org.jivesoftware.smackx.InitExtensions;
 import org.jivesoftware.smackx.bytestreams.ibb.packet.Open;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.jxmpp.jid.Jid;
@@ -40,13 +42,13 @@ import org.mockito.ArgumentCaptor;
  */
 public class InBandBytestreamRequestTest extends InitExtensions {
 
-    static final Jid initiatorJID = JidTestUtil.DUMMY_AT_EXAMPLE_ORG_SLASH_DUMMYRESOURCE;
-    static final Jid targetJID = JidTestUtil.FULL_JID_1_RESOURCE_1;
-    String sessionID = "session_id";
+    private static final Jid initiatorJID = JidTestUtil.DUMMY_AT_EXAMPLE_ORG_SLASH_DUMMYRESOURCE;
+    private static final Jid targetJID = JidTestUtil.FULL_JID_1_RESOURCE_1;
+    private String sessionID = "session_id";
 
-    XMPPConnection connection;
-    InBandBytestreamManager byteStreamManager;
-    Open initBytestream;
+    private XMPPConnection connection;
+    private InBandBytestreamManager byteStreamManager;
+    private Open initBytestream;
 
     /**
      * Initialize fields used in the tests.
@@ -87,7 +89,7 @@ public class InBandBytestreamRequestTest extends InitExtensions {
         // assert that reply is the correct error packet
         assertEquals(initiatorJID, argument.getValue().getTo());
         assertEquals(IQ.Type.error, argument.getValue().getType());
-        assertEquals(XMPPError.Condition.not_acceptable,
+        assertEquals(StanzaError.Condition.not_acceptable,
                         argument.getValue().getError().getCondition());
 
     }

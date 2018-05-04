@@ -28,8 +28,10 @@ import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.IQ;
+
 import org.jivesoftware.smackx.bytestreams.socks5.packet.Bytestream;
 import org.jivesoftware.smackx.bytestreams.socks5.packet.Bytestream.StreamHost;
+
 import org.jxmpp.jid.Jid;
 
 /**
@@ -40,7 +42,7 @@ import org.jxmpp.jid.Jid;
  * 
  * @author Henning Staib
  */
-class Socks5ClientForInitiator extends Socks5Client {
+public class Socks5ClientForInitiator extends Socks5Client {
 
     /* the XMPP connection used to communicate with the SOCKS5 proxy */
     private WeakReference<XMPPConnection> connection;
@@ -69,9 +71,10 @@ class Socks5ClientForInitiator extends Socks5Client {
         this.target = target;
     }
 
+    @Override
     public Socket getSocket(int timeout) throws IOException, InterruptedException,
                     TimeoutException, XMPPException, SmackException {
-        Socket socket = null;
+        Socket socket;
 
         // check if stream host is the local SOCKS5 proxy
         if (this.streamHost.getJID().equals(this.connection.get().getUser())) {
@@ -102,7 +105,7 @@ class Socks5ClientForInitiator extends Socks5Client {
     }
 
     /**
-     * Activates the SOCKS5 Bytestream by sending an XMPP SOCKS5 Bytestream activation stanza(/packet) to the
+     * Activates the SOCKS5 Bytestream by sending an XMPP SOCKS5 Bytestream activation stanza to the
      * SOCKS5 proxy.
      * @throws XMPPErrorException 
      * @throws NoResponseException 
@@ -113,7 +116,7 @@ class Socks5ClientForInitiator extends Socks5Client {
     private void activate() throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         Bytestream activate = createStreamHostActivation();
         // if activation fails #nextResultOrThrow() throws an exception
-        connection.get().createPacketCollectorAndSend(activate).nextResultOrThrow();
+        connection.get().createStanzaCollectorAndSend(activate).nextResultOrThrow();
     }
 
     /**

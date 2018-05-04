@@ -16,16 +16,15 @@
  */
 package org.jivesoftware.smack.packet;
 
-import org.junit.Test;
-
 import static org.custommonkey.xmlunit.XMLAssert.assertXMLEqual;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import org.xml.sax.SAXException;
-
 import java.io.IOException;
+
+import org.junit.Test;
+import org.xml.sax.SAXException;
 
 public class PresenceTest {
     @Test
@@ -44,7 +43,7 @@ public class PresenceTest {
         Presence presenceTypeInConstructor = new Presence(type);
         presenceTypeInConstructor.setStanzaId(null);
         assertEquals(type, presenceTypeInConstructor.getType());
-        assertXMLEqual(control, presenceTypeInConstructor.toXML().toString());
+        assertXMLEqual(control, presenceTypeInConstructor.toXML(null).toString());
 
         controlBuilder = new StringBuilder();
         controlBuilder.append("<presence")
@@ -57,10 +56,10 @@ public class PresenceTest {
         Presence presenceTypeSet = getNewPresence();
         presenceTypeSet.setType(type2);
         assertEquals(type2, presenceTypeSet.getType());
-        assertXMLEqual(control, presenceTypeSet.toXML().toString());
+        assertXMLEqual(control, presenceTypeSet.toXML(null).toString());
     }
 
-    @Test(expected=NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void setNullPresenceTypeTest() {
         getNewPresence().setType(null);
     }
@@ -91,7 +90,7 @@ public class PresenceTest {
         presence.setStatus(status);
 
         assertEquals(status, presence.getStatus());
-        assertXMLEqual(control, presence.toXML().toString());
+        assertXMLEqual(control, presence.toXML(null).toString());
     }
 
     @Test
@@ -110,10 +109,10 @@ public class PresenceTest {
         presence.setPriority(priority);
 
         assertEquals(priority, presence.getPriority());
-        assertXMLEqual(control, presence.toXML().toString());
+        assertXMLEqual(control, presence.toXML(null).toString());
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void setIllegalPriorityTest() {
         getNewPresence().setPriority(Integer.MIN_VALUE);
     }
@@ -143,7 +142,7 @@ public class PresenceTest {
                 mode1);
         presenceModeInConstructor.setStanzaId(null);
         assertEquals(mode1, presenceModeInConstructor.getMode());
-        assertXMLEqual(control, presenceModeInConstructor.toXML().toString());
+        assertXMLEqual(control, presenceModeInConstructor.toXML(null).toString());
 
         controlBuilder = new StringBuilder();
         controlBuilder.append("<presence>")
@@ -156,7 +155,7 @@ public class PresenceTest {
         Presence presenceModeSet = getNewPresence();
         presenceModeSet.setMode(mode2);
         assertEquals(mode2, presenceModeSet.getMode());
-        assertXMLEqual(control, presenceModeSet.toXML().toString());
+        assertXMLEqual(control, presenceModeSet.toXML(null).toString());
     }
 
     @Test
@@ -184,7 +183,7 @@ public class PresenceTest {
         Presence presence = getNewPresence();
         presence.setLanguage(lang);
 
-        assertXMLEqual(control, presence.toXML().toString());
+        assertXMLEqual(control, presence.toXML(null).toString());
     }
 
     private static Presence getNewPresence() {

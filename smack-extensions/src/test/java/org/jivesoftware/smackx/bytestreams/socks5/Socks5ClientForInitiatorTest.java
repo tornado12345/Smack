@@ -16,7 +16,6 @@
  */
 package org.jivesoftware.smackx.bytestreams.socks5;
 
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -34,9 +33,11 @@ import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.EmptyResultIQ;
 import org.jivesoftware.smack.packet.ErrorIQ;
 import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.packet.XMPPError;
+import org.jivesoftware.smack.packet.StanzaError;
+
 import org.jivesoftware.smackx.bytestreams.socks5.packet.Bytestream;
 import org.jivesoftware.smackx.bytestreams.socks5.packet.Bytestream.StreamHost;
+
 import org.jivesoftware.util.ConnectionUtils;
 import org.jivesoftware.util.Protocol;
 import org.jivesoftware.util.Verification;
@@ -55,20 +56,21 @@ import org.jxmpp.jid.JidTestUtil;
 public class Socks5ClientForInitiatorTest {
 
     // settings
-    static final EntityFullJid initiatorJID = JidTestUtil.DUMMY_AT_EXAMPLE_ORG_SLASH_DUMMYRESOURCE;
-    static final EntityFullJid targetJID = JidTestUtil.FULL_JID_1_RESOURCE_1;
-    static final DomainBareJid xmppServer = JidTestUtil.DOMAIN_BARE_JID_1;
-    static final DomainBareJid proxyJID = JidTestUtil.MUC_EXAMPLE_ORG;
-    static final String loopbackAddress = InetAddress.getLoopbackAddress().getHostAddress();
+    private static final EntityFullJid initiatorJID = JidTestUtil.DUMMY_AT_EXAMPLE_ORG_SLASH_DUMMYRESOURCE;
+    private static final EntityFullJid targetJID = JidTestUtil.FULL_JID_1_RESOURCE_1;
+    private static final DomainBareJid proxyJID = JidTestUtil.MUC_EXAMPLE_ORG;
+    private static final String loopbackAddress = InetAddress.getLoopbackAddress().getHostAddress();
 
-    int proxyPort = 7890;
-    String sessionID = "session_id";
+    private static final int GET_SOCKET_TIMEOUT = 90 * 1000;
+
+    private static final int proxyPort = 7890;
+    private static final String sessionID = "session_id";
 
     // protocol verifier
-    Protocol protocol;
+    private Protocol protocol;
 
     // mocked XMPP connection
-    XMPPConnection connection;
+    private XMPPConnection connection;
 
     /**
      * Initialize fields used in the tests.
@@ -83,7 +85,7 @@ public class Socks5ClientForInitiatorTest {
         protocol = new Protocol();
 
         // create mocked XMPP connection
-        connection = ConnectionUtils.createMockedConnection(protocol, initiatorJID, xmppServer);
+        connection = ConnectionUtils.createMockedConnection(protocol, initiatorJID);
     }
 
     /**
@@ -111,7 +113,7 @@ public class Socks5ClientForInitiatorTest {
                         connection, sessionID, targetJID);
 
         try {
-            socks5Client.getSocket(10000);
+            socks5Client.getSocket(GET_SOCKET_TIMEOUT);
 
             fail("exception should be thrown");
         }
@@ -175,7 +177,7 @@ public class Socks5ClientForInitiatorTest {
         Socks5ClientForInitiator socks5Client = new Socks5ClientForInitiator(streamHost, digest,
                         connection, sessionID, targetJID);
 
-        Socket socket = socks5Client.getSocket(10000);
+        Socket socket = socks5Client.getSocket(GET_SOCKET_TIMEOUT);
 
         // verify test data
         InputStream in = socket.getInputStream();
@@ -202,7 +204,7 @@ public class Socks5ClientForInitiatorTest {
     public void shouldFailIfActivateSocks5ProxyFails() throws Exception {
 
         // build error response as reply to the stream activation
-        IQ error = new ErrorIQ(XMPPError.getBuilder(XMPPError.Condition.internal_server_error));
+        IQ error = new ErrorIQ(StanzaError.getBuilder(StanzaError.Condition.internal_server_error));
         error.setFrom(proxyJID);
         error.setTo(initiatorJID);
 
@@ -224,12 +226,12 @@ public class Socks5ClientForInitiatorTest {
 
         try {
 
-            socks5Client.getSocket(10000);
+            socks5Client.getSocket(GET_SOCKET_TIMEOUT);
 
             fail("exception should be thrown");
         }
         catch (XMPPErrorException e) {
-            assertTrue(XMPPError.Condition.internal_server_error.equals(e.getXMPPError().getCondition()));
+            assertTrue(StanzaError.Condition.internal_server_error.equals(e.getXMPPError().getCondition()));
             protocol.verifyAll();
         }
 
@@ -254,6 +256,7 @@ public class Socks5ClientForInitiatorTest {
         protocol.addResponse(activationResponse, Verification.correspondingSenderReceiver,
                         Verification.requestTypeSET, new Verification<Bytestream, IQ>() {
 
+                            @Override
                             public void verify(Bytestream request, IQ response) {
                                 // verify that the correct stream should be activated
                                 assertNotNull(request.getToActivate());

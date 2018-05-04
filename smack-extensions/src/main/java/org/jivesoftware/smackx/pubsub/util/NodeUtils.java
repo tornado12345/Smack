@@ -17,6 +17,7 @@
 package org.jivesoftware.smackx.pubsub.util;
 
 import org.jivesoftware.smack.packet.Stanza;
+
 import org.jivesoftware.smackx.pubsub.ConfigureForm;
 import org.jivesoftware.smackx.pubsub.FormNode;
 import org.jivesoftware.smackx.pubsub.PubSubElementType;
@@ -27,19 +28,17 @@ import org.jivesoftware.smackx.xdata.Form;
  * 
  * @author Robin Collier
  */
-public class NodeUtils
-{
-	/** 
-	 * Get a {@link ConfigureForm} from a packet.
-	 * 
-	 * @param packet
-	 * @param elem
-	 * @return The configuration form
-	 */
-	public static ConfigureForm getFormFromPacket(Stanza packet, PubSubElementType elem)
-	{
-		FormNode config = packet.getExtension(elem.getElementName(), elem.getNamespace().getXmlns());
-		Form formReply = config.getForm();
-		return new ConfigureForm(formReply);
-	}
+public class NodeUtils {
+    /** 
+     * Get a {@link ConfigureForm} from a packet.
+     * 
+     * @param packet
+     * @param elem
+     * @return The configuration form
+     */
+    public static ConfigureForm getFormFromPacket(Stanza packet, PubSubElementType elem) {
+        FormNode config = packet.getExtension(elem.getElementName(), elem.getNamespace().getXmlns());
+        Form formReply = config.getForm();
+        return new ConfigureForm(formReply);
+    }
 }

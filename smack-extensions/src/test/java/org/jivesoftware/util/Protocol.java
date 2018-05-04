@@ -18,21 +18,13 @@ package org.jivesoftware.util;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.StringReader;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
-
 import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.util.XmlUtil;
 
 /**
  * This class can be used in conjunction with a mocked XMPP connection (
@@ -50,20 +42,22 @@ import org.jivesoftware.smack.packet.Stanza;
  * <pre>
  * <code>
  * public void methodToTest() {
- *   Stanza(/Packet) stanza(/packet) = new Packet(); // create an XMPP packet
- *   PacketCollector collector = connection.createPacketCollector(new StanzaIdFilter());
+ *   Stanza stanza = new Packet(); // create an XMPP packet
+ *   StanzaCollector collector = connection.createStanzaCollector(new StanzaIdFilter());
  *   connection.sendStanza(packet);
- *   Stanza(/Packet) reply = collector.nextResult();
+ *   Stanza reply = collector.nextResult();
  * }
  * 
  * public void testMethod() {
+ *   EntityFullJid userJid = JidCreate.entityFullFrom("user@xmpp-server.org");
+ *   DomainBareJid serverJid = JidCreate.domainBareFrom("user-server.org");
  *   // create protocol
  *   Protocol protocol = new Protocol();
  *   // create mocked connection
- *   XMPPConnection connection = ConnectionUtils.createMockedConnection(protocol, "user@xmpp-server", "xmpp-server");
+ *   XMPPConnection connection = ConnectionUtils.createMockedConnection(protocol, userJid, serverJid);
  *   
- *   // add reply stanza(/packet) to protocol
- *   Stanza(/Packet) reply = new Packet();
+ *   // add reply stanza to protocol
+ *   Stanza reply = new Packet();
  *   protocol.add(reply);
  *   
  *   // call method to test
@@ -82,6 +76,7 @@ import org.jivesoftware.smack.packet.Stanza;
  * If the {@link #printProtocol} flag is set to true {@link #verifyAll()} will
  * also print out the XML messages in the order they are sent to the console.
  * This may be useful to inspect the whole protocol "by hand".
+ * </p>
  * 
  * @author Henning Staib
  */
@@ -94,16 +89,16 @@ public class Protocol {
     public boolean printProtocol = false;
 
     // responses to requests are taken form this queue
-    Queue<Stanza> responses = new LinkedList<Stanza>();
+    private final Queue<Stanza> responses = new LinkedList<>();
 
     // list of verifications
-    List<Verification<?, ?>[]> verificationList = new ArrayList<Verification<?, ?>[]>();
+    private final List<Verification<?, ?>[]> verificationList = new ArrayList<>();
 
     // list of requests
-    List<Stanza> requests = new ArrayList<Stanza>();
+    private final List<Stanza> requests = new ArrayList<>();
 
     // list of all responses
-    List<Stanza> responsesList = new ArrayList<Stanza>();
+    private final List<Stanza> responsesList = new ArrayList<>();
 
     /**
      * Adds a responses and all verifications for the request/response pair to
@@ -136,10 +131,10 @@ public class Protocol {
 
             if (printProtocol) {
                 System.out.println("------------------- Request -------------\n");
-                System.out.println(prettyFormat(request.toXML().toString()));
+                System.out.println(XmlUtil.prettyFormatXml(request.toXML(null)));
                 System.out.println("------------------- Response ------------\n");
                 if (response != null) {
-                    System.out.println(prettyFormat(response.toXML().toString()));
+                    System.out.println(XmlUtil.prettyFormatXml(response.toXML(null)));
                 }
                 else {
                     System.out.println("No response");
@@ -174,27 +169,6 @@ public class Protocol {
      */
     public List<Stanza> getRequests() {
         return requests;
-    }
-
-    private static String prettyFormat(String input, int indent) {
-        try {
-            Source xmlInput = new StreamSource(new StringReader(input));
-            StringWriter stringWriter = new StringWriter();
-            StreamResult xmlOutput = new StreamResult(stringWriter);
-            Transformer transformer = TransformerFactory.newInstance().newTransformer();
-            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount",
-                            String.valueOf(indent));
-            transformer.transform(xmlInput, xmlOutput);
-            return xmlOutput.getWriter().toString();
-        }
-        catch (Exception e) {
-            return "error while formatting the XML: " + e.getMessage();
-        }
-    }
-
-    private static String prettyFormat(String input) {
-        return prettyFormat(input, 2);
     }
 
 }

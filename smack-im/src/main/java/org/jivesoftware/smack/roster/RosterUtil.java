@@ -23,9 +23,12 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.jivesoftware.smack.SmackException.FeatureNotSupportedException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.SmackException.NotLoggedInException;
 import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.packet.Presence;
+
 import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.Jid;
 
@@ -84,6 +87,33 @@ public class RosterUtil {
         }
     }
 
+    /**
+     * Pre-approve the subscription if it is required and possible.
+     *
+     * @param roster The roster which should be used for the pre-approval.
+     * @param jid The XMPP address which should be pre-approved.
+     * @throws NotLoggedInException
+     * @throws NotConnectedException
+     * @throws InterruptedException
+     * @since 4.2.2
+     */
+    public static void preApproveSubscriptionIfRequiredAndPossible(Roster roster, BareJid jid)
+            throws NotLoggedInException, NotConnectedException, InterruptedException {
+        if (!roster.isSubscriptionPreApprovalSupported()) {
+            return;
+        }
+
+        RosterEntry entry = roster.getEntry(jid);
+        if (entry == null || (!entry.canSeeMyPresence() && !entry.isApproved())) {
+            try {
+                roster.preApprove(jid);
+            } catch (FeatureNotSupportedException e) {
+                // Should never happen since we checked for the feature above.
+                throw new AssertionError(e);
+            }
+        }
+    }
+
     public static void askForSubscriptionIfRequired(Roster roster, BareJid jid)
             throws NotLoggedInException, NotConnectedException, InterruptedException {
         RosterEntry entry = roster.getEntry(jid);
@@ -111,4 +141,46 @@ public class RosterUtil {
         }
     }
 
+    public static void ensureSubscribed(XMPPConnection connectionOne, XMPPConnection connectionTwo, long timeout)
+                    throws NotLoggedInException, NotConnectedException, InterruptedException, TimeoutException {
+        ensureSubscribedTo(connectionOne, connectionTwo, timeout);
+        ensureSubscribedTo(connectionTwo, connectionOne, timeout);
+    }
+
+    public static void ensureSubscribedTo(XMPPConnection connectionOne, XMPPConnection connectionTwo, long timeout)
+                    throws NotLoggedInException, NotConnectedException, InterruptedException, TimeoutException {
+        Date deadline = new Date(System.currentTimeMillis() + timeout);
+        ensureSubscribedTo(connectionOne, connectionTwo, deadline);
+    }
+
+    public static void ensureSubscribedTo(final XMPPConnection connectionOne, final XMPPConnection connectionTwo,
+                    final Date deadline)
+                    throws NotLoggedInException, NotConnectedException, InterruptedException, TimeoutException {
+        final Roster rosterOne = Roster.getInstanceFor(connectionOne);
+        final BareJid jidTwo = connectionTwo.getUser().asBareJid();
+
+        if (rosterOne.iAmSubscribedTo(jidTwo))
+            return;
+
+        final BareJid jidOne = connectionOne.getUser().asBareJid();
+        final SubscribeListener subscribeListener = new SubscribeListener() {
+            @Override
+            public SubscribeAnswer processSubscribe(Jid from, Presence subscribeRequest) {
+                if (from.equals(jidOne)) {
+                    return SubscribeAnswer.Approve;
+                }
+                return null;
+            }
+        };
+        final Roster rosterTwo = Roster.getInstanceFor(connectionTwo);
+
+        rosterTwo.addSubscribeListener(subscribeListener);
+        try {
+            rosterOne.sendSubscriptionRequest(jidTwo);
+            waitUntilOtherEntityIsSubscribed(rosterTwo, jidOne, deadline);
+        }
+        finally {
+            rosterTwo.removeSubscribeListener(subscribeListener);
+        }
+    }
 }

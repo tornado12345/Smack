@@ -20,6 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.jivesoftware.smack.packet.IQ;
+
 import org.jivesoftware.smackx.jingleold.packet.Jingle;
 import org.jivesoftware.smackx.jingleold.packet.JingleError;
 
@@ -41,23 +42,26 @@ public class JingleSessionStateActive extends JingleSessionState {
      *  A thread-safe means of getting the one instance of this class.
      *  @return The singleton instance of this class.
      */
-    public synchronized static JingleSessionState getInstance() {
+    public static synchronized JingleSessionState getInstance() {
         if (INSTANCE == null) {
             INSTANCE = new JingleSessionStateActive();
         }
         return INSTANCE;
     }
 
+    @Override
     public void enter() {
         // TODO Auto-generated method stub
 
     }
 
+    @Override
     public void exit() {
         // TODO Auto-generated method stub
 
     }
 
+    @Override
     public IQ processJingle(JingleSession session, Jingle jingle, JingleActionEnum action) {
         IQ response = null;
 

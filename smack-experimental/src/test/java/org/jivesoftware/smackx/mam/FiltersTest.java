@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.jivesoftware.smackx.mam.element.MamElements;
 import org.jivesoftware.smackx.xdata.packet.DataForm;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.jxmpp.jid.Jid;
@@ -58,7 +59,7 @@ public class FiltersTest extends MamTest {
         List<String> values = new ArrayList<>();
         values.add(XmppDateTime.formatXEP0082Date(date));
 
-        Assert.assertEquals(dataForm.toXML().toString(), getMamXMemberWith(fields, values));
+        Assert.assertEquals(dataForm.toXML(null).toString(), getMamXMemberWith(fields, values));
     }
 
     @Test
@@ -75,7 +76,7 @@ public class FiltersTest extends MamTest {
         List<String> values = new ArrayList<>();
         values.add(XmppDateTime.formatXEP0082Date(date));
 
-        Assert.assertEquals(dataForm.toXML().toString(), getMamXMemberWith(fields, values));
+        Assert.assertEquals(dataForm.toXML(null).toString(), getMamXMemberWith(fields, values));
     }
 
     @Test
@@ -92,7 +93,7 @@ public class FiltersTest extends MamTest {
         List<String> values = new ArrayList<>();
         values.add(jid);
 
-        Assert.assertEquals(dataForm.toXML().toString(), getMamXMemberWith(fields, values));
+        Assert.assertEquals(dataForm.toXML(null).toString(), getMamXMemberWith(fields, values));
     }
 
     @Test
@@ -112,7 +113,7 @@ public class FiltersTest extends MamTest {
         methodAddStartDateFilter.invoke(mamManager, date, dataForm);
         methodAddEndDateFilter.invoke(mamManager, date, dataForm);
         methodAddJidFilter.invoke(mamManager, JidCreate.from(jid), dataForm);
-        String dataFormResult = dataForm.toXML().toString();
+        String dataFormResult = dataForm.toXML(null).toString();
 
         List<String> fields = new ArrayList<>();
         List<String> values = new ArrayList<>();

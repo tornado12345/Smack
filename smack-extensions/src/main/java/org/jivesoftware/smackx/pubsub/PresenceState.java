@@ -22,7 +22,6 @@ package org.jivesoftware.smackx.pubsub;
  * 
  * @author Robin Collier
  */
-public enum PresenceState
-{
-	chat, online, away, xa, dnd
+public enum PresenceState {
+    chat, online, away, xa, dnd
 }

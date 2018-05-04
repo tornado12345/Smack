@@ -19,7 +19,9 @@ package org.jivesoftware.smackx.push_notifications.element;
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.util.XmlStringBuilder;
+
 import org.jivesoftware.smackx.pubsub.packet.PubSub;
+
 import org.jxmpp.jid.Jid;
 
 /**
@@ -76,7 +78,7 @@ public class PushNotificationsElements {
         }
 
         @Override
-        public CharSequence toXML() {
+        public CharSequence toXML(String enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder(this);
 
             xml.attribute("node", node);

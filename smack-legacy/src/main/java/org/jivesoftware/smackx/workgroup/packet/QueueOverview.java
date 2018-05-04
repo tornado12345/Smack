@@ -17,32 +17,34 @@
 
 package org.jivesoftware.smackx.workgroup.packet;
 
-import org.jivesoftware.smackx.workgroup.agent.WorkgroupQueue;
-import org.jivesoftware.smack.SmackException;
-import org.jivesoftware.smack.packet.ExtensionElement;
-import org.jivesoftware.smack.provider.ExtensionElementProvider;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.provider.ExtensionElementProvider;
+
+import org.jivesoftware.smackx.workgroup.agent.WorkgroupQueue;
+
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+
 public class QueueOverview implements ExtensionElement {
 
     /**
-     * Element name of the stanza(/packet) extension.
+     * Element name of the stanza extension.
      */
     public static String ELEMENT_NAME = "notify-queue";
 
     /**
-     * Namespace of the stanza(/packet) extension.
+     * Namespace of the stanza extension.
      */
     public static String NAMESPACE = "http://jabber.org/protocol/workgroup";
 
     private static final String DATE_FORMAT = "yyyyMMdd'T'HH:mm:ss";
-    private SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
 
     private int averageWaitTime;
     private Date oldestEntry;
@@ -88,15 +90,18 @@ public class QueueOverview implements ExtensionElement {
         this.status = status;
     }
 
+    @Override
     public String getElementName () {
         return ELEMENT_NAME;
     }
 
+    @Override
     public String getNamespace () {
         return NAMESPACE;
     }
 
-    public String toXML () {
+    @Override
+    public String toXML (String enclosingNamespace) {
         StringBuilder buf = new StringBuilder();
         buf.append('<').append(ELEMENT_NAME).append(" xmlns=\"").append(NAMESPACE).append("\">");
 
@@ -129,8 +134,7 @@ public class QueueOverview implements ExtensionElement {
 
             eventType = parser.next();
             while ((eventType != XmlPullParser.END_TAG)
-                         || (!ELEMENT_NAME.equals(parser.getName())))
-            {
+                         || (!ELEMENT_NAME.equals(parser.getName()))) {
                 if ("count".equals(parser.getName())) {
                     queueOverview.setUserCount(Integer.parseInt(parser.nextText()));
                 }

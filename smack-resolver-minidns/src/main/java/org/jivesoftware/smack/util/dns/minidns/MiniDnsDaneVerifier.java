@@ -31,8 +31,8 @@ import javax.net.ssl.X509TrustManager;
 
 import org.jivesoftware.smack.util.dns.SmackDaneVerifier;
 
-import de.measite.minidns.dane.DaneVerifier;
-import de.measite.minidns.dane.ExpectingTrustManager;
+import org.minidns.dane.DaneVerifier;
+import org.minidns.dane.ExpectingTrustManager;
 
 public class MiniDnsDaneVerifier implements SmackDaneVerifier {
     private static final Logger LOGGER = Logger.getLogger(MiniDnsDaneVerifier.class.getName());
@@ -51,7 +51,7 @@ public class MiniDnsDaneVerifier implements SmackDaneVerifier {
             throw new IllegalStateException("DaneProvider was initialized before. Use newInstance() instead.");
         }
         expectingTrustManager = new ExpectingTrustManager(tm);
-        context.init(km, new TrustManager[]{expectingTrustManager}, random);
+        context.init(km, new TrustManager[] {expectingTrustManager}, random);
     }
 
     @Override

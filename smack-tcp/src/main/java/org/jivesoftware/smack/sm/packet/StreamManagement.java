@@ -1,6 +1,6 @@
 /**
  *
- * Copyright © 2014 Florian Schmaus
+ * Copyright © 2014-2018 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,13 @@
  */
 package org.jivesoftware.smack.sm.packet;
 
-import org.jivesoftware.smack.packet.Nonza;
+import java.util.Collections;
+import java.util.List;
+
 import org.jivesoftware.smack.packet.ExtensionElement;
-import org.jivesoftware.smack.packet.XMPPError;
+import org.jivesoftware.smack.packet.Nonza;
+import org.jivesoftware.smack.packet.StanzaError;
+import org.jivesoftware.smack.packet.StanzaErrorTextElement;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 
 public class StreamManagement {
@@ -43,14 +47,14 @@ public class StreamManagement {
         }
 
         @Override
-        public CharSequence toXML() {
+        public CharSequence toXML(String enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder(this);
             xml.closeEmptyElement();
             return xml;
         }
     }
 
-    private static abstract class AbstractEnable implements Nonza {
+    private abstract static class AbstractEnable implements Nonza {
 
         /**
          * Preferred maximum resumption time in seconds (optional).
@@ -109,7 +113,7 @@ public class StreamManagement {
         }
 
         @Override
-        public CharSequence toXML() {
+        public CharSequence toXML(String enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder(this);
             maybeAddResumeAttributeTo(xml);
             maybeAddMaxAttributeTo(xml);
@@ -170,7 +174,7 @@ public class StreamManagement {
         }
 
         @Override
-        public CharSequence toXML() {
+        public CharSequence toXML(String enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder(this);
             xml.optAttribute("id", id);
             maybeAddResumeAttributeTo(xml);
@@ -189,30 +193,46 @@ public class StreamManagement {
     public static class Failed implements Nonza {
         public static final String ELEMENT = "failed";
 
-        private XMPPError.Condition condition;
+        private final StanzaError.Condition condition;
+
+        private final List<StanzaErrorTextElement> textElements;
+
 
         public Failed() {
+            this(null, null);
         }
 
-        public Failed(XMPPError.Condition condition) {
+        public Failed(StanzaError.Condition condition, List<StanzaErrorTextElement> textElements) {
             this.condition = condition;
+            if (textElements == null) {
+                this.textElements = Collections.emptyList();
+            } else {
+                this.textElements = Collections.unmodifiableList(textElements);
+            }
         }
 
-        public XMPPError.Condition getXMPPErrorCondition() {
+        public StanzaError.Condition getXMPPErrorCondition() {
             return condition;
         }
 
+        public List<StanzaErrorTextElement> getTextElements() {
+            return textElements;
+        }
+
         @Override
-        public CharSequence toXML() {
+        public CharSequence toXML(String enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder(this);
-            if (condition != null) {
-                xml.rightAngleBracket();
-                xml.append(condition.toString());
-                xml.xmlnsAttribute(XMPPError.NAMESPACE);
-                xml.closeElement(ELEMENT);
-            }
-            else {
+            if (condition == null && textElements.isEmpty()) {
                 xml.closeEmptyElement();
+            } else {
+                if (condition != null) {
+                    xml.rightAngleBracket();
+                    xml.append(condition.toString());
+                    xml.xmlnsAttribute(StanzaError.NAMESPACE);
+                    xml.closeEmptyElement();
+                }
+                xml.append(textElements);
+                xml.closeElement(ELEMENT);
             }
             return xml;
         }
@@ -229,12 +249,12 @@ public class StreamManagement {
 
     }
 
-    private static abstract class AbstractResume implements Nonza {
+    private abstract static class AbstractResume implements Nonza {
 
         private final long handledCount;
         private final String previd;
 
-        public AbstractResume(long handledCount, String previd) {
+        private AbstractResume(long handledCount, String previd) {
             this.handledCount = handledCount;
             this.previd = previd;
         }
@@ -253,7 +273,7 @@ public class StreamManagement {
         }
 
         @Override
-        public final XmlStringBuilder toXML() {
+        public final XmlStringBuilder toXML(String enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder(this);
             xml.attribute("h", Long.toString(handledCount));
             xml.attribute("previd", previd);
@@ -302,7 +322,7 @@ public class StreamManagement {
         }
 
         @Override
-        public CharSequence toXML() {
+        public CharSequence toXML(String enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder(this);
             xml.attribute("h", Long.toString(handledCount));
             xml.closeEmptyElement();
@@ -328,7 +348,7 @@ public class StreamManagement {
         }
 
         @Override
-        public CharSequence toXML() {
+        public CharSequence toXML(String enclosingNamespace) {
             return '<' + ELEMENT + " xmlns='" + NAMESPACE + "'/>";
         }
 

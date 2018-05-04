@@ -11,11 +11,13 @@ dependencies {
 	compile project(':smack-experimental')
 	compile project(':smack-legacy')
 	compile project(':smack-integration-test')
-    compile "com.lihaoyi:ammonite-repl_$scalaVersion:0.5.5"
+    compile "com.lihaoyi:ammonite_$scalaVersion:0.8.0"
     testCompile project(path: ":smack-core", configuration: "testRuntime")
     testCompile project(path: ":smack-core", configuration: "archives")
 }
 
-task printClasspath(dependsOn: assemble) << {
-    println sourceSets.main.runtimeClasspath.asPath
+task printClasspath(dependsOn: assemble) {
+    doLast {
+        println sourceSets.main.runtimeClasspath.asPath
+    }
 }

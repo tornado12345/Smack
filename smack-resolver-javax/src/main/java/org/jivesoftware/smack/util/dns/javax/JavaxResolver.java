@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2013-2016 Florian Schmaus
+ * Copyright 2013-2018 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,9 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.logging.Level;
 
+import javax.naming.NameNotFoundException;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
@@ -35,6 +37,8 @@ import org.jivesoftware.smack.util.dns.DNSResolver;
 import org.jivesoftware.smack.util.dns.HostAddress;
 import org.jivesoftware.smack.util.dns.SRVRecord;
 
+import org.minidns.dnsname.DNSName;
+
 /**
  * A DNS resolver (mostly for SRV records), which makes use of the API provided in the javax.* namespace.
  * 
@@ -48,7 +52,7 @@ public class JavaxResolver extends DNSResolver implements SmackInitializer {
 
     static {
         try {
-            Hashtable<String, String> env = new Hashtable<String, String>();
+            Hashtable<String, String> env = new Hashtable<>();
             env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
             dirContext = new InitialDirContext(env);
         } catch (Exception e) {
@@ -79,26 +83,44 @@ public class JavaxResolver extends DNSResolver implements SmackInitializer {
     }
 
     @Override
-    protected List<SRVRecord> lookupSRVRecords0(String name, List<HostAddress> failedAddresses, DnssecMode dnssecMode) {
-        List<SRVRecord> res = new ArrayList<SRVRecord>();
+    protected List<SRVRecord> lookupSRVRecords0(DNSName name, List<HostAddress> failedAddresses, DnssecMode dnssecMode) {
+        List<SRVRecord> res = null;
+
+        Attribute srvAttribute;
+        try {
+            Attributes dnsLookup = dirContext.getAttributes(name.ace, new String[] { "SRV" });
+            srvAttribute = dnsLookup.get("SRV");
+            if (srvAttribute == null)
+               return null;
+        } catch (NameNotFoundException e) {
+            LOGGER.log(Level.FINEST, "No DNS SRV RR found for " + name, e);
+            return null;
+        } catch (NamingException e) {
+            LOGGER.log(Level.WARNING, "Exception while resolving DNS SRV RR for " + name, e);
+            return null;
+        }
 
         try {
-            Attributes dnsLookup = dirContext.getAttributes(name, new String[] { "SRV" });
-            Attribute srvAttribute = dnsLookup.get("SRV");
-            if (srvAttribute == null)
-                return res;
             @SuppressWarnings("unchecked")
             NamingEnumeration<String> srvRecords = (NamingEnumeration<String>) srvAttribute.getAll();
+            res = new ArrayList<>();
             while (srvRecords.hasMore()) {
                 String srvRecordString = srvRecords.next();
                 String[] srvRecordEntries = srvRecordString.split(" ");
                 int priority = Integer.parseInt(srvRecordEntries[srvRecordEntries.length - 4]);
                 int port = Integer.parseInt(srvRecordEntries[srvRecordEntries.length - 2]);
                 int weight = Integer.parseInt(srvRecordEntries[srvRecordEntries.length - 3]);
-                String host = srvRecordEntries[srvRecordEntries.length - 1];
+                String srvTarget = srvRecordEntries[srvRecordEntries.length - 1];
+                // Strip trailing '.' from srvTarget.
+                // Later MiniDNS version may do the right thing when DNSName.from() is called with a DNS name string
+                // having a trailing dot, so this can possibly be removed in future Smack versions.
+                if (srvTarget.length() > 0 && srvTarget.charAt(srvTarget.length() - 1) == '.') {
+                    srvTarget = srvTarget.substring(0, srvTarget.length() - 1);
+                }
+                DNSName host = DNSName.from(srvTarget);
 
                 List<InetAddress> hostAddresses = lookupHostAddress0(host, failedAddresses, dnssecMode);
-                if (hostAddresses == null) {
+                if (shouldContinue(name, host, hostAddresses)) {
                     continue;
                 }
 
@@ -107,7 +129,7 @@ public class JavaxResolver extends DNSResolver implements SmackInitializer {
             }
         }
         catch (NamingException e) {
-            throw new IllegalStateException(e);
+            LOGGER.log(Level.SEVERE, "Exception while resolving DNS SRV RR for" + name, e);
         }
 
         return res;

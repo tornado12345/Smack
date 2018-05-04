@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2013-2014 Florian Schmaus
+ * Copyright 2013-2018 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,16 +34,16 @@ import java.util.zip.InflaterInputStream;
  * <p>
  * See also:
  * <ul>
- * <li><a href="http://docs.oracle.com/javase/7/docs/api/java/util/zip/Deflater.html#deflate(byte[], int, int, int)">The required deflate() method (Java7)</a>
- * <li><a href="http://developer.android.com/reference/java/util/zip/Deflater.html#deflate(byte[], int, int, int)">The required deflate() method (Android)</a>
+  * <li><a href="http://docs.oracle.com/javase/7/docs/api/java/util/zip/Deflater.html#deflate(byte[],%20int,%20int,%20int)">The required deflate() method (Java7)</a>
+ * <li><a href="http://developer.android.com/reference/java/util/zip/Deflater.html#deflate(byte[],%20int,%20int,%20int)">The required deflate() method (Android)</a>
  * </ul>
  * 
  * @author Florian Schmaus
  */
 public class Java7ZlibInputOutputStream extends XMPPInputOutputStream {
-    private final static Method method;
-    private final static boolean supported;
-    private final static int compressionLevel = Deflater.DEFAULT_COMPRESSION;
+    private static final Method method;
+    private static final boolean supported;
+    private static final int compressionLevel = Deflater.DEFAULT_COMPRESSION;
 
     private static final int SYNC_FLUSH_INT = 2;
     private static final int FULL_FLUSH_INT = 3;

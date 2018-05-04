@@ -17,15 +17,17 @@
 
 package org.jivesoftware.smackx.debugger.slf4j;
 
-import org.jivesoftware.smack.ConnectionListener;
+import org.jivesoftware.smack.AbstractConnectionListener;
+import org.jivesoftware.smack.ReconnectionListener;
 import org.jivesoftware.smack.XMPPConnection;
+
 import org.slf4j.Logger;
 
-class SLF4JLoggingConnectionListener implements ConnectionListener {
+class SLF4JLoggingConnectionListener extends AbstractConnectionListener implements ReconnectionListener {
     private final XMPPConnection connection;
     private final Logger logger;
 
-    public SLF4JLoggingConnectionListener(XMPPConnection connection, Logger logger) {
+    SLF4JLoggingConnectionListener(XMPPConnection connection, Logger logger) {
         this.connection = Validate.notNull(connection);
         this.logger = Validate.notNull(logger);
     }
@@ -40,22 +42,22 @@ class SLF4JLoggingConnectionListener implements ConnectionListener {
         logger.debug("({}) Connection authenticated as {}", connection.hashCode(), connection.getUser());
     }
 
+    @Override
     public void connectionClosed() {
         logger.debug("({}) Connection closed", connection.hashCode());
     }
 
+    @Override
     public void connectionClosedOnError(Exception e) {
         logger.debug("({}) Connection closed due to an exception: {}", connection.hashCode(), e);
     }
 
+    @Override
     public void reconnectionFailed(Exception e) {
         logger.debug("({}) Reconnection failed due to an exception: {}", connection.hashCode(), e);
     }
 
-    public void reconnectionSuccessful() {
-        logger.debug("({}) Connection reconnected", connection.hashCode());
-    }
-
+    @Override
     public void reconnectingIn(int seconds) {
         logger.debug("({}) Connection will reconnect in {}", connection.hashCode(), seconds);
     }

@@ -19,7 +19,7 @@ package org.jivesoftware.smackx.privacy.packet;
 import org.jivesoftware.smack.util.NumberUtil;
 
 /**
- * A privacy item acts a rule that when matched defines if a stanza(/packet) should be blocked or not.
+ * A privacy item acts a rule that when matched defines if a stanza should be blocked or not.
  *
  * Privacy Items can handle different kind of blocking communications based on JID, group,
  * subscription type or globally by:<ul>
@@ -328,7 +328,7 @@ public class PrivacyItem {
     /**
      * Type defines if the rule is based on JIDs, roster groups or presence subscription types.
      */
-    public static enum Type {
+    public enum Type {
         /**
          * JID being analyzed should belong to a roster group of the list's owner.
          */

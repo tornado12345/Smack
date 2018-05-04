@@ -16,27 +16,32 @@
  */
 package org.jivesoftware.smackx.disco;
 
+import java.util.List;
+
 import org.jivesoftware.smack.packet.ExtensionElement;
+
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
 import org.jivesoftware.smackx.disco.packet.DiscoverItems;
-
-import java.util.List;
 
 
 public abstract class AbstractNodeInformationProvider implements NodeInformationProvider {
 
+    @Override
     public List<DiscoverItems.Item> getNodeItems() {
         return null;
     }
 
+    @Override
     public List<String> getNodeFeatures() {
         return null;
     }
 
+    @Override
     public List<DiscoverInfo.Identity> getNodeIdentities() {
         return null;
     }
 
+    @Override
     public List<ExtensionElement> getNodePacketExtensions() {
         return null;
     }

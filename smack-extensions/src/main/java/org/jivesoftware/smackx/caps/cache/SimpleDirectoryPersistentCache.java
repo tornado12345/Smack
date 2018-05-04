@@ -28,6 +28,7 @@ import java.util.logging.Logger;
 import org.jivesoftware.smack.util.PacketParserUtils;
 import org.jivesoftware.smack.util.stringencoder.Base32;
 import org.jivesoftware.smack.util.stringencoder.StringEncoder;
+
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
 
 /**
@@ -41,8 +42,8 @@ import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
 public class SimpleDirectoryPersistentCache implements EntityCapsPersistentCache {
     private static final Logger LOGGER = Logger.getLogger(SimpleDirectoryPersistentCache.class.getName());
 
-    private File cacheDir;
-    private StringEncoder filenameEncoder;
+    private final File cacheDir;
+    private final StringEncoder filenameEncoder;
 
     /**
      * Creates a new SimpleDirectoryPersistentCache Object. Make sure that the
@@ -107,20 +108,22 @@ public class SimpleDirectoryPersistentCache implements EntityCapsPersistentCache
 
     private File getFileFor(String nodeVer) {
         String filename = filenameEncoder.encode(nodeVer);
-        File nodeFile = new File(cacheDir, filename);
-        return nodeFile;
+        return new File(cacheDir, filename);
     }
 
     @Override
     public void emptyCache() {
         File[] files = cacheDir.listFiles();
+        if (files == null) {
+            return;
+        }
         for (File f : files) {
             f.delete();
         }
     }
 
     /**
-     * Writes the DiscoverInfo stanza(/packet) to an file
+     * Writes the DiscoverInfo stanza to an file
      * 
      * @param file
      * @param info
@@ -129,14 +132,14 @@ public class SimpleDirectoryPersistentCache implements EntityCapsPersistentCache
     private static void writeInfoToFile(File file, DiscoverInfo info) throws IOException {
         DataOutputStream dos = new DataOutputStream(new FileOutputStream(file));
         try {
-            dos.writeUTF(info.toXML().toString());
+            dos.writeUTF(info.toXML(null).toString());
         } finally {
             dos.close();
         }
     }
 
     /**
-     * Tries to restore an DiscoverInfo stanza(/packet) from a file.
+     * Tries to restore an DiscoverInfo stanza from a file.
      * 
      * @param file
      * @return the restored DiscoverInfo
@@ -144,7 +147,7 @@ public class SimpleDirectoryPersistentCache implements EntityCapsPersistentCache
      */
     private static DiscoverInfo restoreInfoFromFile(File file) throws Exception {
         DataInputStream dis = new DataInputStream(new FileInputStream(file));
-        String fileContent = null;
+        String fileContent;
         try {
             fileContent = dis.readUTF();
         } finally {
@@ -153,8 +156,6 @@ public class SimpleDirectoryPersistentCache implements EntityCapsPersistentCache
         if (fileContent == null) {
             return null;
         }
-        DiscoverInfo info = (DiscoverInfo) PacketParserUtils.parseStanza(fileContent);
-
-        return info;
+        return PacketParserUtils.parseStanza(fileContent);
     }
 }

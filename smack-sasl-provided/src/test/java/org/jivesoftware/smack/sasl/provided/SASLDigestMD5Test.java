@@ -16,9 +16,11 @@
  */
 package org.jivesoftware.smack.sasl.provided;
 
+import java.io.UnsupportedEncodingException;
+
 import org.jivesoftware.smack.SmackException;
-import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.sasl.DigestMd5SaslTest;
+
 import org.junit.Test;
 import org.jxmpp.stringprep.XmppStringprepException;
 
@@ -28,12 +30,14 @@ public class SASLDigestMD5Test extends DigestMd5SaslTest {
     }
 
     @Test
-    public void testDigestMD5() throws NotConnectedException, SmackException, InterruptedException, XmppStringprepException {
+    public void testDigestMD5() throws SmackException, InterruptedException,
+                    XmppStringprepException, UnsupportedEncodingException {
         runTest(false);
     }
 
     @Test
-    public void testDigestMD5Authzid() throws NotConnectedException, SmackException, InterruptedException, XmppStringprepException {
+    public void testDigestMD5Authzid() throws SmackException, InterruptedException,
+                    XmppStringprepException, UnsupportedEncodingException {
         runTest(true);
     }
 }

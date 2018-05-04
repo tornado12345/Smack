@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2016 Fernando Ramirez, Florian Schmaus
+ * Copyright 2016-2017 Fernando Ramirez, Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import org.jivesoftware.smack.AbstractConnectionListener;
 import org.jivesoftware.smack.ConnectionCreationListener;
@@ -34,10 +36,12 @@ import org.jivesoftware.smack.iqrequest.AbstractIqRequestHandler;
 import org.jivesoftware.smack.iqrequest.IQRequestHandler.Mode;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.IQ.Type;
+
 import org.jivesoftware.smackx.blocking.element.BlockContactsIQ;
 import org.jivesoftware.smackx.blocking.element.BlockListIQ;
 import org.jivesoftware.smackx.blocking.element.UnblockContactsIQ;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
+
 import org.jxmpp.jid.Jid;
 
 /**
@@ -82,6 +86,12 @@ public final class BlockingCommandManager extends Manager {
         return blockingCommandManager;
     }
 
+    private final Set<AllJidsUnblockedListener> allJidsUnblockedListeners = new CopyOnWriteArraySet<>();
+
+    private final Set<JidsBlockedListener> jidsBlockedListeners = new CopyOnWriteArraySet<>();
+
+    private final Set<JidsUnblockedListener> jidsUnblockedListeners = new CopyOnWriteArraySet<>();
+
     private BlockingCommandManager(XMPPConnection connection) {
         super(connection);
 
@@ -93,11 +103,15 @@ public final class BlockingCommandManager extends Manager {
                         BlockContactsIQ blockContactIQ = (BlockContactsIQ) iqRequest;
 
                         if (blockListCached == null) {
-                            blockListCached = new ArrayList<Jid>();
+                            blockListCached = new ArrayList<>();
                         }
 
                         List<Jid> blockedJids = blockContactIQ.getJids();
                         blockListCached.addAll(blockedJids);
+
+                        for (JidsBlockedListener listener : jidsBlockedListeners) {
+                            listener.onJidsBlocked(blockedJids);
+                        }
 
                         return IQ.createResultIQ(blockContactIQ);
                     }
@@ -111,14 +125,20 @@ public final class BlockingCommandManager extends Manager {
                 UnblockContactsIQ unblockContactIQ = (UnblockContactsIQ) iqRequest;
 
                 if (blockListCached == null) {
-                    blockListCached = new ArrayList<Jid>();
+                    blockListCached = new ArrayList<>();
                 }
 
                 List<Jid> unblockedJids = unblockContactIQ.getJids();
                 if (unblockedJids == null) { // remove all
                     blockListCached.clear();
+                    for (AllJidsUnblockedListener listener : allJidsUnblockedListeners) {
+                        listener.onAllJidsUnblocked();
+                    }
                 } else { // remove only some
                     blockListCached.removeAll(unblockedJids);
+                    for (JidsUnblockedListener listener : jidsUnblockedListeners) {
+                        listener.onJidsUnblocked(unblockedJids);
+                    }
                 }
 
                 return IQ.createResultIQ(unblockContactIQ);
@@ -163,13 +183,11 @@ public final class BlockingCommandManager extends Manager {
     public List<Jid> getBlockList()
             throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
 
-        if (blockListCached != null) {
-            return Collections.unmodifiableList(blockListCached);
+        if (blockListCached == null) {
+            BlockListIQ blockListIQ = new BlockListIQ();
+            BlockListIQ blockListIQResult = connection().createStanzaCollectorAndSend(blockListIQ).nextResultOrThrow();
+            blockListCached = blockListIQResult.getBlockedJidsCopy();
         }
-
-        BlockListIQ blockListIQ = new BlockListIQ();
-        BlockListIQ blockListIQResult = connection().createPacketCollectorAndSend(blockListIQ).nextResultOrThrow();
-        blockListCached = blockListIQResult.getJids();
 
         return Collections.unmodifiableList(blockListCached);
     }
@@ -186,7 +204,7 @@ public final class BlockingCommandManager extends Manager {
     public void blockContacts(List<Jid> jids)
             throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         BlockContactsIQ blockContactIQ = new BlockContactsIQ(jids);
-        connection().createPacketCollectorAndSend(blockContactIQ).nextResultOrThrow();
+        connection().createStanzaCollectorAndSend(blockContactIQ).nextResultOrThrow();
     }
 
     /**
@@ -201,7 +219,7 @@ public final class BlockingCommandManager extends Manager {
     public void unblockContacts(List<Jid> jids)
             throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         UnblockContactsIQ unblockContactIQ = new UnblockContactsIQ(jids);
-        connection().createPacketCollectorAndSend(unblockContactIQ).nextResultOrThrow();
+        connection().createStanzaCollectorAndSend(unblockContactIQ).nextResultOrThrow();
     }
 
     /**
@@ -215,7 +233,30 @@ public final class BlockingCommandManager extends Manager {
     public void unblockAll()
             throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         UnblockContactsIQ unblockContactIQ = new UnblockContactsIQ();
-        connection().createPacketCollectorAndSend(unblockContactIQ).nextResultOrThrow();
+        connection().createStanzaCollectorAndSend(unblockContactIQ).nextResultOrThrow();
     }
 
+    public void addJidsBlockedListener(JidsBlockedListener jidsBlockedListener) {
+        jidsBlockedListeners.add(jidsBlockedListener);
+    }
+
+    public void removeJidsBlockedListener(JidsBlockedListener jidsBlockedListener) {
+        jidsBlockedListeners.remove(jidsBlockedListener);
+    }
+
+    public void addJidsUnblockedListener(JidsUnblockedListener jidsUnblockedListener) {
+        jidsUnblockedListeners.add(jidsUnblockedListener);
+    }
+
+    public void removeJidsUnblockedListener(JidsUnblockedListener jidsUnblockedListener) {
+        jidsUnblockedListeners.remove(jidsUnblockedListener);
+    }
+
+    public void addAllJidsUnblockedListener(AllJidsUnblockedListener allJidsUnblockedListener) {
+        allJidsUnblockedListeners.add(allJidsUnblockedListener);
+    }
+
+    public void removeAllJidsUnblockedListener(AllJidsUnblockedListener allJidsUnblockedListener) {
+        allJidsUnblockedListeners.remove(allJidsUnblockedListener);
+    }
 }

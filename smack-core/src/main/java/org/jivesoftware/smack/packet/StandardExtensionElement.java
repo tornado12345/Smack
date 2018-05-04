@@ -25,6 +25,7 @@ import org.jivesoftware.smack.util.MultiMap;
 import org.jivesoftware.smack.util.Objects;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.XmlStringBuilder;
+
 import org.jxmpp.util.XmppStringUtils;
 
 /**
@@ -120,7 +121,7 @@ public final class StandardExtensionElement implements ExtensionElement {
     }
 
     public List<StandardExtensionElement> getElements() {
-        if (elements == null){
+        if (elements == null) {
             return Collections.emptyList();
         }
         return elements.values();
@@ -131,10 +132,6 @@ public final class StandardExtensionElement implements ExtensionElement {
     }
 
     @Override
-    public XmlStringBuilder toXML() {
-        return toXML(null);
-    }
-
     public XmlStringBuilder toXML(String enclosingNamespace) {
         if (xmlCache != null) {
             return xmlCache;

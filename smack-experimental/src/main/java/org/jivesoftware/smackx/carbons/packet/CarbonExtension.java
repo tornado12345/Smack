@@ -16,18 +16,19 @@
  */
 package org.jivesoftware.smackx.carbons.packet;
 
-import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.util.XmlStringBuilder;
+
 import org.jivesoftware.smackx.forward.packet.Forwarded;
 
 /**
- * Stanza(/Packet) extension for XEP-0280: Message Carbons. The extension
+ * Stanza extension for XEP-0280: Message Carbons. The extension
  * <a href="http://xmpp.org/extensions/xep-0280.html">XEP-0280</a> is
  * meant to synchronize a message flow to multiple presences of a user.
  * 
  * <p>
- * It accomplishes this by wrapping a {@link Forwarded} stanza(/packet) in a <b>sent</b>
+ * It accomplishes this by wrapping a {@link Forwarded} stanza in a <b>sent</b>
  * or <b>received</b> element
  *
  * @author Georg Lukas
@@ -78,10 +79,10 @@ public class CarbonExtension implements ExtensionElement {
     }
 
     @Override
-    public XmlStringBuilder toXML() {
+    public XmlStringBuilder toXML(String enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.rightAngleBracket();
-        xml.append(fwd.toXML());
+        xml.append(fwd.toXML(null));
         xml.closeElement(this);
         return xml;
     }
@@ -122,13 +123,13 @@ public class CarbonExtension implements ExtensionElement {
     /**
      * Defines the direction of a {@link CarbonExtension} message.
      */
-    public static enum Direction {
+    public enum Direction {
         received,
         sent
     }
 
     /**
-     * Stanza(/Packet) extension indicating that a message may not be carbon-copied.  Adding this
+     * Stanza extension indicating that a message may not be carbon-copied.  Adding this
      * extension to any message will disallow that message from being copied. 
      */
     public static final class Private implements ExtensionElement {
@@ -149,7 +150,7 @@ public class CarbonExtension implements ExtensionElement {
         }
 
         @Override
-        public String toXML() {
+        public String toXML(String enclosingNamespace) {
             return "<" + ELEMENT + " xmlns='" + NAMESPACE + "'/>";
         }
 

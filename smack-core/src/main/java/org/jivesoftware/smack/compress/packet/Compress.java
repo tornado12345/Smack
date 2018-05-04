@@ -19,8 +19,8 @@ package org.jivesoftware.smack.compress.packet;
 import java.util.Collections;
 import java.util.List;
 
-import org.jivesoftware.smack.packet.Nonza;
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.Nonza;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 
 public class Compress implements Nonza {
@@ -45,7 +45,7 @@ public class Compress implements Nonza {
     }
 
     @Override
-    public XmlStringBuilder toXML() {
+    public XmlStringBuilder toXML(String enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.rightAngleBracket();
         xml.element("method", method);
@@ -77,7 +77,7 @@ public class Compress implements Nonza {
         }
 
         @Override
-        public XmlStringBuilder toXML() {
+        public XmlStringBuilder toXML(String enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder(this);
             xml.rightAngleBracket();
             for (String method : methods) {

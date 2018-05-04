@@ -20,12 +20,12 @@ package org.jivesoftware.smackx.iqlast;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+import org.jivesoftware.smack.ConnectionCreationListener;
+import org.jivesoftware.smack.Manager;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
-import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.ConnectionCreationListener;
 import org.jivesoftware.smack.StanzaListener;
-import org.jivesoftware.smack.Manager;
+import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPConnectionRegistry;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.filter.StanzaTypeFilter;
@@ -34,11 +34,13 @@ import org.jivesoftware.smack.iqrequest.IQRequestHandler.Mode;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.IQ.Type;
 import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.packet.Presence;
-import org.jivesoftware.smack.packet.XMPPError.Condition;
+import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.packet.StanzaError.Condition;
+
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.iqlast.packet.LastActivity;
+
 import org.jxmpp.jid.Jid;
 
 /**
@@ -46,7 +48,6 @@ import org.jxmpp.jid.Jid;
  * associated with a Jabber ID. A manager handles incoming LastActivity requests
  * of existing Connections. It also allows to request last activity information
  * of other users.
- * <p>
  * 
  * LastActivity (XEP-0012) based on the sending JID's type allows for retrieval
  * of:
@@ -56,11 +57,9 @@ import org.jxmpp.jid.Jid;
  * specified when doing so.
  * <li>How long a host has been up.
  * </ol>
- * <p/>
  * 
  * For example to get the idle time of a user logged in a resource, simple send
- * the LastActivity stanza(/packet) to them, as in the following code:
- * <p>
+ * the LastActivity stanza to them, as in the following code:
  * 
  * <pre>
  * XMPPConnection con = new XMPPTCPConnection(&quot;jabber.org&quot;);
@@ -75,7 +74,7 @@ import org.jxmpp.jid.Jid;
  * LastActivity activity = LastActivity.getLastActivity(con, &quot;xray@jabber.org&quot;);
  * </pre>
  * 
- * To get the uptime of a host, you simple send the LastActivity stanza(/packet) to it,
+ * To get the uptime of a host, you simple send the LastActivity stanza to it,
  * as in the following code example:
  * <p>
  * 
@@ -90,7 +89,7 @@ import org.jxmpp.jid.Jid;
  */
 
 public final class LastActivityManager extends Manager {
-    private static final Map<XMPPConnection, LastActivityManager> instances = new WeakHashMap<XMPPConnection, LastActivityManager>();
+    private static final Map<XMPPConnection, LastActivityManager> instances = new WeakHashMap<>();
 //    private static final PacketFilter IQ_GET_LAST_FILTER = new AndFilter(IQTypeFilter.GET,
 //                    new StanzaTypeFilter(LastActivity.class));
 
@@ -108,6 +107,7 @@ public final class LastActivityManager extends Manager {
     // Enable the LastActivity support on every established connection
     static {
         XMPPConnectionRegistry.addConnectionCreationListener(new ConnectionCreationListener() {
+            @Override
             public void connectionCreated(XMPPConnection connection) {
                 LastActivityManager.getInstanceFor(connection);
             }
@@ -134,8 +134,9 @@ public final class LastActivityManager extends Manager {
         super(connection);
 
         // Listen to all the sent messages to reset the idle time on each one
-        connection.addPacketSendingListener(new StanzaListener() {
-            public void processPacket(Stanza packet) {
+        connection.addStanzaSendingListener(new StanzaListener() {
+            @Override
+            public void processStanza(Stanza packet) {
                 Presence presence = (Presence) packet;
                 Presence.Mode mode = presence.getMode();
                 if (mode == null) return;
@@ -152,9 +153,9 @@ public final class LastActivityManager extends Manager {
             }
         }, StanzaTypeFilter.PRESENCE);
 
-        connection.addPacketSendingListener(new StanzaListener() {
+        connection.addStanzaSendingListener(new StanzaListener() {
             @Override
-            public void processPacket(Stanza packet) {
+            public void processStanza(Stanza packet) {
                 Message message = (Message) packet;
                 // if it's not an error message, reset the idle time
                 if (message.getType() == Message.Type.error) return;
@@ -227,7 +228,7 @@ public final class LastActivityManager extends Manager {
      * 
      * @param jid
      *            the JID of the user.
-     * @return the LastActivity stanza(/packet) of the jid.
+     * @return the LastActivity stanza of the jid.
      * @throws XMPPErrorException
      *             thrown if a server error has occured.
      * @throws NoResponseException if there was no response from the server.
@@ -237,7 +238,7 @@ public final class LastActivityManager extends Manager {
     public LastActivity getLastActivity(Jid jid) throws NoResponseException, XMPPErrorException,
                     NotConnectedException, InterruptedException {
         LastActivity activity = new LastActivity(jid);
-        return (LastActivity) connection().createPacketCollectorAndSend(activity).nextResultOrThrow();
+        return (LastActivity) connection().createStanzaCollectorAndSend(activity).nextResultOrThrow();
     }
 
     /**

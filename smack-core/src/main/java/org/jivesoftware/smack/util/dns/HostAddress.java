@@ -1,6 +1,6 @@
 /**
  *
- * Copyright © 2013-2016 Florian Schmaus
+ * Copyright © 2013-2018 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,48 +25,37 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.jivesoftware.smack.SmackException.ConnectionException;
-import org.jivesoftware.smack.util.Objects;
+
+import org.minidns.dnsname.DNSName;
 
 public class HostAddress {
-    private final String fqdn;
+    private final DNSName fqdn;
     private final int port;
     private final Map<InetAddress, Exception> exceptions = new LinkedHashMap<>();
     private final List<InetAddress> inetAddresses;
 
     /**
-     * Creates a new HostAddress with the given FQDN. The port will be set to the default XMPP client port: 5222
+     * Creates a new HostAddress with the given FQDN.
      * 
-     * @param fqdn Fully qualified domain name.
-     * @throws IllegalArgumentException If the fqdn is null.
-     */
-    public HostAddress(String fqdn, List<InetAddress> inetAddresses) {
-        // Set port to the default port for XMPP client communication
-        this(fqdn, 5222, inetAddresses);
-    }
-
-    /**
-     * Creates a new HostAddress with the given FQDN. The port will be set to the default XMPP client port: 5222
-     * 
-     * @param fqdn Fully qualified domain name.
+     * @param fqdn the optional fully qualified domain name (FQDN).
      * @param port The port to connect on.
-     * @throws IllegalArgumentException If the fqdn is null or port is out of valid range (0 - 65535).
+     * @param inetAddresses list of addresses.
+     * @throws IllegalArgumentException If the port is out of valid range (0 - 65535).
      */
-    public HostAddress(String fqdn, int port, List<InetAddress> inetAddresses) {
-        Objects.requireNonNull(fqdn, "FQDN is null");
+    public HostAddress(DNSName fqdn, int port, List<InetAddress> inetAddresses) {
         if (port < 0 || port > 65535)
             throw new IllegalArgumentException(
-                    "Port must be a 16-bit unsiged integer (i.e. between 0-65535. Port was: " + port);
-        if (fqdn.charAt(fqdn.length() - 1) == '.') {
-            this.fqdn = fqdn.substring(0, fqdn.length() - 1);
-        }
-        else {
-            this.fqdn = fqdn;
-        }
+                    "Port must be a 16-bit unsigned integer (i.e. between 0-65535. Port was: " + port);
+        this.fqdn = fqdn;
         this.port = port;
         if (inetAddresses.isEmpty()) {
             throw new IllegalArgumentException("Must provide at least one InetAddress");
         }
         this.inetAddresses = inetAddresses;
+    }
+
+    public HostAddress(int port, InetAddress hostAddress) {
+        this(null, port, Collections.singletonList(hostAddress));
     }
 
     /**
@@ -76,14 +65,30 @@ public class HostAddress {
      * @param fqdn the domain name of the host.
      * @param e the exception causing the failure.
      */
-    public HostAddress(String fqdn, Exception e) {
+    public HostAddress(DNSName fqdn, Exception e) {
         this.fqdn = fqdn;
         this.port = 5222;
         inetAddresses = Collections.emptyList();
         setException(e);
     }
 
-    public String getFQDN() {
+    public String getHost() {
+        if (fqdn != null) {
+            return fqdn.toString();
+        }
+
+        // In this case, the HostAddress(int, InetAddress) constructor must been used. We have no FQDN. And
+        // inetAddresses.size() must be exactly one.
+        assert inetAddresses.size() == 1;
+        return inetAddresses.get(0).getHostAddress();
+    }
+
+    /**
+     * Return the fully qualified domain name. This may return <code>null</code> in case there host address is only numeric, i.e. an IP address.
+     *
+     * @return the fully qualified domain name or <code>null</code>
+     */
+    public DNSName getFQDN() {
         return fqdn;
     }
 
@@ -97,7 +102,7 @@ public class HostAddress {
 
     public void setException(InetAddress inetAddress, Exception exception) {
         Exception old = exceptions.put(inetAddress, exception);
-        assert(old == null);
+        assert (old == null);
     }
 
     /**
@@ -117,7 +122,7 @@ public class HostAddress {
 
     @Override
     public String toString() {
-        return fqdn + ":" + port;
+        return getHost() + ":" + port;
     }
 
     @Override
@@ -131,7 +136,7 @@ public class HostAddress {
 
         final HostAddress address = (HostAddress) o;
 
-        if (!fqdn.equals(address.fqdn)) {
+        if (!getHost().equals(address.getHost())) {
             return false;
         }
         return port == address.port;
@@ -140,7 +145,7 @@ public class HostAddress {
     @Override
     public int hashCode() {
         int result = 1;
-        result = 37 * result + fqdn.hashCode();
+        result = 37 * result + getHost().hashCode();
         return result * 37 + port;
     }
 

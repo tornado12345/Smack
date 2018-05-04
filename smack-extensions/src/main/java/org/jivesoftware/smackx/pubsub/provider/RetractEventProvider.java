@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.provider.EmbeddedExtensionProvider;
+
 import org.jivesoftware.smackx.pubsub.RetractItem;
 
 /**
@@ -30,12 +31,10 @@ import org.jivesoftware.smackx.pubsub.RetractItem;
  * 
  * @author Robin Collier
  */
-public class RetractEventProvider extends EmbeddedExtensionProvider<RetractItem>
-{
-	@Override
-	protected RetractItem createReturnExtension(String currentElement, String currentNamespace, Map<String, String> attributeMap, List<? extends ExtensionElement> content)
-	{
-		return new RetractItem(attributeMap.get("id"));
-	}
+public class RetractEventProvider extends EmbeddedExtensionProvider<RetractItem> {
+    @Override
+    protected RetractItem createReturnExtension(String currentElement, String currentNamespace, Map<String, String> attributeMap, List<? extends ExtensionElement> content) {
+        return new RetractItem(attributeMap.get("id"));
+    }
 
 }

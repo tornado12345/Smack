@@ -16,17 +16,19 @@
  */
 package org.jivesoftware.smack;
 
-import org.jivesoftware.smack.XMPPException.StreamErrorException;
-import org.jivesoftware.smack.packet.StreamError;
-import org.jivesoftware.smack.util.Async;
-
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.jivesoftware.smack.XMPPException.StreamErrorException;
+import org.jivesoftware.smack.packet.StreamError;
+import org.jivesoftware.smack.util.Async;
 
 /**
  * Handles the automatic reconnection process. Every time a connection is dropped without
@@ -43,7 +45,10 @@ import java.util.logging.Logger;
  * </ol>
  *
  * {@link ReconnectionPolicy#FIXED_DELAY} - The reconnection mechanism will try to reconnect after a fixed delay 
- * independently from the number of reconnection attempts already performed
+ * independently from the number of reconnection attempts already performed.
+ * <p>
+ * Interrupting the reconnection thread will abort the reconnection mechanism.
+ * </p>
  *
  * @author Francisco Vives
  * @author Luca Stucchi
@@ -70,6 +75,7 @@ public final class ReconnectionManager {
 
     static {
         XMPPConnectionRegistry.addConnectionCreationListener(new ConnectionCreationListener() {
+            @Override
             public void connectionCreated(XMPPConnection connection) {
                 if (connection instanceof AbstractXMPPConnection) {
                     ReconnectionManager.getInstanceFor((AbstractXMPPConnection) connection);
@@ -98,6 +104,8 @@ public final class ReconnectionManager {
     public static boolean getEnabledPerDefault() {
         return enabledPerDefault;
     }
+
+    private final Set<ReconnectionListener> reconnectionListeners = new CopyOnWriteArraySet<>();
 
     // Holds the connection to the server
     private final WeakReference<AbstractXMPPConnection> weakRefConnection;
@@ -131,6 +139,27 @@ public final class ReconnectionManager {
     }
 
     /**
+     * Add a new reconnection listener.
+     *
+     * @param listener the listener to add
+     * @return <code>true</code> if the listener was not already added
+     * @since 4.2.2
+     */
+    public boolean addReconnectionListener(ReconnectionListener listener) {
+        return reconnectionListeners.add(listener);
+    }
+
+    /**
+     * Remove a reconnection listener.
+     * @param listener the listener to remove
+     * @return <code>true</code> if the listener was active and got removed.
+     * @since 4.2.2
+     */
+    public boolean removeReconnectionListener(ReconnectionListener listener) {
+        return reconnectionListeners.remove(listener);
+    }
+
+    /**
      * Set the fixed delay in seconds between the reconnection attempts Also set the connection
      * policy to {@link ReconnectionPolicy#FIXED_DELAY}.
      * 
@@ -160,9 +189,9 @@ public final class ReconnectionManager {
     private Thread reconnectionThread;
 
     private ReconnectionManager(AbstractXMPPConnection connection) {
-        weakRefConnection = new WeakReference<AbstractXMPPConnection>(connection);
+        weakRefConnection = new WeakReference<>(connection);
 
-        reconnectionRunnable = new Thread() {
+        reconnectionRunnable = new Runnable() {
 
             /**
              * Holds the current number of reconnection attempts
@@ -204,11 +233,17 @@ public final class ReconnectionManager {
             /**
              * The process will try the reconnection until the connection succeed or the user cancel it
              */
+            @SuppressWarnings("deprecation")
+            @Override
             public void run() {
                 final AbstractXMPPConnection connection = weakRefConnection.get();
                 if (connection == null) {
                     return;
                 }
+
+                // Reset attempts to zero since a new reconnection cycle is started once this runs.
+                attempts = 0;
+
                 // The process will try to reconnect until the connection is established or
                 // the user cancel the reconnection process AbstractXMPPConnection.disconnect().
                 while (isReconnectionPossible(connection)) {
@@ -217,42 +252,40 @@ public final class ReconnectionManager {
                     // Sleep until we're ready for the next reconnection attempt. Notify
                     // listeners once per second about how much time remains before the next
                     // reconnection attempt.
-                    while (isReconnectionPossible(connection) && remainingSeconds > 0) {
+                    while (remainingSeconds > 0) {
+                        if (!isReconnectionPossible(connection)) {
+                            return;
+                        }
                         try {
                             Thread.sleep(1000);
                             remainingSeconds--;
-                            for (ConnectionListener listener : connection.connectionListeners) {
+                            for (ReconnectionListener listener : reconnectionListeners) {
                                 listener.reconnectingIn(remainingSeconds);
                             }
                         }
                         catch (InterruptedException e) {
-                            LOGGER.log(Level.FINE, "waiting for reconnection interrupted", e);
-                            break;
+                            LOGGER.log(Level.FINE, "Reconnection Thread was interrupted, aborting reconnection mechanism", e);
+                            // Exit the reconnection thread in case it was interrupted.
+                            return;
                         }
                     }
 
-                    for (ConnectionListener listener : connection.connectionListeners) {
+                    for (ReconnectionListener listener : reconnectionListeners) {
                         listener.reconnectingIn(0);
                     }
 
+                    if (!isReconnectionPossible(connection)) {
+                        return;
+                    }
                     // Makes a reconnection attempt
                     try {
-                        if (isReconnectionPossible(connection)) {
-                            try {
-                                connection.connect();
-                            } catch (SmackException.AlreadyConnectedException e) {
-                                LOGGER.log(Level.FINER, "Connection was already connected on reconnection attempt", e);
-                            }
+                        try {
+                            connection.connect();
                         }
-                        // TODO Starting with Smack 4.2, connect() will no
-                        // longer login automatically. So change this and the
-                        // previous lines to connection.connect().login() in the
-                        // 4.2, or any later, branch.
-                        if (!connection.isAuthenticated()) {
-                            connection.login();
+                        catch (SmackException.AlreadyConnectedException e) {
+                            LOGGER.log(Level.FINER, "Connection was already connected on reconnection attempt", e);
                         }
-                        // Successfully reconnected.
-                        attempts = 0;
+                        connection.login();
                     }
                     catch (SmackException.AlreadyLoggedInException e) {
                         // This can happen if another thread concurrently triggers a reconnection
@@ -260,12 +293,21 @@ public final class ReconnectionManager {
                         // failure. See also SMACK-725.
                         LOGGER.log(Level.FINER, "Reconnection not required, was already logged in", e);
                     }
-                    catch (SmackException | IOException | XMPPException | InterruptedException e) {
+                    catch (SmackException | IOException | XMPPException e) {
                         // Fires the failed reconnection notification
-                        for (ConnectionListener listener : connection.connectionListeners) {
+                        for (ReconnectionListener listener : reconnectionListeners) {
                             listener.reconnectionFailed(e);
                         }
+                        // Failed to reconnect, try again.
+                        continue;
+                    } catch (InterruptedException e) {
+                        LOGGER.log(Level.FINE, "Reconnection Thread was interrupted, aborting reconnection mechanism", e);
+                        // Exit the reconnection thread in case it was interrupted.
+                        return;
                     }
+
+                    // Successfully reconnected .
+                    return;
                 }
             }
         };
@@ -312,7 +354,7 @@ public final class ReconnectionManager {
      *
      * @return true, if the reconnection mechanism is enabled.
      */
-    public boolean isAutomaticReconnectEnabled() {
+    public synchronized boolean isAutomaticReconnectEnabled() {
         return automaticReconnectEnabled;
     }
 
@@ -344,6 +386,20 @@ public final class ReconnectionManager {
 
         reconnectionThread = Async.go(reconnectionRunnable,
                         "Smack Reconnection Manager (" + connection.getConnectionCounter() + ')');
+    }
+
+    /**
+     * Abort a possibly running reconnection mechanism.
+     *
+     * @since 4.2.2
+     */
+    public synchronized void abortPossiblyRunningReconnection() {
+        if (reconnectionThread == null) {
+            return;
+        }
+
+        reconnectionThread.interrupt();
+        reconnectionThread = null;
     }
 
     private final ConnectionListener connectionListener = new AbstractConnectionListener() {

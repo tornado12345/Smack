@@ -22,6 +22,7 @@ import java.io.IOException;
 import org.jivesoftware.smack.packet.SimpleIQ;
 import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.util.stringencoder.Base64;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -48,12 +49,12 @@ public class SoundSettings extends SimpleIQ {
 
 
     /**
-     * Element name of the stanza(/packet) extension.
+     * Element name of the stanza extension.
      */
     public static final String ELEMENT_NAME = "sound-settings";
 
     /**
-     * Namespace of the stanza(/packet) extension.
+     * Namespace of the stanza extension.
      */
     public static final String NAMESPACE = "http://jivesoftware.com/protocol/workgroup";
 
@@ -62,7 +63,7 @@ public class SoundSettings extends SimpleIQ {
     }
 
     /**
-     * Stanza(/Packet) extension provider for SoundSetting Packets.
+     * Stanza extension provider for SoundSetting Packets.
      */
     public static class InternalProvider extends IQProvider<SoundSettings> {
 

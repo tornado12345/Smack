@@ -16,17 +16,18 @@
  */
 package org.jivesoftware.smackx.bytestreams.ibb.packet;
 
-import static org.junit.Assert.assertEquals;
 import static org.custommonkey.xmlunit.XMLAssert.assertXMLEqual;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Properties;
 
 import org.jivesoftware.smack.packet.IQ;
+
 import org.jivesoftware.smackx.InitExtensions;
-import org.junit.Test;
-import org.jxmpp.jid.impl.JidCreate;
 
 import com.jamesmurty.utils.XMLBuilder;
+import org.junit.Test;
+import org.jxmpp.jid.impl.JidCreate;
 
 /**
  * Test for the Close class.
@@ -57,7 +58,7 @@ public class CloseTest extends InitExtensions {
         assertEquals("sessionID", close.getSessionID());
     }
 
-    private static Properties outputProperties = new Properties();
+    private static final Properties outputProperties = new Properties();
     {
         outputProperties.put(javax.xml.transform.OutputKeys.OMIT_XML_DECLARATION, "yes");
     }
@@ -79,7 +80,7 @@ public class CloseTest extends InitExtensions {
         close.setTo(JidCreate.from("juliet@capulet.lit/balcony"));
         close.setStanzaId("us71g45j");
 
-        assertXMLEqual(control, close.toXML().toString());
+        assertXMLEqual(control, close.toXML(null).toString());
     }
 
 }

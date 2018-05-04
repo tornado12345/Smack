@@ -36,14 +36,16 @@ import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.ErrorIQ;
 import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.packet.XMPPError;
+import org.jivesoftware.smack.packet.StanzaError;
+
 import org.jivesoftware.smackx.bytestreams.socks5.packet.Bytestream;
 import org.jivesoftware.smackx.bytestreams.socks5.packet.Bytestream.StreamHost;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
-import org.jivesoftware.smackx.disco.packet.DiscoverItems;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo.Identity;
+import org.jivesoftware.smackx.disco.packet.DiscoverItems;
 import org.jivesoftware.smackx.disco.packet.DiscoverItems.Item;
+
 import org.jivesoftware.util.ConnectionUtils;
 import org.jivesoftware.util.Protocol;
 import org.jivesoftware.util.Verification;
@@ -64,18 +66,18 @@ import org.jxmpp.stringprep.XmppStringprepException;
 public class Socks5ByteStreamManagerTest {
 
     // settings
-    static final EntityFullJid initiatorJID = JidTestUtil.DUMMY_AT_EXAMPLE_ORG_SLASH_DUMMYRESOURCE;
-    static final EntityFullJid targetJID = JidTestUtil.FULL_JID_1_RESOURCE_1;
-    static final DomainBareJid xmppServer = JidTestUtil.DOMAIN_BARE_JID_1;
-    static final DomainBareJid proxyJID = JidTestUtil.MUC_EXAMPLE_ORG;
-    String proxyAddress = "127.0.0.1";
-    String sessionID = "session_id";
+    private static final EntityFullJid initiatorJID = JidTestUtil.DUMMY_AT_EXAMPLE_ORG_SLASH_DUMMYRESOURCE;
+    private static final EntityFullJid targetJID = JidTestUtil.FULL_JID_1_RESOURCE_1;
+    private static final DomainBareJid xmppServer = initiatorJID.asDomainBareJid();
+    private static final DomainBareJid proxyJID = JidTestUtil.MUC_EXAMPLE_ORG;
+    private static final String proxyAddress = "127.0.0.1";
+    private static final String sessionID = "session_id";
 
     // protocol verifier
-    Protocol protocol;
+    private Protocol protocol;
 
     // mocked XMPP connection
-    XMPPConnection connection;
+    private XMPPConnection connection;
 
     /**
      * Initialize fields used in the tests.
@@ -90,7 +92,7 @@ public class Socks5ByteStreamManagerTest {
         protocol = new Protocol();
 
         // create mocked XMPP connection
-        connection = ConnectionUtils.createMockedConnection(protocol, initiatorJID, xmppServer);
+        connection = ConnectionUtils.createMockedConnection(protocol, initiatorJID);
 
     }
 
@@ -163,7 +165,7 @@ public class Socks5ByteStreamManagerTest {
         catch (FeatureNotSupportedException e) {
             assertTrue(e.getFeature().equals("SOCKS5 Bytestream"));
             assertTrue(e.getJid().equals(targetJID));
-        } catch(Exception e) {
+        } catch (Exception e) {
             fail(e.getMessage());
         }
 
@@ -431,7 +433,7 @@ public class Socks5ByteStreamManagerTest {
                         Verification.requestTypeGET);
 
         // build error packet to reject SOCKS5 Bytestream
-        XMPPError.Builder builder = XMPPError.getBuilder(XMPPError.Condition.not_acceptable);
+        StanzaError.Builder builder = StanzaError.getBuilder(StanzaError.Condition.not_acceptable);
         IQ rejectPacket = new ErrorIQ(builder);
         rejectPacket.setFrom(targetJID);
         rejectPacket.setTo(initiatorJID);
@@ -604,6 +606,7 @@ public class Socks5ByteStreamManagerTest {
         // return used stream host info as response to the bytestream initiation
         protocol.addResponse(streamHostUsedPacket, new Verification<Bytestream, Bytestream>() {
 
+            @Override
             public void verify(Bytestream request, Bytestream response) {
                 // verify SOCKS5 Bytestream request
                 assertEquals(response.getSessionID(), request.getSessionID());
@@ -698,6 +701,7 @@ public class Socks5ByteStreamManagerTest {
         // return used stream host info as response to the bytestream initiation
         protocol.addResponse(streamHostUsedPacket, new Verification<Bytestream, Bytestream>() {
 
+            @Override
             public void verify(Bytestream request, Bytestream response) {
                 assertEquals(response.getSessionID(), request.getSessionID());
                 assertEquals(1, request.getStreamHosts().size());
@@ -714,6 +718,7 @@ public class Socks5ByteStreamManagerTest {
         // return proxy activation response if proxy should be activated
         protocol.addResponse(activationResponse, new Verification<Bytestream, IQ>() {
 
+            @Override
             public void verify(Bytestream request, IQ response) {
                 assertEquals(targetJID, request.getToActivate().getTarget());
             }
@@ -796,6 +801,7 @@ public class Socks5ByteStreamManagerTest {
         // return used stream host info as response to the bytestream initiation
         protocol.addResponse(streamHostUsedPacket, new Verification<Bytestream, Bytestream>() {
 
+            @Override
             public void verify(Bytestream request, Bytestream response) {
                 assertEquals(response.getSessionID(), request.getSessionID());
                 StreamHost streamHost1 = request.getStreamHosts().get(0);
@@ -862,6 +868,7 @@ public class Socks5ByteStreamManagerTest {
 
         Verification<Bytestream, Bytestream> streamHostUsedVerification1 = new Verification<Bytestream, Bytestream>() {
 
+            @Override
             public void verify(Bytestream request, Bytestream response) {
                 assertEquals(response.getSessionID(), request.getSessionID());
                 assertEquals(2, request.getStreamHosts().size());
@@ -898,6 +905,7 @@ public class Socks5ByteStreamManagerTest {
 
         Verification<Bytestream, Bytestream> streamHostUsedVerification2 = new Verification<Bytestream, Bytestream>() {
 
+            @Override
             public void verify(Bytestream request, Bytestream response) {
                 assertEquals(response.getSessionID(), request.getSessionID());
                 assertEquals(2, request.getStreamHosts().size());
@@ -946,6 +954,7 @@ public class Socks5ByteStreamManagerTest {
 
         Verification<Bytestream, Bytestream> streamHostUsedVerification = new Verification<Bytestream, Bytestream>() {
 
+            @Override
             public void verify(Bytestream request, Bytestream response) {
                 assertEquals(response.getSessionID(), request.getSessionID());
                 assertEquals(2, request.getStreamHosts().size());
@@ -1079,6 +1088,7 @@ public class Socks5ByteStreamManagerTest {
         // return proxy activation response if proxy should be activated
         protocol.addResponse(activationResponse, new Verification<Bytestream, IQ>() {
 
+            @Override
             public void verify(Bytestream request, IQ response) {
                 assertEquals(targetJID, request.getToActivate().getTarget());
             }

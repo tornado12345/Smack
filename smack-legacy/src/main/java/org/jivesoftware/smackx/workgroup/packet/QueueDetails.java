@@ -17,13 +17,6 @@
 
 package org.jivesoftware.smackx.workgroup.packet;
 
-import org.jivesoftware.smackx.workgroup.QueueUser;
-import org.jivesoftware.smack.SmackException;
-import org.jivesoftware.smack.packet.ExtensionElement;
-import org.jivesoftware.smack.provider.ExtensionElementProvider;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -33,26 +26,35 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.provider.ExtensionElementProvider;
+
+import org.jivesoftware.smackx.workgroup.QueueUser;
+
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+
 /**
- * Queue details stanza(/packet) extension, which contains details about the users
+ * Queue details stanza extension, which contains details about the users
  * currently in a queue.
  */
 public final class QueueDetails implements ExtensionElement {
     private static final Logger LOGGER = Logger.getLogger(QueueDetails.class.getName());
 
     /**
-     * Element name of the stanza(/packet) extension.
+     * Element name of the stanza extension.
      */
     public static final String ELEMENT_NAME = "notify-queue-details";
 
     /**
-     * Namespace of the stanza(/packet) extension.
+     * Namespace of the stanza extension.
      */
     public static final String NAMESPACE = "http://jabber.org/protocol/workgroup";
 
     private static final String DATE_FORMAT = "yyyyMMdd'T'HH:mm:ss";
 
-    private SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
     /**
      * The list of users in the queue.
      */
@@ -91,20 +93,23 @@ public final class QueueDetails implements ExtensionElement {
         }
     }
 
+    @Override
     public String getElementName() {
         return ELEMENT_NAME;
     }
 
+    @Override
     public String getNamespace() {
         return NAMESPACE;
     }
 
-    public String toXML() {
+    @Override
+    public String toXML(String enclosingNamespace) {
         StringBuilder buf = new StringBuilder();
         buf.append('<').append(ELEMENT_NAME).append(" xmlns=\"").append(NAMESPACE).append("\">");
 
         synchronized (users) {
-            for (Iterator<QueueUser> i=users.iterator(); i.hasNext(); ) {
+            for (Iterator<QueueUser> i = users.iterator(); i.hasNext(); ) {
                 QueueUser user = i.next();
                 int position = user.getQueuePosition();
                 int timeRemaining = user.getEstimatedRemainingTime();
@@ -134,7 +139,7 @@ public final class QueueDetails implements ExtensionElement {
     }
 
     /**
-     * Provider class for QueueDetails stanza(/packet) extensions.
+     * Provider class for QueueDetails stanza extensions.
      */
     public static class Provider extends ExtensionElementProvider<QueueDetails> {
 
@@ -148,11 +153,10 @@ public final class QueueDetails implements ExtensionElement {
 
             int eventType = parser.getEventType();
             while (eventType != XmlPullParser.END_TAG &&
-                    "notify-queue-details".equals(parser.getName()))
-            {
+                    "notify-queue-details".equals(parser.getName())) {
                 eventType = parser.next();
                 while ((eventType == XmlPullParser.START_TAG) && "user".equals(parser.getName())) {
-                    String uid = null;
+                    String uid;
                     int position = -1;
                     int time = -1;
                     Date joinTime = null;
@@ -165,8 +169,7 @@ public final class QueueDetails implements ExtensionElement {
 
                     eventType = parser.next();
                     while ((eventType != XmlPullParser.END_TAG)
-                                || (! "user".equals(parser.getName())))
-                    {
+                                || (!"user".equals(parser.getName()))) {
                         if ("position".equals(parser.getName())) {
                             position = Integer.parseInt(parser.nextText());
                         }
@@ -180,7 +183,7 @@ public final class QueueDetails implements ExtensionElement {
                                 throw new SmackException(e);
                             }
                         }
-                        else if( parser.getName().equals( "waitTime" ) ) {
+                        else if (parser.getName().equals("waitTime")) {
                             Date wait;
                             try {
                                 wait = dateFormat.parse(parser.nextText());

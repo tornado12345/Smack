@@ -28,8 +28,10 @@ import org.jivesoftware.smack.XMPPConnectionRegistry;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.id.StanzaIdUtil;
+
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.vcardtemp.packet.VCard;
+
 import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.Jid;
 
@@ -90,6 +92,8 @@ public final class VCardManager extends Manager {
      * Save this vCard for the user connected by 'connection'. XMPPConnection should be authenticated
      * and not anonymous.
      *
+     * @param vcard VCard.
+     *
      * @throws XMPPErrorException thrown if there was an issue setting the VCard in the server.
      * @throws NoResponseException if there was no response from the server.
      * @throws NotConnectedException 
@@ -102,12 +106,13 @@ public final class VCardManager extends Manager {
         // Also make sure to generate a new stanza id (the given vcard could be a vcard result), in which case we don't
         // want to use the same stanza id again (although it wouldn't break if we did)
         vcard.setStanzaId(StanzaIdUtil.newStanzaId());
-        connection().createPacketCollectorAndSend(vcard).nextResultOrThrow();
+        connection().createStanzaCollectorAndSend(vcard).nextResultOrThrow();
     }
 
     /**
      * Load the VCard of the current user.
      *
+     * @return VCard.
      * @throws XMPPErrorException 
      * @throws NoResponseException 
      * @throws NotConnectedException 
@@ -120,6 +125,9 @@ public final class VCardManager extends Manager {
     /**
      * Load VCard information for a given user.
      *
+     * @param bareJid bareJid of the user.
+     *
+     * @return VCard.
      * @throws XMPPErrorException 
      * @throws NoResponseException if there was no response from the server.
      * @throws NotConnectedException 
@@ -128,7 +136,7 @@ public final class VCardManager extends Manager {
     public VCard loadVCard(EntityBareJid bareJid) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         VCard vcardRequest = new VCard();
         vcardRequest.setTo(bareJid);
-        VCard result = connection().createPacketCollectorAndSend(vcardRequest).nextResultOrThrow();
+        VCard result = connection().createStanzaCollectorAndSend(vcardRequest).nextResultOrThrow();
         return result;
     }
 

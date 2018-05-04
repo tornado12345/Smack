@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2003-2007 Jive Software, 2014 Florian Schmaus
+ * Copyright 2003-2007 Jive Software, 2014-2016 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
@@ -35,16 +34,18 @@ import org.jivesoftware.smack.provider.ProviderManager;
 import org.jivesoftware.smack.sasl.core.SASLAnonymous;
 import org.jivesoftware.smack.sasl.core.SASLXOauth2Mechanism;
 import org.jivesoftware.smack.sasl.core.SCRAMSHA1Mechanism;
+import org.jivesoftware.smack.sasl.core.ScramSha1PlusMechanism;
 import org.jivesoftware.smack.util.FileUtils;
+import org.jivesoftware.smack.util.StringUtils;
+
 import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
 
 public final class SmackInitialization {
     static final String SMACK_VERSION;
 
-    private static final String DEFAULT_CONFIG_FILE = "classpath:org.jivesoftware.smack/smack-config.xml";
+    private static final String DEFAULT_CONFIG_FILE = "org.jivesoftware.smack/smack-config.xml";
 
     private static final Logger LOGGER = Logger.getLogger(SmackInitialization.class.getName());
 
@@ -59,16 +60,16 @@ public final class SmackInitialization {
     static {
         String smackVersion;
         try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(FileUtils.getStreamForUrl("classpath:org.jivesoftware.smack/version", null)));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(FileUtils.getStreamForClasspathFile("org.jivesoftware.smack/version", null), StringUtils.UTF8));
             smackVersion = reader.readLine();
             try {
                 reader.close();
             } catch (IOException e) {
                 LOGGER.log(Level.WARNING, "IOException closing stream", e);
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Could not determine Smack version", e);
-            smackVersion = "unkown";
+            smackVersion = "unknown";
         }
         SMACK_VERSION = smackVersion;
 
@@ -77,47 +78,20 @@ public final class SmackInitialization {
             String[] splitDisabledClasses = disabledClasses.split(",");
             for (String s : splitDisabledClasses) SmackConfiguration.disabledSmackClasses.add(s);
         }
-        try {
-            FileUtils.addLines("classpath:org.jivesoftware.smack/disabledClasses", SmackConfiguration.disabledSmackClasses);
-        }
-        catch (Exception e) {
-            throw new IllegalStateException(e);
-        }
-
-        try {
-            Class<?> c = Class.forName("org.jivesoftware.smack.CustomSmackConfiguration");
-            Field f = c.getField("DISABLED_SMACK_CLASSES");
-            String[] sa = (String[]) f.get(null);
-            if (sa != null) {
-                LOGGER.warning("Using CustomSmackConfig is deprecated and will be removed in a future release");
-                for (String s : sa)
-                    SmackConfiguration.disabledSmackClasses.add(s);
-            }
-        }
-        catch (ClassNotFoundException e1) {
-        }
-        catch (NoSuchFieldException e) {
-        }
-        catch (SecurityException e) {
-        }
-        catch (IllegalArgumentException e) {
-        }
-        catch (IllegalAccessException e) {
-        }
 
         InputStream configFileStream;
         try {
-            configFileStream = FileUtils.getStreamForUrl(DEFAULT_CONFIG_FILE, null);
+            configFileStream = FileUtils.getStreamForClasspathFile(DEFAULT_CONFIG_FILE, null);
         }
         catch (Exception e) {
-            throw new IllegalStateException(e);
+            throw new IllegalStateException("Could not load Smack configuration file", e);
         }
 
         try {
             processConfigFile(configFileStream, null);
         }
         catch (Exception e) {
-            throw new IllegalStateException(e);
+            throw new IllegalStateException("Could not parse Smack configuration file", e);
         }
 
         // Add the Java7 compression handler first, since it's preferred
@@ -133,10 +107,11 @@ public final class SmackInitialization {
             }
         }
         catch (Exception e) {
-            // Ignore.
+            LOGGER.log(Level.FINE, "Could not handle debugEnable property on Smack initialization", e);
         }
 
         SASLAuthentication.registerSASLMechanism(new SCRAMSHA1Mechanism());
+        SASLAuthentication.registerSASLMechanism(new ScramSha1PlusMechanism());
         SASLAuthentication.registerSASLMechanism(new SASLXOauth2Mechanism());
         SASLAuthentication.registerSASLMechanism(new SASLAnonymous());
 
@@ -178,7 +153,7 @@ public final class SmackInitialization {
 
     private static void parseClassesToLoad(XmlPullParser parser, boolean optional,
                     Collection<Exception> exceptions, ClassLoader classLoader)
-                    throws XmlPullParserException, IOException, Exception {
+                    throws Exception {
         final String startName = parser.getName();
         int eventType;
         String name;
@@ -230,7 +205,7 @@ public final class SmackInitialization {
             }
         }
         if (SmackInitializer.class.isAssignableFrom(initClass)) {
-            SmackInitializer initializer = (SmackInitializer) initClass.newInstance();
+            SmackInitializer initializer = (SmackInitializer) initClass.getConstructor().newInstance();
             List<Exception> exceptions = initializer.initialize();
             if (exceptions == null || exceptions.size() == 0) {
                 LOGGER.log(Level.FINE, "Loaded SmackInitializer " + className);

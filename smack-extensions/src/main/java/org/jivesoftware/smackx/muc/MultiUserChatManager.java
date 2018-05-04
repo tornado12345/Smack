@@ -1,6 +1,6 @@
 /**
  *
- * Copyright © 2014-2016 Florian Schmaus
+ * Copyright © 2014-2018 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,21 +32,22 @@ import java.util.logging.Logger;
 import org.jivesoftware.smack.AbstractConnectionListener;
 import org.jivesoftware.smack.ConnectionCreationListener;
 import org.jivesoftware.smack.Manager;
+import org.jivesoftware.smack.SmackException.NoResponseException;
+import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPConnectionRegistry;
-import org.jivesoftware.smack.SmackException.NoResponseException;
-import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.filter.AndFilter;
 import org.jivesoftware.smack.filter.MessageTypeFilter;
+import org.jivesoftware.smack.filter.NotFilter;
 import org.jivesoftware.smack.filter.StanzaExtensionFilter;
 import org.jivesoftware.smack.filter.StanzaFilter;
-import org.jivesoftware.smack.filter.NotFilter;
 import org.jivesoftware.smack.filter.StanzaTypeFilter;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.util.Async;
+
 import org.jivesoftware.smackx.disco.AbstractNodeInformationProvider;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
@@ -54,12 +55,12 @@ import org.jivesoftware.smackx.disco.packet.DiscoverItems;
 import org.jivesoftware.smackx.muc.MultiUserChatException.NotAMucServiceException;
 import org.jivesoftware.smackx.muc.packet.MUCInitialPresence;
 import org.jivesoftware.smackx.muc.packet.MUCUser;
-import org.jxmpp.jid.EntityBareJid;
-import org.jxmpp.jid.EntityFullJid;
+
 import org.jxmpp.jid.DomainBareJid;
+import org.jxmpp.jid.EntityBareJid;
+import org.jxmpp.jid.EntityJid;
 import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.parts.Resourcepart;
-import org.jxmpp.jid.EntityJid;
 
 /**
  * A manager for Multi-User Chat rooms.
@@ -77,12 +78,13 @@ import org.jxmpp.jid.EntityJid;
  * @see <a href="http://xmpp.org/extensions/xep-0045.html">XEP-0045: Multi-User Chat</a>
  */
 public final class MultiUserChatManager extends Manager {
-    private final static String DISCO_NODE = MUCInitialPresence.NAMESPACE + "#rooms";
+    private static final String DISCO_NODE = MUCInitialPresence.NAMESPACE + "#rooms";
 
     private static final Logger LOGGER = Logger.getLogger(MultiUserChatManager.class.getName());
 
     static {
         XMPPConnectionRegistry.addConnectionCreationListener(new ConnectionCreationListener() {
+            @Override
             public void connectionCreated(final XMPPConnection connection) {
                 // Set on every established connection that this client supports the Multi-User
                 // Chat protocol. This information will be used when another client tries to
@@ -150,7 +152,8 @@ public final class MultiUserChatManager extends Manager {
         // Listens for all messages that include a MUCUser extension and fire the invitation
         // listeners if the message includes an invitation.
         StanzaListener invitationPacketListener = new StanzaListener() {
-            public void processPacket(Stanza packet) {
+            @Override
+            public void processStanza(Stanza packet) {
                 final Message message = (Message) packet;
                 // Get the MUCUser extension
                 final MUCUser mucUser = MUCUser.from(message);
@@ -158,14 +161,14 @@ public final class MultiUserChatManager extends Manager {
                 if (mucUser.getInvite() != null) {
                     EntityBareJid mucJid = message.getFrom().asEntityBareJidIfPossible();
                     if (mucJid == null) {
-                        LOGGER.warning("Invite to non bare JID: '" + message.toXML() + "'");
+                        LOGGER.warning("Invite to non bare JID: '" + message.toXML(null) + "'");
                         return;
                     }
                     // Fire event for invitation listeners
                     final MultiUserChat muc = getMultiUserChat(mucJid);
                     final XMPPConnection connection = connection();
                     final MUCUser.Invite invite = mucUser.getInvite();
-                    final EntityFullJid from = invite.getFrom();
+                    final EntityJid from = invite.getFrom();
                     final String reason = invite.getReason();
                     final String password = mucUser.getPassword();
                     for (final InvitationListener listener : invitationsListeners) {
@@ -237,6 +240,7 @@ public final class MultiUserChatManager extends Manager {
      *
      * @param jid the name of the room in the form "roomName@service", where "service" is the hostname at which the
      *        multi-user chat service is running. Make sure to provide a valid JID.
+     * @return MultiUserChat instance of the room with the given jid.
      */
     public synchronized MultiUserChat getMultiUserChat(EntityBareJid jid) {
         WeakReference<MultiUserChat> weakRefMultiUserChat = multiUserChats.get(jid);
@@ -334,9 +338,25 @@ public final class MultiUserChatManager extends Manager {
      * @throws NotConnectedException
      * @throws InterruptedException 
      */
-    public List<DomainBareJid> getXMPPServiceDomains() throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+    public List<DomainBareJid> getMucServiceDomains() throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         ServiceDiscoveryManager sdm = ServiceDiscoveryManager.getInstanceFor(connection());
         return sdm.findServices(MUCInitialPresence.NAMESPACE, false, false);
+    }
+
+    /**
+     * Returns a collection with the XMPP addresses of the Multi-User Chat services.
+     *
+     * @return a collection with the XMPP addresses of the Multi-User Chat services.
+     * @throws XMPPErrorException
+     * @throws NoResponseException
+     * @throws NotConnectedException
+     * @throws InterruptedException
+     * @deprecated use {@link #getMucServiceDomains()} instead.
+     */
+    // TODO: Remove in Smack 4.5
+    @Deprecated
+    public List<DomainBareJid> getXMPPServiceDomains() throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+        return getMucServiceDomains();
     }
 
     /**

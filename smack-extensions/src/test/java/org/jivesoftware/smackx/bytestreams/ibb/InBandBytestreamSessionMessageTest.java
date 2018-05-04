@@ -25,23 +25,24 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Random;
 
-import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.util.stringencoder.Base64;
+
 import org.jivesoftware.smackx.InitExtensions;
 import org.jivesoftware.smackx.bytestreams.ibb.InBandBytestreamManager.StanzaType;
 import org.jivesoftware.smackx.bytestreams.ibb.packet.DataPacketExtension;
 import org.jivesoftware.smackx.bytestreams.ibb.packet.Open;
+
 import org.jivesoftware.util.ConnectionUtils;
 import org.jivesoftware.util.Protocol;
 import org.jivesoftware.util.Verification;
 import org.junit.Before;
 import org.junit.Test;
-import org.jxmpp.jid.DomainBareJid;
 import org.jxmpp.jid.EntityFullJid;
 import org.jxmpp.jid.JidTestUtil;
 import org.powermock.reflect.Whitebox;
@@ -56,24 +57,23 @@ import org.powermock.reflect.Whitebox;
 public class InBandBytestreamSessionMessageTest extends InitExtensions {
 
     // settings
-    static final EntityFullJid initiatorJID = JidTestUtil.DUMMY_AT_EXAMPLE_ORG_SLASH_DUMMYRESOURCE;
-    static final EntityFullJid targetJID = JidTestUtil.FULL_JID_1_RESOURCE_1;
-    static final DomainBareJid xmppServer = JidTestUtil.DOMAIN_BARE_JID_1;
-    String sessionID = "session_id";
+    private static final EntityFullJid initiatorJID = JidTestUtil.DUMMY_AT_EXAMPLE_ORG_SLASH_DUMMYRESOURCE;
+    private static final EntityFullJid targetJID = JidTestUtil.FULL_JID_1_RESOURCE_1;
+    private static final String sessionID = "session_id";
 
-    int blockSize = 10;
+    private static final int blockSize = 10;
 
     // protocol verifier
-    Protocol protocol;
+    private Protocol protocol;
 
     // mocked XMPP connection
-    XMPPConnection connection;
+    private XMPPConnection connection;
 
-    InBandBytestreamManager byteStreamManager;
+    private InBandBytestreamManager byteStreamManager;
 
-    Open initBytestream;
+    private Open initBytestream;
 
-    Verification<Message, IQ> incrementingSequence;
+    private Verification<Message, IQ> incrementingSequence;
 
     /**
      * Initialize fields used in the tests.
@@ -88,7 +88,7 @@ public class InBandBytestreamSessionMessageTest extends InitExtensions {
         protocol = new Protocol();
 
         // create mocked XMPP connection
-        connection = ConnectionUtils.createMockedConnection(protocol, initiatorJID, xmppServer);
+        connection = ConnectionUtils.createMockedConnection(protocol, initiatorJID);
 
         // initialize InBandBytestreamManager to get the InitiationListener
         byteStreamManager = InBandBytestreamManager.getByteStreamManager(connection);
@@ -102,8 +102,9 @@ public class InBandBytestreamSessionMessageTest extends InitExtensions {
 
             long lastSeq = 0;
 
+            @Override
             public void verify(Message request, IQ response) {
-                DataPacketExtension dpe = (DataPacketExtension) request.getExtension(
+                DataPacketExtension dpe = request.getExtension(
                                 DataPacketExtension.ELEMENT, DataPacketExtension.NAMESPACE);
                 assertEquals(lastSeq++, dpe.getSeq());
             }
@@ -249,7 +250,7 @@ public class InBandBytestreamSessionMessageTest extends InitExtensions {
     }
 
     /**
-     * If a data stanza(/packet) is received out of order the session should be closed. See XEP-0047 Section
+     * If a data stanza is received out of order the session should be closed. See XEP-0047 Section
      * 2.2.
      * 
      * @throws Exception should not happen
@@ -274,7 +275,7 @@ public class InBandBytestreamSessionMessageTest extends InitExtensions {
         dataMessage.addExtension(dpe);
 
         // add data packets
-        listener.processPacket(dataMessage);
+        listener.processStanza(dataMessage);
 
         // read until exception is thrown
         try {
@@ -313,7 +314,7 @@ public class InBandBytestreamSessionMessageTest extends InitExtensions {
             DataPacketExtension dpe = new DataPacketExtension(sessionID, i, base64Data);
             Message dataMessage = new Message();
             dataMessage.addExtension(dpe);
-            listener.processPacket(dataMessage);
+            listener.processStanza(dataMessage);
         }
 
         byte[] bytes = new byte[3 * blockSize];
@@ -358,7 +359,7 @@ public class InBandBytestreamSessionMessageTest extends InitExtensions {
             DataPacketExtension dpe = new DataPacketExtension(sessionID, i, base64Data);
             Message dataMessage = new Message();
             dataMessage.addExtension(dpe);
-            listener.processPacket(dataMessage);
+            listener.processStanza(dataMessage);
         }
 
         // read data

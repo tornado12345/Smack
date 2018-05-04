@@ -16,8 +16,8 @@
  */
 package org.jivesoftware.smack.parsing;
 
+import static org.jivesoftware.smack.test.util.CharSequenceEquals.equalsCharSequence;
 import static org.junit.Assert.assertThat;
-import static org.jivesoftware.smack.test.util.CharsequenceEquals.equalsCharSequence;
 
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.packet.ExtensionElement;
@@ -25,6 +25,7 @@ import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.jivesoftware.smack.provider.ProviderManager;
 import org.jivesoftware.smack.test.util.TestUtils;
 import org.jivesoftware.smack.util.PacketParserUtils;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,7 +33,7 @@ import org.xmlpull.v1.XmlPullParser;
 
 public class ParsingExceptionTest {
 
-    private final static String EXTENSION2 =
+    private static final String EXTENSION2 =
     "<extension2 xmlns='namespace'>" +
         "<bar node='testNode'>" +
             "<i id='testid1'>" +

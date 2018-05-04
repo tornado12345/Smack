@@ -1,6 +1,6 @@
 /**
  *
- * Copyright © 2014 Florian Schmaus
+ * Copyright © 2014-2017 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.jivesoftware.smack.android;
 
 import java.util.List;
 
-import org.apache.http.conn.ssl.StrictHostnameVerifier;
 import org.jivesoftware.smack.SmackConfiguration;
 import org.jivesoftware.smack.initializer.SmackInitializer;
 import org.jivesoftware.smack.util.stringencoder.Base64;
@@ -26,14 +25,16 @@ import org.jivesoftware.smack.util.stringencoder.Base64UrlSafeEncoder;
 import org.jivesoftware.smack.util.stringencoder.android.AndroidBase64Encoder;
 import org.jivesoftware.smack.util.stringencoder.android.AndroidBase64UrlSafeEncoder;
 
+import org.apache.http.conn.ssl.StrictHostnameVerifier;
+
 public class AndroidSmackInitializer implements SmackInitializer {
 
-	@Override
-	public List<Exception> initialize() {
-		SmackConfiguration.setDefaultHostnameVerifier(new StrictHostnameVerifier());
-		Base64.setEncoder(AndroidBase64Encoder.getInstance());
-		Base64UrlSafeEncoder.setEncoder(AndroidBase64UrlSafeEncoder.getInstance());
-		return null;
-	}
+    @Override
+    public List<Exception> initialize() {
+        SmackConfiguration.setDefaultHostnameVerifier(new StrictHostnameVerifier());
+        Base64.setEncoder(AndroidBase64Encoder.getInstance());
+        Base64UrlSafeEncoder.setEncoder(AndroidBase64UrlSafeEncoder.getInstance());
+        return null;
+    }
 
 }

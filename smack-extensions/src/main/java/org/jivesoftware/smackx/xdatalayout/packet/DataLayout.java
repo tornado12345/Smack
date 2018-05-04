@@ -19,8 +19,8 @@ package org.jivesoftware.smackx.xdatalayout.packet;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jivesoftware.smack.packet.NamedElement;
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.NamedElement;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 
 /**
@@ -36,7 +36,7 @@ public class DataLayout implements ExtensionElement {
     public static final String ELEMENT = "page";
     public static final String NAMESPACE = "http://jabber.org/protocol/xdata-layout";
 
-    private final List<DataFormLayoutElement> pageLayout = new ArrayList<DataFormLayoutElement>();
+    private final List<DataFormLayoutElement> pageLayout = new ArrayList<>();
     private final String label;
 
     /**
@@ -52,6 +52,8 @@ public class DataLayout implements ExtensionElement {
      * <p>
      * Objects of the following type(s) are allowed in the list: {@link String },
      * {@link Section }, {@link Fieldref } and {@link Reportedref }
+     *
+     * @return list of DataFormLayoutElements.
      */
     public List<DataFormLayoutElement> getPageLayout() {
         return this.pageLayout;
@@ -89,7 +91,7 @@ public class DataLayout implements ExtensionElement {
      * @see org.jivesoftware.smack.packet.PacketExtension#toXML()
      */
     @Override
-    public XmlStringBuilder toXML() {
+    public XmlStringBuilder toXML(String enclosingNamespace) {
         XmlStringBuilder buf = new XmlStringBuilder(this);
         buf.optAttribute("label", getLabel());
         buf.rightAngleBracket();
@@ -103,11 +105,11 @@ public class DataLayout implements ExtensionElement {
 
     /**
      * @param buf
-     * @param pageLayout2
+     * @param pageLayout
      */
     private static void walkList(XmlStringBuilder buf, List<DataFormLayoutElement> pageLayout) {
         for (DataFormLayoutElement object : pageLayout) {
-            buf.append(object.toXML());
+            buf.append(object.toXML(null));
         }
     }
 
@@ -124,7 +126,8 @@ public class DataLayout implements ExtensionElement {
             this.var = var;
         }
 
-        public XmlStringBuilder toXML() {
+        @Override
+        public XmlStringBuilder toXML(String enclosingNamespace) {
             XmlStringBuilder buf = new XmlStringBuilder(this);
             buf.attribute("var", getVar());
             buf.closeEmptyElement();
@@ -150,7 +153,7 @@ public class DataLayout implements ExtensionElement {
     public static class Section implements DataFormLayoutElement{
 
         public static final String ELEMENT = "section";
-        private final List<DataFormLayoutElement> sectionLayout = new ArrayList<DataFormLayoutElement>();
+        private final List<DataFormLayoutElement> sectionLayout = new ArrayList<>();
         private final String label;
 
         /**
@@ -176,12 +179,15 @@ public class DataLayout implements ExtensionElement {
          * <p>
          * Objects of the following type(s) are allowed in the list: {@link String },
          * {@link Section }, {@link Fieldref } and {@link Reportedref }
+         *
+         * @return list of DataFormLayoutElements.
          */
         public List<DataFormLayoutElement> getSectionLayout() {
             return this.sectionLayout;
         }
 
-        public XmlStringBuilder toXML() {
+        @Override
+        public XmlStringBuilder toXML(String enclosingNamespace) {
             XmlStringBuilder buf = new XmlStringBuilder(this);
             buf.optAttribute("label", getLabel());
             buf.rightAngleBracket();
@@ -211,7 +217,8 @@ public class DataLayout implements ExtensionElement {
 
         public static final String ELEMENT = "reportedref";
 
-        public XmlStringBuilder toXML() {
+        @Override
+        public XmlStringBuilder toXML(String enclosingNamespace) {
             XmlStringBuilder buf = new XmlStringBuilder(this);
             buf.closeEmptyElement();
             return buf;
@@ -236,7 +243,8 @@ public class DataLayout implements ExtensionElement {
             this.text = text;
         }
 
-        public XmlStringBuilder toXML() {
+        @Override
+        public XmlStringBuilder toXML(String enclosingNamespace) {
             XmlStringBuilder buf = new XmlStringBuilder();
             buf.element(ELEMENT, getText());
             return buf;
@@ -258,7 +266,7 @@ public class DataLayout implements ExtensionElement {
 
     }
 
-    public static interface DataFormLayoutElement extends NamedElement {
+    public interface DataFormLayoutElement extends NamedElement {
     }
 
 }

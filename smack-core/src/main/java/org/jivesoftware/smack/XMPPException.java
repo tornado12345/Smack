@@ -17,9 +17,12 @@
 
 package org.jivesoftware.smack;
 
+import org.jivesoftware.smack.packet.Nonza;
 import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.packet.StanzaError;
 import org.jivesoftware.smack.packet.StreamError;
-import org.jivesoftware.smack.packet.XMPPError;
+
+import org.jxmpp.jid.Jid;
 
 /**
  * A generic exception that is thrown when an error occurs performing an
@@ -32,7 +35,7 @@ import org.jivesoftware.smack.packet.XMPPError;
  * is sent to the client an XMPPException will be thrown containing the StreamError sent
  * by the server.
  *
- * @see XMPPError
+ * @see StanzaError
  * @author Matt Tucker
  */
 public abstract class XMPPException extends Exception {
@@ -71,49 +74,48 @@ public abstract class XMPPException extends Exception {
          * 
          */
         private static final long serialVersionUID = 212790389529249604L;
-        private final XMPPError error;
+        private final StanzaError error;
+        private final Stanza stanza;
 
-        public XMPPErrorException(XMPPError.Builder xmppErrorBuilder) {
-            this(xmppErrorBuilder.build());
+        /**
+         * The request which resulted in the XMPP protocol error response. May be {@code null}.
+         */
+        private final Stanza request;
+
+        /**
+         * Creates a new XMPPErrorException with the given builder.
+         *
+         * @param xmppErrorBuilder
+         * @deprecated Use {@link #XMPPErrorException(Stanza, StanzaError)} instead.
+         */
+        @Deprecated
+        public XMPPErrorException(StanzaError.Builder xmppErrorBuilder) {
+            this(null, xmppErrorBuilder.build());
         }
 
         /**
-         * Creates a new XMPPException with the XMPPError that was the root case of the exception.
-         * 
+         * Creates a new XMPPErrorException with the XMPPError that was the root case of the exception.
+         *
+         * @param stanza stanza that contained the exception.
          * @param error the root cause of the exception.
          */
-        public XMPPErrorException(XMPPError error) {
+        public XMPPErrorException(Stanza stanza, StanzaError error) {
+            this(stanza, error, null);
+        }
+
+        /**
+         * Creates a new XMPPErrorException with the XMPPError that was the root case of the exception.
+         *
+         * @param request the request which triggered the error.
+         * @param stanza stanza that contained the exception.
+         * @param error the root cause of the exception.
+         * @since 4.3.0
+         */
+        public XMPPErrorException(Stanza stanza, StanzaError error, Stanza request) {
             super();
             this.error = error;
-        }
-
-        /**
-         * Creates a new XMPPException with a description of the exception, an XMPPError, and the
-         * Throwable that was the root cause of the exception.
-         * 
-         * @param message a description of the exception.
-         * @param error the root cause of the exception.
-         * @param wrappedThrowable the root cause of the exception.
-         * @deprecated use {@link #XMPPException.XMPPErrorException(XMPPError)} instead.
-         */
-        @Deprecated
-        public XMPPErrorException(String message, XMPPError error, Throwable wrappedThrowable) {
-            super(message, wrappedThrowable);
-            this.error = error;
-        }
-
-        /**
-         * Creates a new XMPPException with a description of the exception and the XMPPException
-         * that was the root cause of the exception.
-         * 
-         * @param message a description of the exception.
-         * @param error the root cause of the exception.
-         * @deprecated use {@link #XMPPException.XMPPErrorException(XMPPError)} instead.
-         */
-        @Deprecated
-        public XMPPErrorException(String message, XMPPError error) {
-            super(message);
-            this.error = error;
+            this.stanza = stanza;
+            this.request = request;
         }
 
         /**
@@ -122,26 +124,75 @@ public abstract class XMPPException extends Exception {
          * 
          * @return the XMPPError associated with this exception.
          */
-        public XMPPError getXMPPError() {
+        public StanzaError getXMPPError() {
             return error;
+        }
+
+        /**
+         * Get the request which triggered the error response causing this exception.
+         *
+         * @return the request or {@code null}.
+         * @since 4.3.0
+         */
+        public Stanza getRequest() {
+            return request;
         }
 
         @Override
         public String getMessage() {
-            String superMessage = super.getMessage();
-            if (superMessage != null) {
-                return superMessage;
+            StringBuilder sb = new StringBuilder();
+
+            if (stanza != null) {
+                Jid from = stanza.getFrom();
+                if (from != null) {
+                    sb.append("XMPP error reply received from " + from + ": ");
+                }
             }
-            else {
-                return error.toString();
+
+            sb.append(error);
+
+            if (request != null) {
+                sb.append(" as result of the following request: ");
+                sb.append(request);
             }
+
+            return sb.toString();
         }
 
         public static void ifHasErrorThenThrow(Stanza packet) throws XMPPErrorException {
-            XMPPError xmppError = packet.getError();
+            ifHasErrorThenThrow(packet, null);
+        }
+
+        public static void ifHasErrorThenThrow(Stanza packet, Stanza request) throws XMPPErrorException {
+            StanzaError xmppError = packet.getError();
             if (xmppError != null) {
-                throw new XMPPErrorException(xmppError);
+                throw new XMPPErrorException(packet, xmppError, request);
             }
+        }
+    }
+
+    public static class FailedNonzaException extends XMPPException {
+
+        /**
+         * 
+         */
+        private static final long serialVersionUID = 1L;
+
+        private final StanzaError.Condition condition;
+
+        private final Nonza nonza;
+
+        public FailedNonzaException(Nonza nonza, StanzaError.Condition condition) {
+            this.condition = condition;
+            this.nonza = nonza;
+        }
+
+        public StanzaError.Condition getCondition() {
+            return condition;
+        }
+
+        public Nonza getNonza() {
+            return nonza;
         }
     }
 

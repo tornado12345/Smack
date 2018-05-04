@@ -21,8 +21,7 @@ package org.jivesoftware.smackx.pubsub;
  * 
  * @author Robin Collier
  */
-public enum NodeType
-{
-	leaf,
-	collection;
+public enum NodeType {
+    leaf,
+    collection
 }

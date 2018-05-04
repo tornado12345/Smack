@@ -17,15 +17,17 @@
 
 package org.jivesoftware.smackx.commands.provider;
 
-import org.jivesoftware.smack.packet.XMPPError;
-import org.jivesoftware.smack.provider.IQProvider;
+import org.jivesoftware.smack.packet.StanzaError;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
+import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.util.PacketParserUtils;
+
 import org.jivesoftware.smackx.commands.AdHocCommand;
 import org.jivesoftware.smackx.commands.AdHocCommand.Action;
-import org.jivesoftware.smackx.commands.packet.AdHocCommandData;
 import org.jivesoftware.smackx.commands.AdHocCommandNote;
+import org.jivesoftware.smackx.commands.packet.AdHocCommandData;
 import org.jivesoftware.smackx.xdata.provider.DataFormProvider;
+
 import org.xmlpull.v1.XmlPullParser;
 
 /**
@@ -95,13 +97,19 @@ public class AdHocCommandDataProvider extends IQProvider<AdHocCommandData> {
                     adHocCommandData.setForm(dataFormProvider.parse(parser));
                 }
                 else if (parser.getName().equals("note")) {
-                    AdHocCommandNote.Type type = AdHocCommandNote.Type.valueOf(
-                            parser.getAttributeValue("", "type"));
+                    String typeString = parser.getAttributeValue("", "type");
+                    AdHocCommandNote.Type type;
+                    if (typeString != null) {
+                        type = AdHocCommandNote.Type.valueOf(typeString);
+                    } else {
+                        // Type is optional and 'info' if not present.
+                        type = AdHocCommandNote.Type.info;
+                    }
                     String value = parser.nextText();
                     adHocCommandData.addNote(new AdHocCommandNote(type, value));
                 }
                 else if (parser.getName().equals("error")) {
-                    XMPPError.Builder error = PacketParserUtils.parseError(parser);
+                    StanzaError.Builder error = PacketParserUtils.parseError(parser);
                     adHocCommandData.setError(error);
                 }
             }

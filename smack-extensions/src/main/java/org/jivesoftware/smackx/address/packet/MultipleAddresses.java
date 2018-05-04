@@ -17,16 +17,17 @@
 
 package org.jivesoftware.smackx.address.packet;
 
-import org.jivesoftware.smack.packet.NamedElement;
-import org.jivesoftware.smack.packet.ExtensionElement;
-import org.jivesoftware.smack.util.XmlStringBuilder;
-import org.jxmpp.jid.Jid;
-
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.NamedElement;
+import org.jivesoftware.smack.util.XmlStringBuilder;
+
+import org.jxmpp.jid.Jid;
+
 /**
- * Stanza(/Packet) extension that contains the list of addresses that a stanza(/packet) should be sent or was sent.
+ * Stanza extension that contains the list of addresses that a stanza should be sent or was sent.
  *
  * @author Gaston Dombiak
  */
@@ -52,22 +53,22 @@ public class MultipleAddresses implements ExtensionElement {
         ofrom,
     }
 
-    private List<Address> addresses = new ArrayList<Address>();
+    private final List<Address> addresses = new ArrayList<>();
 
     /**
-     * Adds a new address to which the stanza(/packet) is going to be sent or was sent.
+     * Adds a new address to which the stanza is going to be sent or was sent.
      *
      * @param type on of the static type (BCC, CC, NO_REPLY, REPLY_ROOM, etc.)
      * @param jid the JID address of the recipient.
      * @param node used to specify a sub-addressable unit at a particular JID, corresponding to
      *             a Service Discovery node.
      * @param desc used to specify human-readable information for this address.
-     * @param delivered true when the stanza(/packet) was already delivered to this address.
+     * @param delivered true when the stanza was already delivered to this address.
      * @param uri used to specify an external system address, such as a sip:, sips:, or im: URI.
      */
     public void addAddress(Type type, Jid jid, String node, String desc, boolean delivered,
             String uri) {
-        // Create a new address with the specificed configuration
+        // Create a new address with the specified configuration
         Address address = new Address(type);
         address.setJid(jid);
         address.setNode(node);
@@ -79,10 +80,10 @@ public class MultipleAddresses implements ExtensionElement {
     }
 
     /**
-     * Indicate that the stanza(/packet) being sent should not be replied.
+     * Indicate that the stanza being sent should not be replied.
      */
     public void setNoReply() {
-        // Create a new address with the specificed configuration
+        // Create a new address with the specified configuration
         Address address = new Address(Type.noreply);
         // Add the new address to the list of multiple recipients
         addresses.add(address);
@@ -96,7 +97,7 @@ public class MultipleAddresses implements ExtensionElement {
      * @return the list of addresses that matches the specified type.
      */
     public List<Address> getAddressesOfType(Type type) {
-        List<Address> answer = new ArrayList<Address>(addresses.size());
+        List<Address> answer = new ArrayList<>(addresses.size());
         for (Address address : addresses) {
             if (address.getType().equals(type)) {
                 answer.add(address);
@@ -117,12 +118,12 @@ public class MultipleAddresses implements ExtensionElement {
     }
 
     @Override
-    public XmlStringBuilder toXML() {
+    public XmlStringBuilder toXML(String enclosingNamespace) {
         XmlStringBuilder buf = new XmlStringBuilder(this);
         buf.rightAngleBracket();
         // Loop through all the addresses and append them to the string buffer
         for (Address address : addresses) {
-            buf.append(address.toXML());
+            buf.append(address.toXML(null));
         }
         buf.closeElement(this);
         return buf;
@@ -193,7 +194,7 @@ public class MultipleAddresses implements ExtensionElement {
         }
 
         @Override
-        public XmlStringBuilder toXML() {
+        public XmlStringBuilder toXML(String enclosingNamespace) {
             XmlStringBuilder buf = new XmlStringBuilder();
             buf.halfOpenElement(this).attribute("type", type);
             buf.optAttribute("jid", jid);

@@ -20,7 +20,7 @@ package org.jivesoftware.smack.packet;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 
 /**
- * IQ stanza(/packet) that will be sent to the server to establish a session.<p>
+ * IQ stanza that will be sent to the server to establish a session.<p>
  *
  * If a server supports sessions, it MUST include a <i>session</i> element in the
  * stream features it advertises to a client after the completion of stream authentication.
@@ -67,7 +67,7 @@ public class Session extends SimpleIQ {
         }
 
         @Override
-        public XmlStringBuilder toXML() {
+        public XmlStringBuilder toXML(String enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder(this);
             if (optional) {
                 xml.rightAngleBracket();

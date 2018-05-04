@@ -16,55 +16,53 @@
  */
 package org.jivesoftware.smackx.pubsub.packet;
 
-import java.util.Locale;
-
 /**
  * Defines all the valid namespaces that are used with the {@link PubSub} packet
  * as defined by the specification.
  * 
  * @author Robin Collier
  */
-public enum PubSubNamespace
-{
-	BASIC(null),
-	ERROR("errors"),
-	EVENT("event"),
-	OWNER("owner");
+public enum PubSubNamespace {
+    basic(null),
+    error("errors"),
+    event("event"),
+    owner("owner");
 
     private final String fragment;
     private final String fullNamespace;
 
-	private PubSubNamespace(String fragment)
-	{
-		this.fragment = fragment;
+    PubSubNamespace(String fragment) {
+        this.fragment = fragment;
         if (fragment != null) {
             fullNamespace = PubSub.NAMESPACE + '#' + fragment;
-        }
-        else {
+        } else {
             fullNamespace = PubSub.NAMESPACE;
         }
-	}
+    }
 
-	public String getXmlns()
-	{
+    public String getXmlns() {
         return fullNamespace;
-	}
+    }
 
-	public String getFragment()
-	{
-		return fragment;
-	}
+    public String getFragment() {
+        return fragment;
+    }
 
-	public static PubSubNamespace valueOfFromXmlns(String ns)
-	{
-		int index = ns.lastIndexOf('#');
+    public static PubSubNamespace valueOfFromXmlns(String ns) {
+        int index = ns.lastIndexOf('#');
 
-		if (index != -1)
-		{
-			String suffix = ns.substring(ns.lastIndexOf('#')+1);
-			return valueOf(suffix.toUpperCase(Locale.US));
-		}
-		else
-			return BASIC;
-	}
+        if (index != -1) {
+            // We found an extended namespace.
+            if (index > ns.length()) {
+                throw new IllegalArgumentException(ns + " is not a valid PubSub namespace");
+            }
+            String suffix = ns.substring(index + 1);
+            return valueOf(suffix);
+        }
+
+        if (!PubSub.NAMESPACE.equals(ns)) {
+            throw new IllegalArgumentException(ns + " is not a valid PubSub namespace");
+        }
+        return basic;
+    }
 }

@@ -23,7 +23,7 @@ import java.util.List;
 import org.jivesoftware.smack.packet.IQ;
 
 /**
- * IQ stanza(/packet) that serves for kicking users, granting and revoking voice, banning users, 
+ * IQ stanza that serves for kicking users, granting and revoking voice, banning users, 
  * modifying the ban list, granting and revoking membership and granting and revoking 
  * moderator privileges. All these operations are scoped by the 
  * 'http://jabber.org/protocol/muc#admin' namespace.
@@ -35,22 +35,22 @@ public class MUCAdmin extends IQ {
     public static final String ELEMENT = QUERY_ELEMENT;
     public static final String NAMESPACE = MUCInitialPresence.NAMESPACE + "#admin";
 
-    private final List<MUCItem> items = new ArrayList<MUCItem>();
+    private final List<MUCItem> items = new ArrayList<>();
 
     public MUCAdmin() {
         super(ELEMENT, NAMESPACE);
     }
 
     /**
-     * Returns a List of item childs that holds information about roles, affiliation,
+     * Returns a List of item children that holds information about roles, affiliation,
      * jids and nicks.
      * 
-     * @return a List of item childs that holds information about roles, affiliation,
+     * @return a List of item children that holds information about roles, affiliation,
      *          jids and nicks.
      */
     public List<MUCItem> getItems() {
         synchronized (items) {
-            return Collections.unmodifiableList(new ArrayList<MUCItem>(items));
+            return Collections.unmodifiableList(new ArrayList<>(items));
         }
     }
 
@@ -71,7 +71,7 @@ public class MUCAdmin extends IQ {
 
         synchronized (items) {
             for (MUCItem item : items) {
-                xml.append(item.toXML());
+                xml.append(item.toXML(null));
             }
         }
 

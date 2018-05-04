@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -40,8 +41,9 @@ public class OfflineMessageInfo implements ExtensionElement {
     * Returns the XML element name of the extension sub-packet root element.
     * Always returns "offline"
     *
-    * @return the XML element name of the stanza(/packet) extension.
+    * @return the XML element name of the stanza extension.
     */
+    @Override
     public String getElementName() {
         return "offline";
     }
@@ -50,8 +52,9 @@ public class OfflineMessageInfo implements ExtensionElement {
      * Returns the XML namespace of the extension sub-packet root element.
      * According the specification the namespace is always "http://jabber.org/protocol/offline"
      *
-     * @return the XML namespace of the stanza(/packet) extension.
+     * @return the XML namespace of the stanza extension.
      */
+    @Override
     public String getNamespace() {
         return "http://jabber.org/protocol/offline";
     }
@@ -78,7 +81,8 @@ public class OfflineMessageInfo implements ExtensionElement {
         this.node = node;
     }
 
-    public String toXML() {
+    @Override
+    public String toXML(String enclosingNamespace) {
         StringBuilder buf = new StringBuilder();
         buf.append('<').append(getElementName()).append(" xmlns=\"").append(getNamespace()).append(
             "\">");
@@ -91,7 +95,7 @@ public class OfflineMessageInfo implements ExtensionElement {
     public static class Provider extends ExtensionElementProvider<OfflineMessageInfo> {
 
         /**
-         * Parses a OfflineMessageInfo stanza(/packet) (extension sub-packet).
+         * Parses a OfflineMessageInfo stanza (extension sub-packet).
          *
          * @param parser the XML parser, positioned at the starting element of the extension.
          * @return a PacketExtension.

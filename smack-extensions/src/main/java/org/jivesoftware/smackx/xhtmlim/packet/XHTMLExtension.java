@@ -17,13 +17,13 @@
 
 package org.jivesoftware.smackx.xhtmlim.packet;
 
-import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.packet.ExtensionElement;
-import org.jivesoftware.smack.util.XmlStringBuilder;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.util.XmlStringBuilder;
 
 /**
  * An XHTML sub-packet, which is used by XMPP clients to exchange formatted text. The XHTML 
@@ -46,8 +46,9 @@ public class XHTMLExtension implements ExtensionElement {
     * Returns the XML element name of the extension sub-packet root element.
     * Always returns "html"
     *
-    * @return the XML element name of the stanza(/packet) extension.
+    * @return the XML element name of the stanza extension.
     */
+    @Override
     public String getElementName() {
         return ELEMENT;
     }
@@ -56,8 +57,9 @@ public class XHTMLExtension implements ExtensionElement {
      * Returns the XML namespace of the extension sub-packet root element.
      * According the specification the namespace is always "http://jabber.org/protocol/xhtml-im"
      *
-     * @return the XML namespace of the stanza(/packet) extension.
+     * @return the XML namespace of the stanza extension.
      */
+    @Override
     public String getNamespace() {
         return NAMESPACE;
     }
@@ -79,7 +81,7 @@ public class XHTMLExtension implements ExtensionElement {
      * 
      */
     @Override
-    public XmlStringBuilder toXML() {
+    public XmlStringBuilder toXML(String enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.rightAngleBracket();
         // Loop through all the bodies and append them to the string buffer
@@ -97,7 +99,7 @@ public class XHTMLExtension implements ExtensionElement {
      */
     public List<CharSequence> getBodies() {
         synchronized (bodies) {
-            return Collections.unmodifiableList(new ArrayList<CharSequence>(bodies));
+            return Collections.unmodifiableList(new ArrayList<>(bodies));
         }
     }
 

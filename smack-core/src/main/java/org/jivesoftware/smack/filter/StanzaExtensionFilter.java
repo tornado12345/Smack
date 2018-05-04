@@ -17,8 +17,8 @@
 
 package org.jivesoftware.smack.filter;
 
-import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.util.StringUtils;
 
 /**
@@ -65,6 +65,7 @@ public class StanzaExtensionFilter implements StanzaFilter {
         this(packetExtension.getElementName(), packetExtension.getNamespace());
     }
 
+    @Override
     public boolean accept(Stanza packet) {
         return packet.hasExtension(elementName, namespace);
     }

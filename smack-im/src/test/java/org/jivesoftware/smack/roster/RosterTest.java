@@ -35,16 +35,17 @@ import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.im.InitSmackIm;
 import org.jivesoftware.smack.packet.ErrorIQ;
 import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.packet.Stanza;
-import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.IQ.Type;
-import org.jivesoftware.smack.packet.XMPPError.Condition;
+import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.packet.StanzaError.Condition;
 import org.jivesoftware.smack.roster.packet.RosterPacket;
 import org.jivesoftware.smack.roster.packet.RosterPacket.Item;
 import org.jivesoftware.smack.roster.packet.RosterPacket.ItemType;
 import org.jivesoftware.smack.test.util.TestUtils;
 import org.jivesoftware.smack.test.util.WaitForPacketListener;
 import org.jivesoftware.smack.util.PacketParserUtils;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -75,7 +76,7 @@ public class RosterTest extends InitSmackIm {
         rosterListener = new TestRosterListener();
         roster = Roster.getInstanceFor(connection);
         roster.addRosterListener(rosterListener);
-        connection.setPacketReplyTimeout(1000 * 60 * 5);
+        connection.setReplyTimeout(1000 * 60 * 5);
     }
 
     @After
@@ -145,6 +146,7 @@ public class RosterTest extends InitSmackIm {
 
         // Adding the new roster item
         final RosterUpdateResponder serverSimulator = new RosterUpdateResponder() {
+            @Override
             void verifyUpdateRequest(final RosterPacket updateRequest) {
                 final Item item = updateRequest.getRosterItems().iterator().next();
                 assertEquals("The provided JID doesn't match the requested!",
@@ -216,6 +218,7 @@ public class RosterTest extends InitSmackIm {
 
         // Updating the roster item
         final RosterUpdateResponder serverSimulator = new RosterUpdateResponder() {
+            @Override
             void verifyUpdateRequest(final RosterPacket updateRequest) {
                 final Item item = updateRequest.getRosterItems().iterator().next();
                 assertEquals("The provided JID doesn't match the requested!",
@@ -225,10 +228,10 @@ public class RosterTest extends InitSmackIm {
                         contactName,
                         item.getName());
                 assertTrue("The updated contact doesn't belong to the requested groups ("
-                        + contactGroups[0] +")!",
+                        + contactGroups[0] + ")!",
                         item.getGroupNames().contains(contactGroups[0]));
                 assertTrue("The updated contact doesn't belong to the requested groups ("
-                        + contactGroups[1] +")!",
+                        + contactGroups[1] + ")!",
                         item.getGroupNames().contains(contactGroups[1]));
                 assertSame("The provided group number doesn't match the requested!",
                         contactGroups.length,
@@ -255,10 +258,10 @@ public class RosterTest extends InitSmackIm {
                 contactName,
                 addedEntry.getName());
         assertTrue("The updated contact doesn't belong to the requested groups ("
-                + contactGroups[0] +")!",
+                + contactGroups[0] + ")!",
                 roster.getGroup(contactGroups[0]).contains(addedEntry));
         assertTrue("The updated contact doesn't belong to the requested groups ("
-                + contactGroups[1] +")!",
+                + contactGroups[1] + ")!",
                 roster.getGroup(contactGroups[1]).contains(addedEntry));
         assertSame("The updated contact should be member of two groups!",
                 contactGroups.length,
@@ -289,6 +292,7 @@ public class RosterTest extends InitSmackIm {
 
         // Delete a roster item
         final RosterUpdateResponder serverSimulator = new RosterUpdateResponder() {
+            @Override
             void verifyUpdateRequest(final RosterPacket updateRequest) {
                 final Item item = updateRequest.getRosterItems().iterator().next();
                 assertEquals("The provided JID doesn't match the requested!",
@@ -383,7 +387,7 @@ public class RosterTest extends InitSmackIm {
         connection.processStanza(packet);
 
         // Smack should reply with an error IQ
-        ErrorIQ errorIQ = (ErrorIQ) connection.getSentPacket();
+        ErrorIQ errorIQ = connection.getSentPacket();
         assertEquals(requestId, errorIQ.getStanzaId());
         assertEquals(Condition.service_unavailable, errorIQ.getError().getCondition());
 
@@ -396,7 +400,7 @@ public class RosterTest extends InitSmackIm {
      * 
      * @see <a href="http://www.igniterealtime.org/issues/browse/SMACK-294">SMACK-294</a>
      */
-    @Test(timeout=5000)
+    @Test(timeout = 5000)
     public void testAddEmptyGroupEntry() throws Throwable {
         // Constants for the new contact
         final BareJid contactJID = JidCreate.entityBareFrom("nurse@example.com");
@@ -410,6 +414,7 @@ public class RosterTest extends InitSmackIm {
 
         // Adding the new roster item
         final RosterUpdateResponder serverSimulator = new RosterUpdateResponder() {
+            @Override
             void verifyUpdateRequest(final RosterPacket updateRequest) {
                 final Item item = updateRequest.getRosterItems().iterator().next();
                 assertSame("The provided JID doesn't match the requested!",
@@ -512,9 +517,9 @@ public class RosterTest extends InitSmackIm {
      * @param roster the roster (or buddy list) which should be initialized.
      */
     public static void removeAllRosterEntries(DummyConnection connection, Roster roster) {
-        for(RosterEntry entry : roster.getEntries()) {
+        for (RosterEntry entry : roster.getEntries()) {
             // prepare the roster push packet
-            final RosterPacket rosterPush= new RosterPacket();
+            final RosterPacket rosterPush = new RosterPacket();
             rosterPush.setType(Type.set);
             rosterPush.setTo(connection.getUser());
 
@@ -532,9 +537,7 @@ public class RosterTest extends InitSmackIm {
      * Initialize the roster according to the example in
      * <a href="http://xmpp.org/rfcs/rfc3921.html#roster-login"
      *     >RFC3921: Retrieving One's Roster on Login</a>.
-     * 
-     * @param connection the dummy connection of which the provided roster belongs to.
-     * @param roster the roster (or buddy list) which should be initialized.
+     *
      * @throws SmackException 
      * @throws XmppStringprepException 
      */
@@ -654,8 +657,9 @@ public class RosterTest extends InitSmackIm {
          * 
          * @param updateRequest the request which would be sent to the server.
          */
-        abstract void verifyUpdateRequest(final RosterPacket updateRequest);
+        abstract void verifyUpdateRequest(RosterPacket updateRequest);
 
+        @Override
         public void run() {
             try {
                 while (true) {
@@ -679,9 +683,9 @@ public class RosterTest extends InitSmackIm {
                         connection.processStanza(response);
 
                         // Verify the roster update request
-                        assertSame("A roster set MUST contain one and only one <item/> element.",
-                                1,
-                                rosterRequest.getRosterItemCount());
+                        if (rosterRequest.getRosterItemCount() != 1) {
+                            throw new AssertionError("A roster set MUST contain one and only one <item/> element.");
+                        }
                         verifyUpdateRequest(rosterRequest);
                         break;
                     }
@@ -712,21 +716,25 @@ public class RosterTest extends InitSmackIm {
         private final List<Jid> addressesDeleted = new CopyOnWriteArrayList<>();
         private final List<Jid> addressesUpdated = new CopyOnWriteArrayList<>();
 
+        @Override
         public synchronized void entriesAdded(Collection<Jid> addresses) {
             addressesAdded.addAll(addresses);
             reportInvoked();
         }
 
+        @Override
         public synchronized void entriesDeleted(Collection<Jid> addresses) {
             addressesDeleted.addAll(addresses);
             reportInvoked();
         }
 
+        @Override
         public synchronized void entriesUpdated(Collection<Jid> addresses) {
             addressesUpdated.addAll(addresses);
             reportInvoked();
         }
 
+        @Override
         public void presenceChanged(Presence presence) {
             reportInvoked();
         }
@@ -794,6 +802,7 @@ public class RosterTest extends InitSmackIm {
         /**
          * Reset the lists of added, deleted or updated items.
          */
+        @Override
         public synchronized void reset() {
             super.reset();
             addressesAdded.clear();

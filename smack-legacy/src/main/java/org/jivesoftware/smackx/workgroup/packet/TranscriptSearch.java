@@ -20,10 +20,11 @@ package org.jivesoftware.smackx.workgroup.packet;
 import org.jivesoftware.smack.packet.SimpleIQ;
 import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.util.PacketParserUtils;
+
 import org.xmlpull.v1.XmlPullParser;
 
 /**
- * IQ stanza(/packet) for retrieving the transcript search form, submiting the completed search form
+ * IQ stanza for retrieving the transcript search form, submitting the completed search form
  * or retrieving the answer of a transcript search.
  *
  * @author Gaston Dombiak
@@ -31,12 +32,12 @@ import org.xmlpull.v1.XmlPullParser;
 public class TranscriptSearch extends SimpleIQ {
 
     /**
-    * Element name of the stanza(/packet) extension.
+    * Element name of the stanza extension.
     */
    public static final String ELEMENT_NAME = "transcript-search";
 
    /**
-    * Namespace of the stanza(/packet) extension.
+    * Namespace of the stanza extension.
     */
    public static final String NAMESPACE = "http://jivesoftware.com/protocol/workgroup";
 

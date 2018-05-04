@@ -21,21 +21,22 @@ import java.io.IOException;
 
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.provider.IQProvider;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 /**
- * IQ stanza(/packet) for retrieving and adding Chat Notes.
+ * IQ stanza for retrieving and adding Chat Notes.
  */
 public class ChatNotes extends IQ {
 
     /**
-     * Element name of the stanza(/packet) extension.
+     * Element name of the stanza extension.
      */
     public static final String ELEMENT_NAME = "chat-notes";
 
     /**
-     * Namespace of the stanza(/packet) extension.
+     * Namespace of the stanza extension.
      */
     public static final String NAMESPACE = "http://jivesoftware.com/protocol/workgroup";
 

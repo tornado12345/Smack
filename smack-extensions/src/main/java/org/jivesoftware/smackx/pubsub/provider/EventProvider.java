@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.provider.EmbeddedExtensionProvider;
+
 import org.jivesoftware.smackx.pubsub.EventElement;
 import org.jivesoftware.smackx.pubsub.EventElementType;
 import org.jivesoftware.smackx.pubsub.NodeExtension;
@@ -31,13 +32,10 @@ import org.jivesoftware.smackx.pubsub.NodeExtension;
  * 
  * @author Robin Collier
  */
-public class EventProvider extends EmbeddedExtensionProvider<EventElement>
-{
-	@Override
-	protected EventElement createReturnExtension(String currentElement, String currentNamespace, Map<String, String> attMap, List<? extends ExtensionElement> content)
-	{
-// CHECKSTYLE:OFF
-	   	return new EventElement(EventElementType.valueOf(content.get(0).getElementName()), (NodeExtension)content.get(0));
-// CHECKSTYLE:ON
-	}
+public class EventProvider extends EmbeddedExtensionProvider<EventElement> {
+    @Override
+    protected EventElement createReturnExtension(String currentElement, String currentNamespace, Map<String, String> attMap, List<? extends ExtensionElement> content) {
+        // TODO: Shouldn't be an embedded extension provider.
+        return new EventElement(EventElementType.valueOf(content.get(0).getElementName()), (NodeExtension) content.get(0));
+    }
 }

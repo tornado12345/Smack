@@ -17,15 +17,16 @@
 
 package org.jivesoftware.smackx.workgroup.agent;
 
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Stanza;
-import org.jxmpp.jid.Jid;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import org.jxmpp.jid.Jid;
 
 /**
  * A class embodying the semantic agent chat offer; specific instances allow the acceptance or
@@ -37,16 +38,16 @@ import java.util.Map;
  */
 public class Offer {
 
-    private XMPPConnection connection;
-    private AgentSession session;
+    private final XMPPConnection connection;
+    private final AgentSession session;
 
-    private String sessionID;
-    private Jid userJID;
-    private Jid userID;
-    private Jid workgroupName;
-    private Date expiresDate;
-    private Map<String, List<String>> metaData;
-    private OfferContent content;
+    private final String sessionID;
+    private final Jid userJID;
+    private final Jid userID;
+    private final Jid workgroupName;
+    private final Date expiresDate;
+    private final Map<String, List<String>> metaData;
+    private final OfferContent content;
 
     private boolean accepted = false;
     private boolean rejected = false;
@@ -66,8 +67,7 @@ public class Offer {
      */
     Offer(XMPPConnection conn, AgentSession agentSession, Jid userID,
             Jid userJID, Jid workgroupName, Date expiresDate,
-            String sessionID, Map<String, List<String>> metaData, OfferContent content)
-    {
+            String sessionID, Map<String, List<String>> metaData, OfferContent content) {
         this.connection = conn;
         this.session = agentSession;
         this.userID = userID;
@@ -192,7 +192,7 @@ public class Offer {
     }
 
     /**
-     * Stanza(/Packet) for rejecting offers.
+     * Stanza for rejecting offers.
      */
     private class RejectPacket extends IQ {
 
@@ -211,7 +211,7 @@ public class Offer {
     }
 
     /**
-     * Stanza(/Packet) for accepting an offer.
+     * Stanza for accepting an offer.
      */
     private class AcceptPacket extends IQ {
 

@@ -18,6 +18,19 @@ $ gradle integrationTest -Dsinttest.service=my.xmppservice.org
 
 Note that the service needs to have In-Band Registration (IBR) enabled.
 
+A better alternative to IBR is using XEP-0133: Service Administration
+to create the throw away accounts used by the integration test
+framework. Simply use
+
+```bash
+$ gradle integrationTest -Dsinttest.service=my.xmppservice.org \
+                         -Dsinttest.adminAccountUsername=admin \
+						 -Dsinttest.adminAccountPassword=aeR0Wuub
+```
+
+to run Smack's integration test framework against `my.xmppservice.org`
+with an admin account named `admin` and `aeR0Wuub` as password.
+
 Configuration
 -------------
 
@@ -40,7 +53,7 @@ service=example.org
 ```bash
 service=example.org
 serviceTlsPin=CERTSHA256:2F:92:C9:4D:30:58:E1:05:21:9A:57:59:5F:6E:25:9A:0F:BF:FF:64:1A:C3:4B:EC:06:7D:4A:6F:0A:D5:21:85
-debug=true
+debugger=console
 ```
 
 ### Framework properties
@@ -51,13 +64,15 @@ debug=true
 | serviceTlsPin        | TLS Pin (used by [java-pinning](https://github.com/Flowdalic/java-pinning))            |
 | securityMode         | Either 'required' or 'disabled'           |
 | replyTimeout         | In milliseconds                           |
+| adminAccountUsername | Username of the XEP-0133 Admin account    |
+| adminAccountPassword | Password of the XEP-0133 Admin account    |
 | accountOneUsername   | Username of the first XMPP account        |
 | accountOnePassword   | Password of the first XMPP account        |
 | accountTwoUsername   | Username of the second XMPP account       |
 | accountTwoPassword   | Password of the second XMPP account       |
 | accountThreeUsername | Username of the third XMPP account        |
 | accountThreePassword | Password of the third XMPP account        |
-| debug                | 'true' to enable debug output             |
+| debugger             | 'console' for console debugger, 'enhanced' for the enhanced debugger  |
 | enabledTests         | List of enabled tests                     |
 | disabledTests        | List of disabled tests                    |
 | testPackages         | List of packages with tests               |

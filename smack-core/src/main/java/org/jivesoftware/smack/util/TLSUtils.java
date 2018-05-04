@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2014 Florian Schmaus
+ * Copyright 2014-2016 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,11 @@
 package org.jivesoftware.smack.util;
 
 import java.security.KeyManagementException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -27,6 +30,7 @@ import java.util.Set;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
@@ -51,11 +55,14 @@ public class TLSUtils {
      * According to the <a
      * href="https://raw.githubusercontent.com/stpeter/manifesto/master/manifesto.txt">Encrypted
      * XMPP Manifesto</a>, TLSv1.2 shall be deployed, providing fallback support for SSLv3 and
-     * TLSv1.1. This method goes one step boyond and upgrades the handshake to use TLSv1 or better.
+     * TLSv1.1. This method goes one step beyond and upgrades the handshake to use TLSv1 or better.
      * This method requires the underlying OS to support all of TLSv1.2 , 1.1 and 1.0.
      * </p>
      * 
      * @param builder the configuration builder to apply this setting to
+     * @param <B> Type of the ConnectionConfiguration builder.
+     *
+     * @return the given builder
      */
     public static <B extends ConnectionConfiguration.Builder<B,?>> B setTLSOnly(B builder) {
         builder.setEnabledSSLProtocols(new String[] { PROTO_TLSV1_2,  PROTO_TLSV1_1, PROTO_TLSV1 });
@@ -73,6 +80,9 @@ public class TLSUtils {
      * </p>
      * 
      * @param builder the configuration builder to apply this setting to
+     * @param <B> Type of the ConnectionConfiguration builder.
+     *
+     * @return the given builder
      */
     public static <B extends ConnectionConfiguration.Builder<B,?>> B setSSLv3AndTLSOnly(B builder) {
         builder.setEnabledSSLProtocols(new String[] { PROTO_TLSV1_2,  PROTO_TLSV1_1, PROTO_TLSV1, PROTO_SSL3 });
@@ -88,6 +98,7 @@ public class TLSUtils {
      * </p>
      * 
      * @param builder a connection configuration builder.
+     * @param <B> Type of the ConnectionConfiguration builder.
      * @throws NoSuchAlgorithmException
      * @throws KeyManagementException
      * @return the given builder.
@@ -116,6 +127,7 @@ public class TLSUtils {
      * </p>
      * 
      * @param builder a connection configuration builder.
+     * @param <B> Type of the ConnectionConfiguration builder.
      * @return the given builder.
      */
     public static <B extends ConnectionConfiguration.Builder<B,?>> B disableHostnameVerificationForTlsCertificates(B builder) {
@@ -164,6 +176,41 @@ public class TLSUtils {
             enabledCiphers = ciphersIntersection.toArray(enabledCiphers);
             sslSocket.setEnabledCipherSuites(enabledCiphers);
         }
+    }
+
+    /**
+     * Get the channel binding data for the 'tls-server-end-point' channel binding type. This channel binding type is
+     * defined in RFC 5929 § 4.
+     *
+     * @param sslSession the SSL/TLS session from which the data should be retrieved.
+     * @return the channel binding data.
+     * @throws SSLPeerUnverifiedException
+     * @throws CertificateEncodingException
+     * @throws NoSuchAlgorithmException
+     * @see <a href="https://tools.ietf.org/html/rfc5929#section-4">RFC 5929 § 4.</a>
+     */
+    public static byte[] getChannelBindingTlsServerEndPoint(final SSLSession sslSession)
+                    throws SSLPeerUnverifiedException, CertificateEncodingException, NoSuchAlgorithmException {
+        final Certificate[] peerCertificates = sslSession.getPeerCertificates();
+        final Certificate certificate = peerCertificates[0];
+        final String certificateAlgorithm = certificate.getPublicKey().getAlgorithm();
+
+        // RFC 5929 § 4.1 hash function selection.
+        String algorithm;
+        switch (certificateAlgorithm) {
+        case "MD5":
+        case "SHA-1":
+            algorithm = "SHA-256";
+            break;
+        default:
+            algorithm = certificateAlgorithm;
+            break;
+        }
+
+        final MessageDigest messageDigest = MessageDigest.getInstance(algorithm);
+        final byte[] certificateDerEncoded = certificate.getEncoded();
+        messageDigest.update(certificateDerEncoded);
+        return messageDigest.digest();
     }
 
     /**

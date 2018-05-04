@@ -22,6 +22,7 @@ import java.io.IOException;
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.jivesoftware.smack.util.ParserUtils;
+
 import org.jxmpp.jid.Jid;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -29,16 +30,16 @@ import org.xmlpull.v1.XmlPullParserException;
 public class UserID implements ExtensionElement {
 
     /**
-     * Element name of the stanza(/packet) extension.
+     * Element name of the stanza extension.
      */
     public static final String ELEMENT_NAME = "user";
 
     /**
-     * Namespace of the stanza(/packet) extension.
+     * Namespace of the stanza extension.
      */
     public static final String NAMESPACE = "http://jivesoftware.com/protocol/workgroup";
 
-    private Jid userID;
+    private final Jid userID;
 
     public UserID(Jid userID) {
         this.userID = userID;
@@ -48,15 +49,18 @@ public class UserID implements ExtensionElement {
         return this.userID;
     }
 
+    @Override
     public String getElementName() {
         return ELEMENT_NAME;
     }
 
+    @Override
     public String getNamespace() {
         return NAMESPACE;
     }
 
-    public String toXML() {
+    @Override
+    public String toXML(String enclosingNamespace) {
         StringBuilder buf = new StringBuilder();
 
         buf.append('<').append(ELEMENT_NAME).append(" xmlns=\"").append(NAMESPACE).append("\" ");

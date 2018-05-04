@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
+
 import org.jivesoftware.smackx.jingleold.JingleSession;
 
 import de.javawi.jstun.test.demo.ice.Candidate;
@@ -45,15 +46,15 @@ import de.javawi.jstun.util.UtilityException;
  */
 public class ICEResolver extends TransportResolver {
 
-	private static final Logger LOGGER = Logger.getLogger(ICEResolver.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ICEResolver.class.getName());
 
     XMPPConnection connection;
     Random random = new Random();
     long sid;
     String server;
     int port;
-    static Map<String, ICENegociator> negociatorsMap = new HashMap<String, ICENegociator>();
-    //ICENegociator iceNegociator = null;
+    static Map<String, ICENegociator> negociatorsMap = new HashMap<>();
+    // ICENegociator iceNegociator = null;
 
     public ICEResolver(XMPPConnection connection, String server, int port) {
         super();
@@ -63,6 +64,7 @@ public class ICEResolver extends TransportResolver {
         this.setType(Type.ice);
     }
 
+    @Override
     public void initialize() throws XMPPException {
         if (!isResolving() && !isResolved()) {
             LOGGER.fine("Initialized");
@@ -73,13 +75,13 @@ public class ICEResolver extends TransportResolver {
             // of the STUN server are much, much faster.
             if (negociatorsMap.get(server) == null) {
             // CHECKSTYLE:OFF
-            	ICENegociator iceNegociator = new ICENegociator(server, port, (short) 1);
-            	negociatorsMap.put(server, iceNegociator);
+                ICENegociator iceNegociator = new ICENegociator(server, port, (short) 1);
+                negociatorsMap.put(server, iceNegociator);
 
-            	// gather candidates
-            	iceNegociator.gatherCandidateAddresses();
-            	// priorize candidates
-            	iceNegociator.prioritizeCandidates();
+                // gather candidates
+                iceNegociator.gatherCandidateAddresses();
+                // prioritize candidates
+                iceNegociator.prioritizeCandidates();
             // CHECKSTYLE:ON
             }
 
@@ -87,6 +89,7 @@ public class ICEResolver extends TransportResolver {
         this.setInitialized();
     }
 
+    @Override
     public void cancel() throws XMPPException {
 
     }
@@ -96,6 +99,7 @@ public class ICEResolver extends TransportResolver {
      * @throws SmackException 
      * @throws InterruptedException 
      */
+    @Override
     public synchronized void resolve(JingleSession session) throws XMPPException, SmackException, InterruptedException {
         this.setResolveInit();
 
@@ -113,7 +117,7 @@ public class ICEResolver extends TransportResolver {
         for (Candidate candidate : iceNegociator.getSortedCandidates())
             try {
                 Candidate.CandidateType type = candidate.getCandidateType();
-                ICECandidate.Type iceType = ICECandidate.Type.local;
+                ICECandidate.Type iceType;
                 if (type.equals(Candidate.CandidateType.ServerReflexive))
                     iceType = ICECandidate.Type.srflx;
                 else if (type.equals(Candidate.CandidateType.PeerReflexive))
@@ -125,21 +129,21 @@ public class ICEResolver extends TransportResolver {
 
                // JBW/GW - 17JUL08: Figure out the zero-based NIC number for this candidate.
                 short nicNum = 0;
-				try {
-					Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces();
-					short i = 0;
-					NetworkInterface nic = NetworkInterface.getByInetAddress(candidate.getAddress().getInetAddress());
-					while(nics.hasMoreElements()) {
-						NetworkInterface checkNIC = nics.nextElement();
-						if (checkNIC.equals(nic)) {
-							nicNum = i;
-							break;
-						}
-						i++;
-					}
-				} catch (SocketException e1) {
-					LOGGER.log(Level.WARNING, "exeption", e1);
-				}
+                try {
+                    Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces();
+                    short i = 0;
+                    NetworkInterface nic = NetworkInterface.getByInetAddress(candidate.getAddress().getInetAddress());
+                    while (nics.hasMoreElements()) {
+                        NetworkInterface checkNIC = nics.nextElement();
+                        if (checkNIC.equals(nic)) {
+                            nicNum = i;
+                            break;
+                        }
+                        i++;
+                    }
+                } catch (SocketException e1) {
+                    LOGGER.log(Level.WARNING, "exeption", e1);
+                }
 
                 TransportCandidate transportCandidate = new ICECandidate(candidate.getAddress().getInetAddress().getHostAddress(), 1, nicNum, String.valueOf(Math.abs(random.nextLong())), candidate.getPort(), "1", candidate.getPriority(), iceType);
                 transportCandidate.setLocalIp(candidate.getBase().getAddress().getInetAddress().getHostAddress());

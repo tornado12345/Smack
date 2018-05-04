@@ -17,12 +17,13 @@
 package org.jivesoftware.smackx.jingleold.packet;
 
 import org.jivesoftware.smack.packet.ExtensionElement;
+
 import org.jivesoftware.smackx.jingleold.media.ContentInfo;
 
 /**
  * Jingle content info.
  *
- * @author Alvaro Saurin <alvaro.saurin@gmail.com>
+ * @author Alvaro Saurin
  */
 public class JingleContentInfo implements ExtensionElement {
 
@@ -59,6 +60,7 @@ public class JingleContentInfo implements ExtensionElement {
     /**
      * Get the element name.
      */
+    @Override
     public String getElementName() {
         // Media info is supposed to be just a single-word command...
         return getMediaInfo().toString();
@@ -74,13 +76,15 @@ public class JingleContentInfo implements ExtensionElement {
     }
 
     /**
-     * Get the publilc namespace.
+     * Get the public namespace.
      */
+    @Override
     public String getNamespace() {
         return namespace;
     }
 
-    public String toXML() {
+    @Override
+    public String toXML(String enclosingNamespace) {
         StringBuilder buf = new StringBuilder();
         buf.append('<').append(getElementName()).append(" xmlns=\"");
         buf.append(getNamespace()).append("\" ");
@@ -100,6 +104,7 @@ public class JingleContentInfo implements ExtensionElement {
             setNamespace(NAMESPACE);
         }
 
+        @Override
         public String getNamespace() {
             return NAMESPACE;
         }
@@ -148,7 +153,7 @@ public class JingleContentInfo implements ExtensionElement {
         public static class Ringing extends Audio {
             public Ringing() {
                 super(ContentInfo.Audio.RINGING);
-			}
-		}
-	}
+            }
+        }
+    }
 }

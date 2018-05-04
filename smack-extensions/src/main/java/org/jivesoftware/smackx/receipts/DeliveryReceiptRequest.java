@@ -18,11 +18,12 @@ package org.jivesoftware.smackx.receipts;
 
 import java.io.IOException;
 
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Stanza;
-import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.id.StanzaIdUtil;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -32,22 +33,21 @@ import org.xmlpull.v1.XmlPullParserException;
  *
  * @author Georg Lukas
  */
-public class DeliveryReceiptRequest implements ExtensionElement
-{
+public class DeliveryReceiptRequest implements ExtensionElement {
     public static final String ELEMENT = "request";
 
-    public String getElementName()
-    {
+    @Override
+    public String getElementName() {
         return ELEMENT;
     }
 
-    public String getNamespace()
-    {
+    @Override
+    public String getNamespace() {
         return DeliveryReceipt.NAMESPACE;
     }
 
-    public String toXML()
-    {
+    @Override
+    public String toXML(String enclosingNamespace) {
         return "<request xmlns='" + DeliveryReceipt.NAMESPACE + "'/>";
     }
 

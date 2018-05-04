@@ -18,7 +18,9 @@
 package org.jivesoftware.smackx.muc;
 
 import org.jivesoftware.smack.packet.Message;
+
 import org.jivesoftware.smackx.muc.packet.MUCUser;
+
 import org.jxmpp.jid.EntityBareJid;
 
 /**
@@ -36,6 +38,6 @@ public interface InvitationRejectionListener {
      * @param message the message used to decline the invitation.
      * @param rejection the raw decline found in the message.
      */
-    public abstract void invitationDeclined(EntityBareJid invitee, String reason, Message message, MUCUser.Decline rejection);
+    void invitationDeclined(EntityBareJid invitee, String reason, Message message, MUCUser.Decline rejection);
 
 }

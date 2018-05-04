@@ -23,47 +23,49 @@ import java.util.logging.Logger;
 
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
+import org.jivesoftware.smack.StanzaCollector;
 import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.PacketCollector;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.SimpleIQ;
 import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.provider.ProviderManager;
+
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
 import org.jivesoftware.smackx.disco.packet.DiscoverItems;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 /**
- * STUN IQ Stanza(/Packet) used to request and retrieve a STUN server and port to make p2p connections easier. STUN is usually used by Jingle Media Transmission between two parties that are behind NAT.
- * <p/>
+ * STUN IQ Stanza used to request and retrieve a STUN server and port to make p2p connections easier. STUN is usually used by Jingle Media Transmission between two parties that are behind NAT.
+ *
  * High Level Usage Example:
- * <p/>
+ *
  * STUN stun = STUN.getSTUNServer(connection);
  *
  * @author Thiago Camargo
  */
 public class STUN extends SimpleIQ {
 
-	private static final Logger LOGGER = Logger.getLogger(STUN.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(STUN.class.getName());
 
-	private List<StunServerAddress> servers = new ArrayList<StunServerAddress>();
+    private final List<StunServerAddress> servers = new ArrayList<>();
 
     private String publicIp = null;
 
     /**
-     * Element name of the stanza(/packet) extension.
+     * Element name of the stanza extension.
      */
     public static final String DOMAIN = "stun";
 
     /**
-     * Element name of the stanza(/packet) extension.
+     * Element name of the stanza extension.
      */
     public static final String ELEMENT_NAME = "query";
 
     /**
-     * Namespace of the stanza(/packet) extension.
+     * Namespace of the stanza extension.
      */
     public static final String NAMESPACE = "google:jingleinfo";
 
@@ -107,7 +109,7 @@ public class STUN extends SimpleIQ {
 
     /**
      * IQProvider for RTP Bridge packets.
-     * Parse receive RTPBridge stanza(/packet) to a RTPBridge instance
+     * Parse receive RTPBridge stanza to a RTPBridge instance
      *
      * @author Thiago Rocha
      */
@@ -185,7 +187,7 @@ public class STUN extends SimpleIQ {
         STUN stunPacket = new STUN();
         stunPacket.setTo(DOMAIN + "." + connection.getXMPPServiceDomain());
 
-        PacketCollector collector = connection.createPacketCollectorAndSend(stunPacket);
+        StanzaCollector collector = connection.createStanzaCollectorAndSend(stunPacket);
 
         STUN response = collector.nextResult();
 

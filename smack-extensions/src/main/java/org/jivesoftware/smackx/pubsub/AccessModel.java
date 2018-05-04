@@ -17,25 +17,25 @@
 package org.jivesoftware.smackx.pubsub;
 
 /**
- * This enumeration represents the access models for the pubsub node
- * as defined in the pubsub specification section <a href="http://xmpp.org/extensions/xep-0060.html#registrar-formtypes-config">16.4.3</a>.
+ * This enumeration represents the access models for the PubSub node
+ * as defined in the PubSub specification section <a href="http://xmpp.org/extensions/xep-0060.html#registrar-formtypes-config">16.4.3</a>.
  * 
  * @author Robin Collier
  */
-public enum AccessModel
-{
-	/** Anyone may subscribe and retrieve items.	 */
-	open,
+public enum AccessModel {
 
-	/** Subscription request must be approved and only subscribers may retrieve items. */
-	authorize,
+    /** Anyone may subscribe and retrieve items.     */
+    open,
 
-	/** Anyone with a presence subscription of both or from may subscribe and retrieve items. */
-	presence,
+    /** Subscription request must be approved and only subscribers may retrieve items. */
+    authorize,
 
-	/** Anyone in the specified roster group(s) may subscribe and retrieve items. */
-	roster,
+    /** Anyone with a presence subscription of both or from may subscribe and retrieve items. */
+    presence,
 
-	/** Only those on a whitelist may subscribe and retrieve items. */
-	whitelist;
+    /** Anyone in the specified roster group(s) may subscribe and retrieve items. */
+    roster,
+
+    /** Only those on a whitelist may subscribe and retrieve items. */
+    whitelist;
 }

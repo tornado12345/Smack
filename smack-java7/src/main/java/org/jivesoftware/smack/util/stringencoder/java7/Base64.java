@@ -16,6 +16,7 @@
  */
 package org.jivesoftware.smack.util.stringencoder.java7;
 
+import java.nio.charset.Charset;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,6 +30,7 @@ import java.util.logging.Logger;
  * @author rob@iharder.net
  * @version 2.2.1
  */
+// CHECKSTYLE:OFF
 public final class Base64
 {
     private static final Logger LOGGER = Logger.getLogger(Base64.class.getName());
@@ -36,22 +38,22 @@ public final class Base64
     /* ********  P U B L I C   F I E L D S  ******** */
 
     /** No options specified. Value is zero. */
-    public final static int NO_OPTIONS = 0;
+    public static final int NO_OPTIONS = 0;
 
     /** Specify encoding. */
-    public final static int ENCODE = 1;
+    public static final int ENCODE = 1;
 
 
     /** Specify decoding. */
-    public final static int DECODE = 0;
+    public static final int DECODE = 0;
 
 
     /** Specify that data should be gzip-compressed. */
-    public final static int GZIP = 2;
+    public static final int GZIP = 2;
 
 
     /** Don't break lines when encoding (violates strict Base64 specification). */
-    public final static int DONT_BREAK_LINES = 8;
+    public static final int DONT_BREAK_LINES = 8;
 
 	/**
 	 * Encode using Base64-like encoding that is URL- and Filename-safe as described
@@ -61,47 +63,47 @@ public final class Base64
 	 * or at the very least should not be called Base64 without also specifying that is
 	 * was encoded using the URL- and Filename-safe dialect.
 	 */
-	 public final static int URL_SAFE = 16;
+	 public static final int URL_SAFE = 16;
 
 
 	/**
 	 * Encode using the special "ordered" dialect of Base64 described here:
 	 * <a href="http://www.faqs.org/qa/rfcc-1940.html">http://www.faqs.org/qa/rfcc-1940.html</a>.
 	 */
-	 public final static int ORDERED = 32;
+	 public static final int ORDERED = 32;
 
 
 /* ********  P R I V A T E   F I E L D S  ******** */
 
 
     /** Maximum line length (76) of Base64 output. */
-    private final static int MAX_LINE_LENGTH = 76;
+    private static final int MAX_LINE_LENGTH = 76;
 
 
     /** The equals sign (=) as a byte. */
-    private final static byte EQUALS_SIGN = (byte)'=';
+    private static final byte EQUALS_SIGN = (byte)'=';
 
 
     /** The new line character (\n) as a byte. */
-    private final static byte NEW_LINE = (byte)'\n';
+    private static final byte NEW_LINE = (byte)'\n';
 
 
     /** Preferred encoding. */
-    private final static String PREFERRED_ENCODING = "UTF-8";
+    private static final String PREFERRED_ENCODING = "UTF-8";
 
 
     // I think I end up not using the BAD_ENCODING indicator.
-    //private final static byte BAD_ENCODING    = -9; // Indicates error in encoding
-    private final static byte WHITE_SPACE_ENC = -5; // Indicates white space in encoding
-    private final static byte EQUALS_SIGN_ENC = -1; // Indicates equals sign in encoding
+    // private static final byte BAD_ENCODING    = -9; // Indicates error in encoding
+    private static final byte WHITE_SPACE_ENC = -5; // Indicates white space in encoding
+    private static final byte EQUALS_SIGN_ENC = -1; // Indicates equals sign in encoding
 
 
 /* ********  S T A N D A R D   B A S E 6 4   A L P H A B E T  ******** */
 
     /** The 64 valid Base64 values. */
-    //private final static byte[] ALPHABET;
+    // private static final byte[] ALPHABET;
 	/* Host platform me be something funny like EBCDIC, so we hardcode these values. */
-	private final static byte[] _STANDARD_ALPHABET =
+	private static final byte[] _STANDARD_ALPHABET =
     {
         (byte)'A', (byte)'B', (byte)'C', (byte)'D', (byte)'E', (byte)'F', (byte)'G',
         (byte)'H', (byte)'I', (byte)'J', (byte)'K', (byte)'L', (byte)'M', (byte)'N',
@@ -120,7 +122,7 @@ public final class Base64
      * Translates a Base64 value to either its 6-bit reconstruction value
      * or a negative number indicating some other meaning.
      **/
-    private final static byte[] _STANDARD_DECODABET =
+    private static final byte[] _STANDARD_DECODABET =
     {
         -9,-9,-9,-9,-9,-9,-9,-9,-9,                 // Decimal  0 -  8
         -5,-5,                                      // Whitespace: Tab and Linefeed
@@ -163,7 +165,7 @@ public final class Base64
 	 * <a href="http://www.faqs.org/rfcs/rfc3548.html">http://www.faqs.org/rfcs/rfc3548.html</a>.
 	 * Notice that the last two bytes become "hyphen" and "underscore" instead of "plus" and "slash."
 	 */
-    private final static byte[] _URL_SAFE_ALPHABET =
+    private static final byte[] _URL_SAFE_ALPHABET =
     {
       (byte)'A', (byte)'B', (byte)'C', (byte)'D', (byte)'E', (byte)'F', (byte)'G',
       (byte)'H', (byte)'I', (byte)'J', (byte)'K', (byte)'L', (byte)'M', (byte)'N',
@@ -180,7 +182,7 @@ public final class Base64
 	/**
 	 * Used in decoding URL- and Filename-safe dialects of Base64.
 	 */
-    private final static byte[] _URL_SAFE_DECODABET =
+    private static final byte[] _URL_SAFE_DECODABET =
     {
       -9,-9,-9,-9,-9,-9,-9,-9,-9,                 // Decimal  0 -  8
       -5,-5,                                      // Whitespace: Tab and Linefeed
@@ -227,7 +229,7 @@ public final class Base64
 	 * I don't get the point of this technique, but it is described here:
 	 * <a href="http://www.faqs.org/qa/rfcc-1940.html">http://www.faqs.org/qa/rfcc-1940.html</a>.
 	 */
-    private final static byte[] _ORDERED_ALPHABET =
+    private static final byte[] _ORDERED_ALPHABET =
     {
       (byte)'-',
       (byte)'0', (byte)'1', (byte)'2', (byte)'3', (byte)'4',
@@ -246,7 +248,7 @@ public final class Base64
 	/**
 	 * Used in decoding the "ordered" dialect of Base64.
 	 */
-    private final static byte[] _ORDERED_DECODABET =
+    private static final byte[] _ORDERED_DECODABET =
     {
       -9,-9,-9,-9,-9,-9,-9,-9,-9,                 // Decimal  0 -  8
       -5,-5,                                      // Whitespace: Tab and Linefeed
@@ -296,7 +298,7 @@ public final class Base64
 	 * in which case one of them will be picked, though there is
 	 * no guarantee as to which one will be picked.
 	 */
-	private final static byte[] getAlphabet( int options )
+	private static byte[] getAlphabet( int options )
 	{
 		if( (options & URL_SAFE) == URL_SAFE ) return _URL_SAFE_ALPHABET;
 		else if( (options & ORDERED) == ORDERED ) return _ORDERED_ALPHABET;
@@ -312,7 +314,7 @@ public final class Base64
 	 * in which case one of them will be picked, though there is
 	 * no guarantee as to which one will be picked.
 	 */
-	private final static byte[] getDecodabet( int options )
+	private static byte[] getDecodabet( int options )
 	{
 		if( (options & URL_SAFE) == URL_SAFE ) return _URL_SAFE_DECODABET;
 		else if( (options & ORDERED) == ORDERED ) return _ORDERED_DECODABET;
@@ -357,7 +359,7 @@ public final class Base64
      * anywhere along their length by specifying
      * <var>srcOffset</var> and <var>destOffset</var>.
      * This method does not check to make sure your arrays
-     * are large enough to accomodate <var>srcOffset</var> + 3 for
+     * are large enough to accommodate <var>srcOffset</var> + 3 for
      * the <var>source</var> array or <var>destOffset</var> + 4 for
      * the <var>destination</var> array.
      * The actual number of significant bytes in your array is
@@ -513,7 +515,7 @@ public final class Base64
         }   // end try
         catch (java.io.UnsupportedEncodingException uue)
         {
-            return new String( baos.toByteArray() );
+            return new String( baos.toByteArray(), Charset.defaultCharset() );
         }   // end catch
 
     }   // end encode
@@ -641,7 +643,7 @@ public final class Base64
             }   // end try
             catch (java.io.UnsupportedEncodingException uue)
             {
-                return new String( baos.toByteArray() );
+                return new String( baos.toByteArray(), Charset.defaultCharset() );
             }   // end catch
         }   // end if: compress
 
@@ -686,7 +688,7 @@ public final class Base64
             }   // end try
             catch (java.io.UnsupportedEncodingException uue)
             {
-                return new String( outBuff, 0, e );
+                return new String( outBuff, 0, e , Charset.defaultCharset());
             }   // end catch
 
         }   // end else: don't compress
@@ -708,7 +710,7 @@ public final class Base64
      * anywhere along their length by specifying
      * <var>srcOffset</var> and <var>destOffset</var>.
      * This method does not check to make sure your arrays
-     * are large enough to accomodate <var>srcOffset</var> + 4 for
+     * are large enough to accommodate <var>srcOffset</var> + 4 for
      * the <var>source</var> array or <var>destOffset</var> + 3 for
      * the <var>destination</var> array.
      * This method returns the actual number of bytes that
@@ -733,7 +735,7 @@ public final class Base64
         if( source[ srcOffset + 2] == EQUALS_SIGN )
         {
             // Two ways to do the same thing. Don't know which way I like best.
-            //int outBuff =   ( ( DECODABET[ source[ srcOffset    ] ] << 24 ) >>>  6 )
+            // int outBuff =   ( ( DECODABET[ source[ srcOffset    ] ] << 24 ) >>>  6 )
             //              | ( ( DECODABET[ source[ srcOffset + 1] ] << 24 ) >>> 12 );
             int outBuff =   ( ( DECODABET[ source[ srcOffset    ] ] & 0xFF ) << 18 )
                           | ( ( DECODABET[ source[ srcOffset + 1] ] & 0xFF ) << 12 );
@@ -746,7 +748,7 @@ public final class Base64
         else if( source[ srcOffset + 3 ] == EQUALS_SIGN )
         {
             // Two ways to do the same thing. Don't know which way I like best.
-            //int outBuff =   ( ( DECODABET[ source[ srcOffset     ] ] << 24 ) >>>  6 )
+            // int outBuff =   ( ( DECODABET[ source[ srcOffset     ] ] << 24 ) >>>  6 )
             //              | ( ( DECODABET[ source[ srcOffset + 1 ] ] << 24 ) >>> 12 )
             //              | ( ( DECODABET[ source[ srcOffset + 2 ] ] << 24 ) >>> 18 );
             int outBuff =   ( ( DECODABET[ source[ srcOffset     ] ] & 0xFF ) << 18 )
@@ -763,7 +765,7 @@ public final class Base64
         {
             try{
             // Two ways to do the same thing. Don't know which way I like best.
-            //int outBuff =   ( ( DECODABET[ source[ srcOffset     ] ] << 24 ) >>>  6 )
+            // int outBuff =   ( ( DECODABET[ source[ srcOffset     ] ] << 24 ) >>>  6 )
             //              | ( ( DECODABET[ source[ srcOffset + 1 ] ] << 24 ) >>> 12 )
             //              | ( ( DECODABET[ source[ srcOffset + 2 ] ] << 24 ) >>> 18 )
             //              | ( ( DECODABET[ source[ srcOffset + 3 ] ] << 24 ) >>> 24 );
@@ -886,9 +888,9 @@ public final class Base64
         }   // end try
         catch( java.io.UnsupportedEncodingException uee )
         {
-            bytes = s.getBytes();
+            bytes = s.getBytes( Charset.defaultCharset() );
         }   // end catch
-		//</change>
+		// </change>
 
         // Decode
         bytes = decode( bytes, 0, bytes.length, options );
@@ -1288,6 +1290,7 @@ public final class Base64
          * @return next byte
          * @since 1.3
          */
+        @Override
         public int read() throws java.io.IOException
         {
             // Do we need to get data?
@@ -1416,6 +1419,7 @@ public final class Base64
          * @return bytes read into array or -1 if end of stream is encountered.
          * @since 1.3
          */
+        @Override
         public int read( byte[] dest, int off, int len ) throws java.io.IOException
         {
             int i;
@@ -1424,7 +1428,7 @@ public final class Base64
             {
                 b = read();
 
-                //if( b < 0 && i == 0 )
+                // if( b < 0 && i == 0 )
                 //    return -1;
 
                 if( b >= 0 )
@@ -1529,6 +1533,7 @@ public final class Base64
          * @param theByte the byte to write
          * @since 1.3
          */
+        @Override
         public void write(int theByte) throws java.io.IOException
         {
             // Encoding suspended?
@@ -1568,7 +1573,7 @@ public final class Base64
                     {
                         int len = Base64.decode4to3( buffer, 0, b4, 0, options );
                         out.write( b4, 0, len );
-                        //out.write( Base64.decode4to3( buffer ) );
+                        // out.write( Base64.decode4to3( buffer ) );
                         position = 0;
                     }   // end if: enough to output
                 }   // end if: meaningful base64 character
@@ -1590,6 +1595,7 @@ public final class Base64
          * @param len max number of bytes to read into array
          * @since 1.3
          */
+        @Override
         public void write( byte[] theBytes, int off, int len ) throws java.io.IOException
         {
             // Encoding suspended?
@@ -1635,6 +1641,7 @@ public final class Base64
          *
          * @since 1.3
          */
+        @Override
         public void close() throws java.io.IOException
         {
             // 1. Ensure that pending characters are written
@@ -1682,4 +1689,4 @@ public final class Base64
 
 
 }   // end class Base64
-
+// CHECKSTYLE:ON

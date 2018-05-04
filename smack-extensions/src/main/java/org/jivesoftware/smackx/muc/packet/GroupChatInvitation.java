@@ -19,15 +19,16 @@ package org.jivesoftware.smackx.muc.packet;
 
 import java.io.IOException;
 
-import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.jivesoftware.smack.util.XmlStringBuilder;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 /**
- * A group chat invitation stanza(/packet) extension, which is used to invite other
+ * A group chat invitation stanza extension, which is used to invite other
  * users to a group chat room. To invite a user to a group chat room, address
  * a new message to the user and set the room name appropriately, as in the
  * following code example:
@@ -45,7 +46,7 @@ import org.xmlpull.v1.XmlPullParserException;
  *
  * <pre>
  * PacketFilter filter = new StanzaExtensionFilter("x", "jabber:x:conference");
- * // Create a stanza(/packet) collector or stanza(/packet) listeners using the filter...
+ * // Create a stanza collector or stanza listeners using the filter...
  * </pre>
  *
  * <b>Note</b>: this protocol is outdated now that the Multi-User Chat (MUC) XEP is available
@@ -58,12 +59,12 @@ import org.xmlpull.v1.XmlPullParserException;
 public class GroupChatInvitation implements ExtensionElement {
 
     /**
-     * Element name of the stanza(/packet) extension.
+     * Element name of the stanza extension.
      */
     public static final String ELEMENT = "x";
 
     /**
-     * Namespace of the stanza(/packet) extension.
+     * Namespace of the stanza extension.
      */
     public static final String NAMESPACE = "jabber:x:conference";
 
@@ -72,7 +73,7 @@ public class GroupChatInvitation implements ExtensionElement {
     /**
      * Creates a new group chat invitation to the specified room address.
      * GroupChat room addresses are in the form <tt>room@service</tt>,
-     * where <tt>service</tt> is the name of groupchat server, such as
+     * where <tt>service</tt> is the name of group chat server, such as
      * <tt>chat.example.com</tt>.
      *
      * @param roomAddress the address of the group chat room.
@@ -84,7 +85,7 @@ public class GroupChatInvitation implements ExtensionElement {
     /**
      * Returns the address of the group chat room. GroupChat room addresses
      * are in the form <tt>room@service</tt>, where <tt>service</tt> is
-     * the name of groupchat server, such as <tt>chat.example.com</tt>.
+     * the name of group chat server, such as <tt>chat.example.com</tt>.
      *
      * @return the address of the group chat room.
      */
@@ -92,16 +93,18 @@ public class GroupChatInvitation implements ExtensionElement {
         return roomAddress;
     }
 
+    @Override
     public String getElementName() {
         return ELEMENT;
     }
 
+    @Override
     public String getNamespace() {
         return NAMESPACE;
     }
 
     @Override
-    public XmlStringBuilder toXML() {
+    public XmlStringBuilder toXML(String enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.attribute("jid", getRoomAddress());
         xml.closeEmptyElement();

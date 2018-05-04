@@ -17,6 +17,7 @@
 package org.jivesoftware.smackx.pubsub;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 
@@ -25,12 +26,16 @@ import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.ThreadedDummyConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
-import org.jivesoftware.smack.packet.XMPPError;
-import org.jivesoftware.smack.packet.XMPPError.Condition;
+import org.jivesoftware.smack.packet.IQ.Type;
+import org.jivesoftware.smack.packet.StanzaError;
+import org.jivesoftware.smack.packet.StanzaError.Condition;
+
+import org.jivesoftware.smackx.InitExtensions;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo.Identity;
 import org.jivesoftware.smackx.pubsub.packet.PubSub;
 import org.jivesoftware.smackx.xdata.packet.DataForm;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -39,58 +44,67 @@ import org.junit.Test;
  * @author Robin Collier
  *
  */
-public class ConfigureFormTest
-{
-	@Test
-	public void checkChildrenAssocPolicy()
-	{
-		ConfigureForm form = new ConfigureForm(DataForm.Type.submit);
-		form.setChildrenAssociationPolicy(ChildrenAssociationPolicy.owners);
-		assertEquals(ChildrenAssociationPolicy.owners, form.getChildrenAssociationPolicy());
-	}
+public class ConfigureFormTest extends InitExtensions {
+    @Test
+    public void checkChildrenAssocPolicy() {
+        ConfigureForm form = new ConfigureForm(DataForm.Type.submit);
+        form.setChildrenAssociationPolicy(ChildrenAssociationPolicy.owners);
+        assertEquals(ChildrenAssociationPolicy.owners, form.getChildrenAssociationPolicy());
+    }
 
-	@Test
-	public void getConfigFormWithInsufficientPriviliges() throws XMPPException, SmackException, IOException, InterruptedException
-	{
-		ThreadedDummyConnection con = ThreadedDummyConnection.newInstance();
-		PubSubManager mgr = new PubSubManager(con, PubSubManagerTest.DUMMY_PUBSUB_SERVICE);
-		DiscoverInfo info = new DiscoverInfo();
-		Identity ident = new Identity("pubsub", null, "leaf");
-		info.addIdentity(ident);
-		con.addIQReply(info);
+    @Test
+    public void getConfigFormWithInsufficientPrivileges() throws XMPPException, SmackException, IOException, InterruptedException {
+        ThreadedDummyConnection con = ThreadedDummyConnection.newInstance();
+        PubSubManager mgr = new PubSubManager(con, PubSubManagerTest.DUMMY_PUBSUB_SERVICE);
+        DiscoverInfo info = new DiscoverInfo();
+        info.setType(Type.result);
+        info.setFrom(PubSubManagerTest.DUMMY_PUBSUB_SERVICE);
+        Identity ident = new Identity("pubsub", null, "leaf");
+        info.addIdentity(ident);
+        con.addIQReply(info);
 
-		Node node = mgr.getNode("princely_musings");
+        Node node = mgr.getNode("princely_musings");
 
-		PubSub errorIq = new PubSub();
-		XMPPError.Builder error = XMPPError.getBuilder(Condition.forbidden);
-		errorIq.setError(error);
-		con.addIQReply(errorIq);
+        PubSub errorIq = new PubSub();
+        errorIq.setType(Type.error);
+        errorIq.setFrom(PubSubManagerTest.DUMMY_PUBSUB_SERVICE);
+        StanzaError.Builder error = StanzaError.getBuilder(Condition.forbidden);
+        errorIq.setError(error);
+        con.addIQReply(errorIq);
 
-		try
-		{
-			node.getNodeConfiguration();
-		}
-		catch (XMPPErrorException e)
-		{
-			Assert.assertEquals(XMPPError.Type.AUTH, e.getXMPPError().getType());
-		}
-	}
+        try {
+            node.getNodeConfiguration();
+            fail();
+        }
+        catch (XMPPErrorException e) {
+            Assert.assertEquals(StanzaError.Type.AUTH, e.getXMPPError().getType());
+        }
+    }
 
-	@Test (expected=SmackException.class)
-	public void getConfigFormWithTimeout() throws XMPPException, SmackException, InterruptedException
-	{
-		ThreadedDummyConnection con = new ThreadedDummyConnection();
-		PubSubManager mgr = new PubSubManager(con, PubSubManagerTest.DUMMY_PUBSUB_SERVICE);
-		DiscoverInfo info = new DiscoverInfo();
-		Identity ident = new Identity("pubsub", null, "leaf");
-		info.addIdentity(ident);
-		con.addIQReply(info);
+    @Test(expected = SmackException.class)
+    public void getConfigFormWithTimeout() throws XMPPException, SmackException, InterruptedException {
+        ThreadedDummyConnection con = new ThreadedDummyConnection();
+        PubSubManager mgr = new PubSubManager(con, PubSubManagerTest.DUMMY_PUBSUB_SERVICE);
+        DiscoverInfo info = new DiscoverInfo();
+        Identity ident = new Identity("pubsub", null, "leaf");
+        info.addIdentity(ident);
+        con.addIQReply(info);
 
-		Node node = mgr.getNode("princely_musings");
+        Node node = mgr.getNode("princely_musings");
 
-		SmackConfiguration.setDefaultPacketReplyTimeout(100);
-		con.setTimeout();
+        SmackConfiguration.setDefaultReplyTimeout(100);
+        con.setTimeout();
 
-		node.getNodeConfiguration();
-	}
+        node.getNodeConfiguration();
+    }
+
+    @Test
+    public void checkNotificationType() {
+        ConfigureForm form = new ConfigureForm(DataForm.Type.submit);
+        form.setNotificationType(NotificationType.normal);
+        assertEquals(NotificationType.normal, form.getNotificationType());
+        form.setNotificationType(NotificationType.headline);
+        assertEquals(NotificationType.headline, form.getNotificationType());
+    }
+
 }

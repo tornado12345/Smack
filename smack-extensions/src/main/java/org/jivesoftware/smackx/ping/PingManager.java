@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2012-2015 Florian Schmaus
+ * Copyright 2012-2018 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,38 @@
  */
 package org.jivesoftware.smackx.ping;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.jivesoftware.smack.AbstractConnectionClosedListener;
+import org.jivesoftware.smack.ConnectionCreationListener;
+import org.jivesoftware.smack.Manager;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
+import org.jivesoftware.smack.SmackFuture;
+import org.jivesoftware.smack.SmackFuture.InternalProcessStanzaSmackFuture;
 import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.ConnectionCreationListener;
-import org.jivesoftware.smack.Manager;
 import org.jivesoftware.smack.XMPPConnectionRegistry;
-import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.iqrequest.AbstractIqRequestHandler;
 import org.jivesoftware.smack.iqrequest.IQRequestHandler.Mode;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.IQ.Type;
-import org.jivesoftware.smack.util.SmackExecutorThreadFactory;
+import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.packet.StanzaError;
+import org.jivesoftware.smack.util.ExceptionCallback;
+import org.jivesoftware.smack.util.SuccessCallback;
+
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.ping.packet.Ping;
+
 import org.jxmpp.jid.Jid;
 
 /**
@@ -63,10 +66,11 @@ import org.jxmpp.jid.Jid;
 public final class PingManager extends Manager {
     private static final Logger LOGGER = Logger.getLogger(PingManager.class.getName());
 
-    private static final Map<XMPPConnection, PingManager> INSTANCES = new WeakHashMap<XMPPConnection, PingManager>();
+    private static final Map<XMPPConnection, PingManager> INSTANCES = new WeakHashMap<>();
 
     static {
         XMPPConnectionRegistry.addConnectionCreationListener(new ConnectionCreationListener() {
+            @Override
             public void connectionCreated(XMPPConnection connection) {
                 getInstanceFor(connection);
             }
@@ -81,7 +85,7 @@ public final class PingManager extends Manager {
      * The connection the manager is attached to.
      * @return The new or existing manager.
      */
-    public synchronized static PingManager getInstanceFor(XMPPConnection connection) {
+    public static synchronized PingManager getInstanceFor(XMPPConnection connection) {
         PingManager pingManager = INSTANCES.get(connection);
         if (pingManager == null) {
             pingManager = new PingManager(connection);
@@ -104,10 +108,7 @@ public final class PingManager extends Manager {
         defaultPingInterval = interval;
     }
 
-    private final Set<PingFailedListener> pingFailedListeners = Collections
-                    .synchronizedSet(new HashSet<PingFailedListener>());
-
-    private final ScheduledExecutorService executorService;
+    private final Set<PingFailedListener> pingFailedListeners = new CopyOnWriteArraySet<>();
 
     /**
      * The interval in seconds between pings are send to the users server.
@@ -118,8 +119,6 @@ public final class PingManager extends Manager {
 
     private PingManager(XMPPConnection connection) {
         super(connection);
-        executorService = Executors.newSingleThreadScheduledExecutor(
-                        new SmackExecutorThreadFactory(connection, "Ping"));
         ServiceDiscoveryManager sdm = ServiceDiscoveryManager.getInstanceFor(connection);
         sdm.addFeature(Ping.NAMESPACE);
 
@@ -141,6 +140,77 @@ public final class PingManager extends Manager {
             }
         });
         maybeSchedulePingServerTask();
+    }
+
+    private boolean isValidErrorPong(Jid destinationJid, XMPPErrorException xmppErrorException) {
+        // If it is an error error response and the destination was our own service, then this must mean that the
+        // service responded, i.e. is up and pingable.
+        if (destinationJid.equals(connection().getXMPPServiceDomain())) {
+            return true;
+        }
+
+        final StanzaError xmppError = xmppErrorException.getXMPPError();
+
+        // We may received an error response from an intermediate service returning an error like
+        // 'remote-server-not-found' or 'remote-server-timeout' to us (which would fake the 'from' address,
+        // see RFC 6120 § 8.3.1 2.). Or the recipient could became unavailable.
+
+        // Sticking with the current rules of RFC 6120/6121, it is undecidable at this point whether we received an
+        // error response from the pinged entity or not. This is because a service-unavailable error condition is
+        // *required* (as per the RFCs) to be send back in both relevant cases:
+        // 1. When the receiving entity is unaware of the IQ request type. RFC 6120 § 8.4.:
+        //    "If an intended recipient receives an IQ stanza of type "get" or
+        //    "set" containing a child element qualified by a namespace it does
+        //    not understand, then the entity MUST return an IQ stanza of type
+        //    "error" with an error condition of <service-unavailable/>.
+        //  2. When the receiving resource is not available. RFC 6121 § 8.5.3.2.3.
+
+        // Some clients don't obey the first rule and instead send back a feature-not-implement condition with type 'cancel',
+        // which allows us to consider this response as valid "error response" pong.
+        StanzaError.Type type = xmppError.getType();
+        StanzaError.Condition condition = xmppError.getCondition();
+        return type == StanzaError.Type.CANCEL && condition == StanzaError.Condition.feature_not_implemented;
+    }
+
+    public SmackFuture<Boolean, Exception> pingAsync(Jid jid) {
+        return pingAsync(jid, connection().getReplyTimeout());
+    }
+
+    public SmackFuture<Boolean, Exception> pingAsync(final Jid jid, long pongTimeout) {
+        final InternalProcessStanzaSmackFuture<Boolean, Exception> future = new InternalProcessStanzaSmackFuture<Boolean, Exception>() {
+            @Override
+            public void handleStanza(Stanza packet) {
+                setResult(true);
+            }
+            @Override
+            public boolean isNonFatalException(Exception exception) {
+                if (exception instanceof XMPPErrorException) {
+                    XMPPErrorException xmppErrorException = (XMPPErrorException) exception;
+                    if (isValidErrorPong(jid, xmppErrorException)) {
+                        setResult(true);
+                        return true;
+                    }
+                }
+                return false;
+            }
+        };
+
+        Ping ping = new Ping(jid);
+        connection().sendIqRequestAsync(ping, pongTimeout)
+        .onSuccess(new SuccessCallback<IQ>() {
+            @Override
+            public void onSuccess(IQ result) {
+                future.processStanza(result);
+            }
+        })
+        .onError(new ExceptionCallback<Exception>() {
+            @Override
+            public void processException(Exception exception) {
+                future.processException(exception);
+            }
+        });
+
+        return future;
     }
 
     /**
@@ -167,10 +237,10 @@ public final class PingManager extends Manager {
         }
         Ping ping = new Ping(jid);
         try {
-            connection.createPacketCollectorAndSend(ping).nextResultOrThrow(pingTimeout);
+            connection.createStanzaCollectorAndSend(ping).nextResultOrThrow(pingTimeout);
         }
-        catch (XMPPException exc) {
-            return jid.equals(connection.getXMPPServiceDomain());
+        catch (XMPPErrorException e) {
+            return isValidErrorPong(jid, e);
         }
         return true;
     }
@@ -186,7 +256,7 @@ public final class PingManager extends Manager {
      * @throws InterruptedException 
      */
     public boolean ping(Jid jid) throws NotConnectedException, NoResponseException, InterruptedException {
-        return ping(jid, connection().getPacketReplyTimeout());
+        return ping(jid, connection().getReplyTimeout());
     }
 
     /**
@@ -231,7 +301,7 @@ public final class PingManager extends Manager {
      * @throws InterruptedException 
      */
     public boolean pingMyServer(boolean notifyListeners) throws NotConnectedException, InterruptedException {
-        return pingMyServer(notifyListeners, connection().getPacketReplyTimeout());
+        return pingMyServer(notifyListeners, connection().getReplyTimeout());
     }
 
     /**
@@ -321,7 +391,7 @@ public final class PingManager extends Manager {
             int nextPingIn = pingInterval - delta;
             LOGGER.fine("Scheduling ServerPingTask in " + nextPingIn + " seconds (pingInterval="
                             + pingInterval + ", delta=" + delta + ")");
-            nextAutomaticPing = executorService.schedule(pingServerRunnable, nextPingIn, TimeUnit.SECONDS);
+            nextAutomaticPing = schedule(pingServerRunnable, nextPingIn, TimeUnit.SECONDS);
         }
     }
 
@@ -402,22 +472,11 @@ public final class PingManager extends Manager {
     }
 
     private final Runnable pingServerRunnable = new Runnable() {
+        @Override
         public void run() {
             LOGGER.fine("ServerPingTask run()");
             pingServerIfNecessary();
         }
     };
 
-    @Override
-    protected void finalize() throws Throwable {
-        LOGGER.fine("finalizing PingManager: Shutting down executor service");
-        try {
-            executorService.shutdown();
-        } catch (Throwable t) {
-            LOGGER.log(Level.WARNING, "finalize() threw throwable", t);
-        }
-        finally {
-            super.finalize();
-        }
-    }
 }

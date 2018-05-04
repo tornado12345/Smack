@@ -26,8 +26,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.jivesoftware.smack.Manager;
-import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
+import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.filter.AndFilter;
 import org.jivesoftware.smack.filter.MessageTypeFilter;
@@ -36,7 +36,9 @@ import org.jivesoftware.smack.filter.StanzaExtensionFilter;
 import org.jivesoftware.smack.filter.StanzaFilter;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Stanza;
+
 import org.jivesoftware.smackx.xevent.packet.MessageEvent;
+
 import org.jxmpp.jid.Jid;
 
 /**
@@ -56,10 +58,10 @@ public final class MessageEventManager extends Manager {
     private static final StanzaFilter PACKET_FILTER = new AndFilter(new StanzaExtensionFilter(
                     new MessageEvent()), new NotFilter(MessageTypeFilter.ERROR));
 
-    private List<MessageEventNotificationListener> messageEventNotificationListeners = new CopyOnWriteArrayList<MessageEventNotificationListener>();
-    private List<MessageEventRequestListener> messageEventRequestListeners = new CopyOnWriteArrayList<MessageEventRequestListener>();
+    private final List<MessageEventNotificationListener> messageEventNotificationListeners = new CopyOnWriteArrayList<>();
+    private final List<MessageEventRequestListener> messageEventRequestListeners = new CopyOnWriteArrayList<>();
 
-    public synchronized static MessageEventManager getInstanceFor(XMPPConnection connection) {
+    public static synchronized MessageEventManager getInstanceFor(XMPPConnection connection) {
         MessageEventManager messageEventManager = INSTANCES.get(connection);
         if (messageEventManager == null) {
             messageEventManager = new MessageEventManager(connection);
@@ -71,16 +73,16 @@ public final class MessageEventManager extends Manager {
     /**
      * Creates a new message event manager.
      *
-     * @param con an XMPPConnection to a XMPP server.
+     * @param connection an XMPPConnection to a XMPP server.
      */
     private MessageEventManager(XMPPConnection connection) {
         super(connection);
         // Listens for all message event packets and fire the proper message event listeners.
         connection.addAsyncStanzaListener(new StanzaListener() {
-            public void processPacket(Stanza packet) {
+            @Override
+            public void processStanza(Stanza packet) {
                 Message message = (Message) packet;
-                MessageEvent messageEvent =
-                    (MessageEvent) message.getExtension("x", "jabber:x:event");
+                MessageEvent messageEvent = message.getExtension("x", "jabber:x:event");
                 if (messageEvent.isMessageEventRequest()) {
                     // Fire event for requests of message events
                     for (String eventType : messageEvent.getEventTypes())
@@ -101,7 +103,7 @@ public final class MessageEventManager extends Manager {
 
     /**
      * Adds event notification requests to a message. For each event type that
-     * the user wishes event notifications from the message recepient for, <tt>true</tt>
+     * the user wishes event notifications from the message recipient for, <tt>true</tt>
      * should be passed in to this method.
      * 
      * @param message the message to add the requested notifications.
@@ -111,8 +113,7 @@ public final class MessageEventManager extends Manager {
      * @param composing specifies if the composing event is requested.
      */
     public static void addNotificationsRequests(Message message, boolean offline,
-            boolean delivered, boolean displayed, boolean composing)
-    {
+            boolean delivered, boolean displayed, boolean composing) {
         // Create a MessageEvent Package and add it to the message
         MessageEvent messageEvent = new MessageEvent();
         messageEvent.setOffline(offline);
@@ -174,12 +175,12 @@ public final class MessageEventManager extends Manager {
             Method method =
                 MessageEventRequestListener.class.getDeclaredMethod(
                     methodName,
-                    new Class<?>[] { String.class, String.class, MessageEventManager.class });
+                    new Class<?>[] { Jid.class, String.class, MessageEventManager.class });
             for (MessageEventRequestListener listener : messageEventRequestListeners) {
                 method.invoke(listener, new Object[] { from, packetID, this });
             }
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error while invoking MessageEventRequestListener", e);
+            LOGGER.log(Level.SEVERE, "Error while invoking MessageEventRequestListener's  " + methodName, e);
         }
     }
 
@@ -194,12 +195,12 @@ public final class MessageEventManager extends Manager {
             Method method =
                 MessageEventNotificationListener.class.getDeclaredMethod(
                     methodName,
-                    new Class<?>[] { String.class, String.class });
+                    new Class<?>[] { Jid.class, String.class });
             for (MessageEventNotificationListener listener : messageEventNotificationListeners) {
                 method.invoke(listener, new Object[] { from, packetID });
             }
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error while invoking MessageEventNotificationListener", e);
+            LOGGER.log(Level.SEVERE, "Error while invoking MessageEventNotificationListener's " + methodName, e);
         }
     }
 

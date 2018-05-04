@@ -20,6 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.jivesoftware.smack.packet.IQ;
+
 import org.jivesoftware.smackx.jingleold.packet.Jingle;
 
 /**
@@ -41,23 +42,26 @@ public class JingleSessionStatePending extends JingleSessionState {
      *  A thread-safe means of getting the one instance of this class.
      *  @return The singleton instance of this class.
      */
-    public synchronized static JingleSessionState getInstance() {
+    public static synchronized JingleSessionState getInstance() {
         if (INSTANCE == null) {
             INSTANCE = new JingleSessionStatePending();
         }
         return INSTANCE;
     }
 
+    @Override
     public void enter() {
         // TODO Auto-generated method stub
 
     }
 
+    @Override
     public void exit() {
         // TODO Auto-generated method stub
 
     }
 
+    @Override
     public IQ processJingle(JingleSession session, Jingle jingle, JingleActionEnum action) {
         IQ response = null;
 
@@ -89,7 +93,7 @@ public class JingleSessionStatePending extends JingleSessionState {
 
             default:
                 // Anything other action is an error.
-                //response = createJingleError(inJingle, JingleError.OUT_OF_ORDER);
+                // response = createJingleError(inJingle, JingleError.OUT_OF_ORDER);
                 break;
         }
 
@@ -102,8 +106,8 @@ public class JingleSessionStatePending extends JingleSessionState {
     private IQ receiveContentAcceptAction(Jingle inJingle) {
 
         // According to XEP-167 the only thing we can do is ack.
-        //setSessionState(JingleSessionStateEnum.ACTIVE);
-        //return createAck(inJingle);
+        // setSessionState(JingleSessionStateEnum.ACTIVE);
+        // return createAck(inJingle);
 
         // This is now handled by the media negotiator for the matching <content> segment.
         return null;

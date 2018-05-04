@@ -19,19 +19,22 @@ package org.jivesoftware.smackx.debugger.slf4j;
 
 import org.jivesoftware.smack.util.ReaderListener;
 import org.jivesoftware.smack.util.WriterListener;
+
 import org.slf4j.Logger;
 
 class SLF4JRawXmlListener implements ReaderListener, WriterListener {
     private final Logger logger;
 
-    public SLF4JRawXmlListener(Logger logger) {
+    SLF4JRawXmlListener(Logger logger) {
         this.logger = Validate.notNull(logger);
     }
 
+    @Override
     public void read(String str) {
         logger.debug("{}: {}", SLF4JSmackDebugger.RECEIVED_TAG, str);
     }
 
+    @Override
     public void write(String str) {
         logger.debug("{}: {}", SLF4JSmackDebugger.SENT_TAG, str);
     }

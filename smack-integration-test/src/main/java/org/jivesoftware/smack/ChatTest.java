@@ -17,27 +17,24 @@
 
 package org.jivesoftware.smack;
 
+import static org.jivesoftware.smackx.jiveproperties.JivePropertiesManager.addProperty;
+import static org.jivesoftware.smackx.jiveproperties.JivePropertiesManager.getProperty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.jivesoftware.smackx.jiveproperties.JivePropertiesManager.addProperty;
-import static org.jivesoftware.smackx.jiveproperties.JivePropertiesManager.getProperty;
 
 import java.util.Date;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.igniterealtime.smack.inttest.AbstractSmackIntegrationTest;
-import org.igniterealtime.smack.inttest.SmackIntegrationTest;
-import org.igniterealtime.smack.inttest.SmackIntegrationTestEnvironment;
-import org.jivesoftware.smack.SmackException.NotConnectedException;
-import org.jivesoftware.smack.chat.Chat;
-import org.jivesoftware.smack.chat.ChatManager;
 import org.jivesoftware.smack.chat.ChatManagerListener;
 import org.jivesoftware.smack.filter.ThreadFilter;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smackx.jiveproperties.JivePropertiesManager;
-import org.jxmpp.stringprep.XmppStringprepException;
+
+import org.igniterealtime.smack.inttest.AbstractSmackIntegrationTest;
+import org.igniterealtime.smack.inttest.SmackIntegrationTest;
+import org.igniterealtime.smack.inttest.SmackIntegrationTestEnvironment;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 
 /**
  * Tests for Chat Manager and for Chat Manager Listener.
@@ -46,28 +43,31 @@ import org.jxmpp.stringprep.XmppStringprepException;
  */
 public class ChatTest extends AbstractSmackIntegrationTest {
 
-    private final ChatManager chatManagerOne;
+    @SuppressWarnings("deprecation")
+    private final org.jivesoftware.smack.chat.ChatManager chatManagerOne;
     private boolean invoked;
 
+    @SuppressWarnings("deprecation")
     public ChatTest(SmackIntegrationTestEnvironment environment) {
         super(environment);
-        chatManagerOne = ChatManager.getInstanceFor(conOne);
+        chatManagerOne = org.jivesoftware.smack.chat.ChatManager.getInstanceFor(conOne);
     }
 
     @BeforeClass
-    public static void setUp() {
+    public void setUp() {
         JivePropertiesManager.setJavaObjectEnabled(true);
     }
 
     @AfterClass
-    public static void tearDown() {
+    public void tearDown() {
         JivePropertiesManager.setJavaObjectEnabled(false);
     }
 
+    @SuppressWarnings("deprecation")
     @SmackIntegrationTest
-    public void testProperties() throws XmppStringprepException, NotConnectedException, Exception {
-        Chat newChat = chatManagerOne.createChat(conTwo.getUser());
-        PacketCollector collector = conTwo.createPacketCollector(new ThreadFilter(newChat.getThreadID()));
+    public void testProperties() throws Exception {
+        org.jivesoftware.smack.chat.Chat newChat = chatManagerOne.createChat(conTwo.getUser());
+        StanzaCollector collector = conTwo.createStanzaCollector(new ThreadFilter(newChat.getThreadID()));
 
         Message msg = new Message();
 
@@ -82,7 +82,7 @@ public class ChatTest extends AbstractSmackIntegrationTest {
 
         newChat.sendMessage(msg);
 
-        Message msg2 = (Message) collector.nextResult(2000);
+        Message msg2 = collector.nextResult(2000);
         assertNotNull("No message was received", msg2);
         assertEquals("Subjects are different", msg.getSubject(), msg2.getSubject());
         assertEquals("Bodies are different", msg.getBody(), msg2.getBody());
@@ -112,12 +112,13 @@ public class ChatTest extends AbstractSmackIntegrationTest {
                getProperty(msg2, "birthdate"));
     }
 
+    @SuppressWarnings("deprecation")
     @SmackIntegrationTest
     public void chatManagerTest() {
         ChatManagerListener listener = new ChatManagerListener() {
 
             @Override
-            public void chatCreated(Chat chat, boolean createdLocally) {
+            public void chatCreated(org.jivesoftware.smack.chat.Chat chat, boolean createdLocally) {
                 invoked = true;
             }
 

@@ -46,8 +46,8 @@ import java.util.Set;
  */
 public class DefaultPrivateData implements PrivateData {
 
-    private String elementName;
-    private String namespace;
+    private final String elementName;
+    private final String namespace;
     private Map<String, String> map;
 
     /**
@@ -64,8 +64,9 @@ public class DefaultPrivateData implements PrivateData {
      /**
      * Returns the XML element name of the private data sub-packet root element.
      *
-     * @return the XML element name of the stanza(/packet) extension.
+     * @return the XML element name of the stanza extension.
      */
+    @Override
     public String getElementName() {
         return elementName;
     }
@@ -73,12 +74,14 @@ public class DefaultPrivateData implements PrivateData {
     /**
      * Returns the XML namespace of the private data sub-packet root element.
      *
-     * @return the XML namespace of the stanza(/packet) extension.
+     * @return the XML namespace of the stanza extension.
      */
+    @Override
     public String getNamespace() {
         return namespace;
     }
 
+    @Override
     public String toXML() {
         StringBuilder buf = new StringBuilder();
         buf.append('<').append(elementName).append(" xmlns=\"").append(namespace).append("\">");
@@ -100,7 +103,7 @@ public class DefaultPrivateData implements PrivateData {
      */
     public synchronized Set<String> getNames() {
         if (map == null) {
-            return Collections.<String>emptySet();
+            return Collections.emptySet();
         }
         return Collections.unmodifiableSet(map.keySet());
     }
@@ -126,7 +129,7 @@ public class DefaultPrivateData implements PrivateData {
      */
     public synchronized void setValue(String name, String value) {
         if (map == null) {
-            map = new HashMap<String,String>();
+            map = new HashMap<>();
         }
         map.put(name, value);
     }

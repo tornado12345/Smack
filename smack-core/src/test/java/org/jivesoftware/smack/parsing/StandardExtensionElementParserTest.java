@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2015 Florian Schmaus.
+ * Copyright 2015-2017 Florian Schmaus.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 
 import org.jivesoftware.smack.packet.StandardExtensionElement;
 import org.jivesoftware.smack.packet.StandardExtensionElement.Builder;
+
 import org.junit.Test;
 
 public class StandardExtensionElementParserTest {
@@ -31,7 +32,7 @@ public class StandardExtensionElementParserTest {
         builder.addAttribute("attr1", "attr1-value");
         builder.addElement(StandardExtensionElement.builder("bar", "ns2").addAttribute("attr2", "attr2-value").build());
         builder.addElement("another-element", "another-element-text");
-        final String elementString = builder.build().toXML().toString();
+        final String elementString = builder.build().toXML(null).toString();
 
         StandardExtensionElement parsedElement = StandardExtensionElementProvider.INSTANCE.parse(getParserFor(elementString));
 
@@ -45,6 +46,9 @@ public class StandardExtensionElementParserTest {
         assertEquals("attr2-value", barNs2Element.getAttributeValue("attr2"));
 
         assertEquals("another-element-text", parsedElement.getFirstElement("another-element").getText());
+
+        String parsedElementString = parsedElement.toXML(null).toString();
+        assertEquals(elementString, parsedElementString);
     }
 
     @Test
@@ -52,7 +56,7 @@ public class StandardExtensionElementParserTest {
         Builder builder = StandardExtensionElement.builder("foo", "ns1-value");
         builder.addAttribute("xmlns:ns2", "ns2-value");
         builder.addAttribute("ns2:bar", "bar-ns2-value");
-        final String elementString = builder.build().toXML().toString();
+        final String elementString = builder.build().toXML(null).toString();
 
         StandardExtensionElement parsedElement = StandardExtensionElementProvider.INSTANCE.parse(getParserFor(elementString));
         assertEquals("foo", parsedElement.getElementName());

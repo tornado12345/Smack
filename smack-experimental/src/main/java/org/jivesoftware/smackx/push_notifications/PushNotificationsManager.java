@@ -29,10 +29,12 @@ import org.jivesoftware.smack.XMPPConnectionRegistry;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.IQ.Type;
+
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.push_notifications.element.DisablePushNotificationsIQ;
 import org.jivesoftware.smackx.push_notifications.element.EnablePushNotificationsIQ;
 import org.jivesoftware.smackx.push_notifications.element.PushNotificationsElements;
+
 import org.jxmpp.jid.Jid;
 
 /**
@@ -78,18 +80,19 @@ public final class PushNotificationsManager extends Manager {
     }
 
     /**
-     * Returns true if Push Notifications is supported by the server.
+     * Returns true if Push Notifications are supported by this account.
      *
-     * @return true if Push Notifications is supported by the server.
+     * @return true if Push Notifications are supported by this account.
      * @throws NoResponseException
      * @throws XMPPErrorException
      * @throws NotConnectedException
      * @throws InterruptedException
+     * @since 4.2.2
      */
-    public boolean isSupportedByServer()
-            throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
-        return ServiceDiscoveryManager.getInstanceFor(connection())
-                .serverSupportsFeature(PushNotificationsElements.NAMESPACE);
+    public boolean isSupported()
+                    throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+        return ServiceDiscoveryManager.getInstanceFor(connection()).accountSupportsFeatures(
+                        PushNotificationsElements.NAMESPACE);
     }
 
     /**
@@ -162,7 +165,7 @@ public final class PushNotificationsManager extends Manager {
     private boolean changePushNotificationsStatus(IQ iq)
             throws NotConnectedException, InterruptedException, NoResponseException, XMPPErrorException {
         final XMPPConnection connection = connection();
-        IQ responseIQ = connection.createPacketCollectorAndSend(iq).nextResultOrThrow();
+        IQ responseIQ = connection.createStanzaCollectorAndSend(iq).nextResultOrThrow();
         return responseIQ.getType() != Type.error;
     }
 

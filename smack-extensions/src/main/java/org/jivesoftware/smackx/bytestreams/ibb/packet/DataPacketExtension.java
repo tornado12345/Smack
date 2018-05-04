@@ -30,9 +30,9 @@ import org.jivesoftware.smack.util.stringencoder.Base64;
 public class DataPacketExtension implements ExtensionElement {
 
     /**
-     * The element name of the data stanza(/packet) extension.
+     * The element name of the data stanza extension.
      */
-    public final static String ELEMENT = "data";
+    public static final String ELEMENT = "data";
 
     /**
      * The XMPP namespace of the In-Band Bytestream.
@@ -54,7 +54,7 @@ public class DataPacketExtension implements ExtensionElement {
      * Creates a new In-Band Bytestream data packet.
      * 
      * @param sessionID unique session ID identifying this In-Band Bytestream
-     * @param seq sequence of this stanza(/packet) in regard to the other data packets
+     * @param seq sequence of this stanza in regard to the other data packets
      * @param data the base64 encoded data contained in this packet
      */
     public DataPacketExtension(String sessionID, long seq, String data) {
@@ -82,9 +82,9 @@ public class DataPacketExtension implements ExtensionElement {
     }
 
     /**
-     * Returns the sequence of this stanza(/packet) in regard to the other data packets.
+     * Returns the sequence of this stanza in regard to the other data packets.
      * 
-     * @return the sequence of this stanza(/packet) in regard to the other data packets.
+     * @return the sequence of this stanza in regard to the other data packets.
      */
     public long getSeq() {
         return seq;
@@ -126,16 +126,18 @@ public class DataPacketExtension implements ExtensionElement {
         return this.decodedData;
     }
 
+    @Override
     public String getElementName() {
         return ELEMENT;
     }
 
+    @Override
     public String getNamespace() {
         return NAMESPACE;
     }
 
     @Override
-    public XmlStringBuilder toXML() {
+    public XmlStringBuilder toXML(String enclosingNamespace) {
         XmlStringBuilder xml = getIQChildElementBuilder(new IQChildElementXmlStringBuilder(this));
         xml.closeElement(this);
         return xml;

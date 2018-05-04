@@ -26,16 +26,18 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
+import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.XMPPException.XMPPErrorException;
+import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.packet.StanzaError;
+
 import org.igniterealtime.smack.inttest.AbstractSmackIntegrationTest;
 import org.igniterealtime.smack.inttest.DummySmackIntegrationTestFramework;
 import org.igniterealtime.smack.inttest.FailedTest;
 import org.igniterealtime.smack.inttest.SmackIntegrationTest;
 import org.igniterealtime.smack.inttest.SmackIntegrationTestEnvironment;
 import org.igniterealtime.smack.inttest.SmackIntegrationTestFramework.TestRunResult;
-import org.jivesoftware.smack.SmackException;
-import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smack.XMPPException.XMPPErrorException;
-import org.jivesoftware.smack.packet.XMPPError;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -83,7 +85,7 @@ public class SmackIntegrationTestFrameworkUnitTest {
         FailedTest failedTest = failedTests.get(0);
         assertTrue(failedTest.failureReason instanceof XMPPErrorException);
         XMPPErrorException ex = (XMPPErrorException) failedTest.failureReason;
-        assertEquals(XMPPError.Condition.bad_request, ex.getXMPPError().getCondition());
+        assertEquals(StanzaError.Condition.bad_request, ex.getXMPPError().getCondition());
         assertEquals(ThrowsNonFatalExceptionDummyTest.DESCRIPTIVE_TEXT, ex.getXMPPError().getDescriptiveText());
     }
 
@@ -97,8 +99,9 @@ public class SmackIntegrationTestFrameworkUnitTest {
 
         @SmackIntegrationTest
         public void throwRuntimeExceptionTest() throws XMPPErrorException {
-            throw new XMPPException.XMPPErrorException(
-                            XMPPError.from(XMPPError.Condition.bad_request, DESCRIPTIVE_TEXT));
+            Message message = new Message();
+            throw new XMPPException.XMPPErrorException(message,
+                            StanzaError.from(StanzaError.Condition.bad_request, DESCRIPTIVE_TEXT).build());
         }
     }
 
@@ -122,12 +125,12 @@ public class SmackIntegrationTestFrameworkUnitTest {
         }
 
         @BeforeClass
-        public static void setUp() {
+        public void setUp() {
             beforeClassInvoked = true;
         }
 
         @AfterClass
-        public static void tearDown() {
+        public void tearDown() {
             afterClassInvoked = true;
         }
 

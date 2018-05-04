@@ -21,34 +21,36 @@ import java.util.logging.Logger;
 
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPException;
+
 import org.jivesoftware.smackx.jingleold.packet.Jingle;
+
 import org.jxmpp.jid.Jid;
 
 /**
  * A Jingle session request.
- * <p/>
+ *
  * This class is a facade of a received Jingle request. The user can have direct
- * access to the Jingle stanza(/packet) (<i>JingleSessionRequest.getJingle() </i>) of
- * the request or can use the convencience methods provided by this class.
+ * access to the Jingle stanza (<i>JingleSessionRequest.getJingle() </i>) of
+ * the request or can use the convenience methods provided by this class.
  *
  * @author Alvaro Saurin
  */
 public class JingleSessionRequest {
 
-	private static final Logger LOGGER = Logger.getLogger(JingleSessionRequest.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(JingleSessionRequest.class.getName());
 
-	private final Jingle jingle; // The Jingle packet
+    private final Jingle jingle; // The Jingle packet
 
     private final JingleManager manager; // The manager associated to this
 
     // request
 
     /**
-     * A recieve request is constructed from the Jingle Initiation request
-     * received from the initator.
+     * A receive request is constructed from the Jingle Initiation request
+     * received from the initiator.
      *
      * @param manager The manager handling this request
-     * @param jingle  The jingle IQ recieved from the initiator.
+     * @param jingle  The jingle IQ received from the initiator.
      */
     public JingleSessionRequest(JingleManager manager, Jingle jingle) {
         this.manager = manager;
@@ -76,7 +78,7 @@ public class JingleSessionRequest {
     }
 
     /**
-     * Returns the Jingle stanza(/packet) that was sent by the requester which contains
+     * Returns the Jingle stanza that was sent by the requester which contains
      * the parameters of the session.
      */
     public Jingle getJingle() {
@@ -105,18 +107,18 @@ public class JingleSessionRequest {
     /**
      * Accepts this request and creates the incoming Jingle session.
      *
-     * @return Returns the <b><i>IncomingJingleSession</b></i> on which the
+     * @return Returns the IncomingJingleSession on which the
      *         negotiation can be carried out.
      * @throws SmackException 
      * @throws InterruptedException 
      */
     public synchronized JingleSession accept() throws XMPPException, SmackException, InterruptedException {
-        JingleSession session = null;
+        JingleSession session;
         synchronized (manager) {
             session = manager.createIncomingJingleSession(this);
             // Acknowledge the IQ reception
             session.setSid(this.getSessionID());
-            //session.sendAck(this.getJingle());
+            // session.sendAck(this.getJingle());
             session.updatePacketListener();
             session.receivePacketAndRespond(this.getJingle());
         }
@@ -127,18 +129,18 @@ public class JingleSessionRequest {
      * Rejects the session request.
      */
     public synchronized void reject() {
-        JingleSession session = null;
+        JingleSession session;
         synchronized (manager) {
             try {
-				session = manager.createIncomingJingleSession(this);
-				// Acknowledge the IQ reception
-				session.setSid(this.getSessionID());
-				//session.sendAck(this.getJingle());
-				session.updatePacketListener();
-				session.terminate("Declined");
-			} catch (Exception e) {
-				LOGGER.log(Level.SEVERE, "Exception in reject", e);
-			}
+                session = manager.createIncomingJingleSession(this);
+                // Acknowledge the IQ reception
+                session.setSid(this.getSessionID());
+                // session.sendAck(this.getJingle());
+                session.updatePacketListener();
+                session.terminate("Declined");
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "Exception in reject", e);
+            }
         }
      }
 }

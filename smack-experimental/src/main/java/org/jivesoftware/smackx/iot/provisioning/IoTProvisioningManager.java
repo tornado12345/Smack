@@ -45,10 +45,11 @@ import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.roster.AbstractPresenceEventListener;
 import org.jivesoftware.smack.roster.Roster;
-import org.jivesoftware.smack.roster.RosterEntry;
 import org.jivesoftware.smack.roster.SubscribeListener;
+
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
+import org.jivesoftware.smackx.iot.IoTManager;
 import org.jivesoftware.smackx.iot.discovery.IoTDiscoveryManager;
 import org.jivesoftware.smackx.iot.provisioning.element.ClearCache;
 import org.jivesoftware.smackx.iot.provisioning.element.ClearCacheResponse;
@@ -57,6 +58,7 @@ import org.jivesoftware.smackx.iot.provisioning.element.Friend;
 import org.jivesoftware.smackx.iot.provisioning.element.IoTIsFriend;
 import org.jivesoftware.smackx.iot.provisioning.element.IoTIsFriendResponse;
 import org.jivesoftware.smackx.iot.provisioning.element.Unfriend;
+
 import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.DomainBareJid;
 import org.jxmpp.jid.Jid;
@@ -82,7 +84,9 @@ public final class IoTProvisioningManager extends Manager {
     // Ensure a IoTProvisioningManager exists for every connection.
     static {
         XMPPConnectionRegistry.addConnectionCreationListener(new ConnectionCreationListener() {
+            @Override
             public void connectionCreated(XMPPConnection connection) {
+                if (!IoTManager.isAutoEnableActive()) return;
                 getInstanceFor(connection);
             }
         });
@@ -121,7 +125,7 @@ public final class IoTProvisioningManager extends Manager {
         // Stanza listener for XEP-0324 § 3.2.3.
         connection.addAsyncStanzaListener(new StanzaListener() {
             @Override
-            public void processPacket(Stanza stanza) throws NotConnectedException, InterruptedException {
+            public void processStanza(Stanza stanza) throws NotConnectedException, InterruptedException {
                 if (!isFromProvisioningService(stanza, true)) {
                     return;
                 }
@@ -147,7 +151,7 @@ public final class IoTProvisioningManager extends Manager {
         // (yet) part of the XEP.
         connection.addAsyncStanzaListener(new StanzaListener() {
             @Override
-            public void processPacket(final Stanza stanza) throws NotConnectedException, InterruptedException {
+            public void processStanza(final Stanza stanza) throws NotConnectedException, InterruptedException {
                 final Message friendMessage = (Message) stanza;
                 final Friend friend = Friend.from(friendMessage);
                 final BareJid friendJid = friend.getFriend();
@@ -157,8 +161,8 @@ public final class IoTProvisioningManager extends Manager {
                     // Notify the recommended friend that we will now accept his
                     // friendship requests.
                     final XMPPConnection connection = connection();
-                    Friend friendNotifiacation = new Friend(connection.getUser().asBareJid());
-                    Message notificationMessage = new Message(friendJid, friendNotifiacation);
+                    Friend friendNotification = new Friend(connection.getUser().asBareJid());
+                    Message notificationMessage = new Message(friendJid, friendNotification);
                     connection.sendStanza(notificationMessage);
                 } else {
                     // Check is the message was send from a thing we previously
@@ -203,7 +207,7 @@ public final class IoTProvisioningManager extends Manager {
 
                                 // Handle <clearCache/> request.
                                 Jid from = iqRequest.getFrom();
-                                LruCache<BareJid, Void> cache = negativeFriendshipRequestCache.get(from);
+                                LruCache<BareJid, Void> cache = negativeFriendshipRequestCache.lookup(from);
                                 if (cache != null) {
                                     cache.clear();
                                 }
@@ -232,7 +236,7 @@ public final class IoTProvisioningManager extends Manager {
                 }
                 catch (NoResponseException | XMPPErrorException | NotConnectedException | InterruptedException e) {
                     LOGGER.log(Level.WARNING,
-                                    "Could not determine privisioning server. Ignoring friend request from " + from, e);
+                                    "Could not determine provisioning server. Ignoring friend request from " + from, e);
                 }
                 if (provisioningServer == null) {
                     return null;
@@ -328,7 +332,7 @@ public final class IoTProvisioningManager extends Manager {
      * @throws InterruptedException
      */
     public boolean isFriend(Jid provisioningServer, BareJid friendInQuestion) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
-        LruCache<BareJid, Void> cache = negativeFriendshipRequestCache.get(provisioningServer);
+        LruCache<BareJid, Void> cache = negativeFriendshipRequestCache.lookup(provisioningServer);
         if (cache != null && cache.containsKey(friendInQuestion)) {
             // We hit a cached negative isFriend response for this provisioning server.
             return false;
@@ -336,7 +340,7 @@ public final class IoTProvisioningManager extends Manager {
 
         IoTIsFriend iotIsFriend = new IoTIsFriend(friendInQuestion);
         iotIsFriend.setTo(provisioningServer);
-        IoTIsFriendResponse response = connection().createPacketCollectorAndSend(iotIsFriend).nextResultOrThrow();
+        IoTIsFriendResponse response = connection().createStanzaCollectorAndSend(iotIsFriend).nextResultOrThrow();
         assert (response.getJid().equals(friendInQuestion));
         boolean isFriend = response.getIsFriendResult();
         if (!isFriend) {
@@ -350,6 +354,10 @@ public final class IoTProvisioningManager extends Manager {
         return isFriend;
     }
 
+    public boolean iAmFriendOf(BareJid otherJid) {
+        return roster.iAmSubscribedTo(otherJid);
+    }
+
     public void sendFriendshipRequest(BareJid bareJid) throws NotConnectedException, InterruptedException {
         Presence presence = new Presence(Presence.Type.subscribe);
         presence.setTo(bareJid);
@@ -360,19 +368,17 @@ public final class IoTProvisioningManager extends Manager {
     }
 
     public void sendFriendshipRequestIfRequired(BareJid jid) throws NotConnectedException, InterruptedException {
-        RosterEntry entry = roster.getEntry(jid);
-        if (entry != null && entry.canSeeHisPresence()) {
-            return;
-        }
+        if (iAmFriendOf(jid)) return;
+
         sendFriendshipRequest(jid);
     }
 
-    public boolean isBefriended(Jid friendInQuestion) {
+    public boolean isMyFriend(Jid friendInQuestion) {
         return roster.isSubscribedToMyPresence(friendInQuestion);
     }
 
     public void unfriend(Jid friend) throws NotConnectedException, InterruptedException {
-        if (isBefriended(friend)) {
+        if (isMyFriend(friend)) {
             Presence presence = new Presence(Presence.Type.unsubscribed);
             presence.setTo(friend);
             connection().sendStanza(presence);
@@ -414,7 +420,7 @@ public final class IoTProvisioningManager extends Manager {
         if (!provisioningServer.equals(stanza.getFrom())) {
             if (log) {
                 LOGGER.warning("Ignoring  request '" + stanza
-                                + "' because not from provising server '" + provisioningServer
+                                + "' because not from provisioning server '" + provisioningServer
                                 + "'.");
             }
             return false;

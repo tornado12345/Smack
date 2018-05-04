@@ -1,6 +1,8 @@
 Group Chat Invitations
 ======================
 
+[Back](index.md)
+
 The group chat invitation extension is used to invite other users to a
 group chat room.
 
@@ -17,8 +19,7 @@ group chat room, address a new message to the user and set the room name
 appropriately, as in the following code example:
 
 ```
-Message message = new Message("user@chat.example.com");
-message.setBody("Join me for a group chat!");
+Message message = new Message("user@chat.example.com", "Join me for a group chat!");
 message.addExtension(new GroupChatInvitation("room@chat.example.com"));
 con.sendStanza(message);
 ```

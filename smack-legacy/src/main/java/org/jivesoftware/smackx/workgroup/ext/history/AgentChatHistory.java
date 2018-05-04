@@ -17,16 +17,18 @@
 
 package org.jivesoftware.smackx.workgroup.ext.history;
 
-import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.provider.IQProvider;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+
+import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smack.provider.IQProvider;
+
+import org.jxmpp.jid.EntityBareJid;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
 
 /**
  * IQ provider used to retrieve individual agent information. Each chat session can be mapped
@@ -35,29 +37,29 @@ import java.util.List;
 public class AgentChatHistory extends IQ {
 
     /**
-     * Element name of the stanza(/packet) extension.
+     * Element name of the stanza extension.
      */
     public static final String ELEMENT_NAME = "chat-sessions";
 
     /**
-     * Namespace of the stanza(/packet) extension.
+     * Namespace of the stanza extension.
      */
     public static final String NAMESPACE = "http://jivesoftware.com/protocol/workgroup";
 
-    private String agentJID;
+    private EntityBareJid agentJID;
     private int maxSessions;
     private long startDate;
 
-    private List<AgentChatSession> agentChatSessions = new ArrayList<AgentChatSession>();
+    private final List<AgentChatSession> agentChatSessions = new ArrayList<>();
 
-    public AgentChatHistory(String agentJID, int maxSessions, Date startDate) {
+    public AgentChatHistory(EntityBareJid agentJID, int maxSessions, Date startDate) {
         this();
         this.agentJID = agentJID;
         this.maxSessions = maxSessions;
         this.startDate = startDate.getTime();
     }
 
-    public AgentChatHistory(String agentJID, int maxSessions) {
+    public AgentChatHistory(EntityBareJid agentJID, int maxSessions) {
         this();
         this.agentJID = agentJID;
         this.maxSessions = maxSessions;
@@ -86,7 +88,7 @@ public class AgentChatHistory extends IQ {
     }
 
     /**
-     * Stanza(/Packet) extension provider for AgentHistory packets.
+     * Stanza extension provider for AgentHistory packets.
      */
     public static class InternalProvider extends IQProvider<AgentChatHistory> {
 

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright © 2014 Florian Schmaus
+ * Copyright © 2014-2018 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,19 @@
 package org.jivesoftware.smack.sm.provider;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.jivesoftware.smack.packet.XMPPError;
+import org.jivesoftware.smack.packet.AbstractTextElement;
+import org.jivesoftware.smack.packet.StanzaError;
+import org.jivesoftware.smack.packet.StanzaErrorTextElement;
 import org.jivesoftware.smack.sm.packet.StreamManagement.AckAnswer;
 import org.jivesoftware.smack.sm.packet.StreamManagement.AckRequest;
 import org.jivesoftware.smack.sm.packet.StreamManagement.Enabled;
 import org.jivesoftware.smack.sm.packet.StreamManagement.Failed;
 import org.jivesoftware.smack.sm.packet.StreamManagement.Resumed;
 import org.jivesoftware.smack.util.ParserUtils;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -44,16 +49,24 @@ public class ParseStreamManagement {
     public static Failed failed(XmlPullParser parser) throws XmlPullParserException, IOException {
         ParserUtils.assertAtStartTag(parser);
         String name;
-        XMPPError.Condition condition = null;
+        StanzaError.Condition condition = null;
+        List<StanzaErrorTextElement> textElements = new ArrayList<>(4);
         outerloop:
-        while(true) {
+        while (true) {
             int event = parser.next();
             switch (event) {
             case XmlPullParser.START_TAG:
                 name = parser.getName();
                 String namespace = parser.getNamespace();
-                if (XMPPError.NAMESPACE.equals(namespace)) {
-                    condition = XMPPError.Condition.fromString(name);
+                if (StanzaError.NAMESPACE.equals(namespace)) {
+                    if (name.equals(AbstractTextElement.ELEMENT)) {
+                        String lang = ParserUtils.getXmlLang(parser);
+                        String text = parser.nextText();
+                        StanzaErrorTextElement stanzaErrorTextElement = new StanzaErrorTextElement(text, lang);
+                        textElements.add(stanzaErrorTextElement);
+                    } else {
+                        condition = StanzaError.Condition.fromString(name);
+                    }
                 }
                 break;
             case XmlPullParser.END_TAG:
@@ -65,7 +78,7 @@ public class ParseStreamManagement {
             }
         }
         ParserUtils.assertAtEndTag(parser);
-        return new Failed(condition);
+        return new Failed(condition, textElements);
     }
 
     public static Resumed resumed(XmlPullParser parser) throws XmlPullParserException, IOException {

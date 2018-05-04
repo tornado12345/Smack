@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2015 Florian Schmaus
+ * Copyright 2015-2017 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,31 +19,58 @@ package org.igniterealtime.smack.inttest;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.logging.Logger;
+
+import javax.net.ssl.SSLContext;
 
 import org.jivesoftware.smack.ConnectionConfiguration.SecurityMode;
 import org.jivesoftware.smack.util.Objects;
 import org.jivesoftware.smack.util.StringUtils;
+
+import eu.geekplace.javapinning.java7.Java7Pinning;
 import org.jxmpp.jid.DomainBareJid;
 import org.jxmpp.jid.impl.JidCreate;
 import org.jxmpp.stringprep.XmppStringprepException;
 
 public final class Configuration {
 
+    private static final Logger LOGGER = Logger.getLogger(Configuration.class.getName());
+
+    public enum AccountRegistration {
+        disabled,
+        inBandRegistration,
+        serviceAdministration,
+    }
+
+    public enum Debugger {
+        none,
+        console,
+        enhanced,
+    }
+
     public final DomainBareJid service;
 
     public final String serviceTlsPin;
+
+    public final SSLContext tlsContext;
 
     public final SecurityMode securityMode;
 
     public final int replyTimeout;
 
-    public final boolean registerAccounts;
+    public final AccountRegistration accountRegistration;
+
+    public final String adminAccountUsername;
+
+    public final String adminAccountPassword;
 
     public final String accountOneUsername;
 
@@ -57,7 +84,7 @@ public final class Configuration {
 
     public final String accountThreePassword;
 
-    public final boolean debug;
+    public final Debugger debugger;
 
     public final Set<String> enabledTests;
 
@@ -66,23 +93,39 @@ public final class Configuration {
     public final Set<String> testPackages;
 
     private Configuration(DomainBareJid service, String serviceTlsPin, SecurityMode securityMode, int replyTimeout,
-                    boolean debug, String accountOneUsername, String accountOnePassword, String accountTwoUsername,
+                    Debugger debugger, String accountOneUsername, String accountOnePassword, String accountTwoUsername,
                     String accountTwoPassword, String accountThreeUsername, String accountThreePassword, Set<String> enabledTests, Set<String> disabledTests,
-                    Set<String> testPackages) {
+                    Set<String> testPackages, String adminAccountUsername, String adminAccountPassword)
+                    throws KeyManagementException, NoSuchAlgorithmException {
         this.service = Objects.requireNonNull(service,
                         "'service' must be set. Either via 'properties' files or via system property 'sinttest.service'.");
         this.serviceTlsPin = serviceTlsPin;
+        if (serviceTlsPin != null) {
+            tlsContext = Java7Pinning.forPin(serviceTlsPin);
+        } else {
+            tlsContext = null;
+        }
         this.securityMode = securityMode;
-        this.replyTimeout = replyTimeout;
-        this.debug = debug;
-        if (StringUtils.isNullOrEmpty(accountOneUsername) || StringUtils.isNullOrEmpty(accountOnePassword)
-                        || StringUtils.isNullOrEmpty(accountTwoUsername)
-                        || StringUtils.isNullOrEmpty(accountTwoPassword)) {
-            registerAccounts = true;
+        if (replyTimeout > 0) {
+            this.replyTimeout = replyTimeout;
+        } else {
+            this.replyTimeout = 60000;
+        }
+        this.debugger = debugger;
+        if (StringUtils.isNotEmpty(adminAccountUsername, adminAccountPassword)) {
+            accountRegistration = AccountRegistration.serviceAdministration;
+        }
+        else if (StringUtils.isNotEmpty(accountOneUsername, accountOnePassword, accountTwoUsername, accountTwoPassword,
+                        accountThreeUsername, accountThreePassword)) {
+            accountRegistration = AccountRegistration.disabled;
         }
         else {
-            registerAccounts = false;
+            accountRegistration = AccountRegistration.inBandRegistration;
         }
+
+        this.adminAccountUsername = adminAccountUsername;
+        this.adminAccountPassword = adminAccountPassword;
+
         this.accountOneUsername = accountOneUsername;
         this.accountOnePassword = accountOnePassword;
         this.accountTwoUsername = accountTwoUsername;
@@ -92,6 +135,10 @@ public final class Configuration {
         this.enabledTests = enabledTests;
         this.disabledTests = disabledTests;
         this.testPackages = testPackages;
+    }
+
+    public boolean isAccountRegistrationPossible() {
+        return accountRegistration != AccountRegistration.disabled;
     }
 
     public static Builder builder() {
@@ -108,6 +155,10 @@ public final class Configuration {
 
         private int replyTimeout;
 
+        private String adminAccountUsername;
+
+        private String adminAccountPassword;
+
         private String accountOneUsername;
 
         private String accountOnePassword;
@@ -120,7 +171,7 @@ public final class Configuration {
 
         public String accountThreePassword;
 
-        private boolean debug;
+        private Debugger debugger = Debugger.none;
 
         private Set<String> enabledTests;
 
@@ -154,11 +205,21 @@ public final class Configuration {
             return addTestPackage(enabledTest.getPackage().getName());
         }
 
-        public Builder addTestPackage(String testPackage) {
+        private void ensureTestPackagesIsSet(int length) {
             if (testPackages == null) {
-                testPackages = new HashSet<>();
+                testPackages = new HashSet<>(length);
             }
+        }
+
+        public Builder addTestPackage(String testPackage) {
+            ensureTestPackagesIsSet(4);
             testPackages.add(testPackage);
+            return this;
+        }
+
+        public Builder setAdminAccountUsernameAndPassword(String adminAccountUsername, String adminAccountPassword) {
+            this.adminAccountUsername = StringUtils.requireNotNullOrEmpty(adminAccountUsername, "adminAccountUsername must not be null or empty");
+            this.adminAccountPassword = StringUtils.requireNotNullOrEmpty(adminAccountPassword, "adminAccountPassword must no be null or empty");
             return this;
         }
 
@@ -195,9 +256,27 @@ public final class Configuration {
             return this;
         }
 
-        public Builder setDebug(String debugString) {
-            if (debugString != null) {
-                debug = Boolean.valueOf(debugString);
+        @SuppressWarnings("fallthrough")
+        public Builder setDebugger(String debuggerString) {
+            if (debuggerString == null) {
+                return this;
+            }
+            switch (debuggerString) {
+            case "false": // For backwards compatibility settings with previous boolean setting.
+                LOGGER.warning("Debug string \"" + debuggerString + "\" is deprecated, please use \"none\" instead");
+            case "none":
+                debugger = Debugger.none;
+                break;
+            case "true": // For backwards compatibility settings with previous boolean setting.
+                LOGGER.warning("Debug string \"" + debuggerString + "\" is deprecated, please use \"console\" instead");
+            case "console":
+                debugger = Debugger.console;
+                break;
+            case "enhanced":
+                debugger = Debugger.enhanced;
+                break;
+            default:
+                throw new IllegalArgumentException("Unrecognized debugger string: " + debuggerString);
             }
             return this;
         }
@@ -212,10 +291,12 @@ public final class Configuration {
             return this;
         }
 
-        public Builder setTestPackages(String testPackagesString) {
+        public Builder addTestPackages(String testPackagesString) {
             if (testPackagesString != null) {
                 String[] testPackagesArray = testPackagesString.split(",");
-                testPackages = new HashSet<>(testPackagesArray.length);
+
+                ensureTestPackagesIsSet(testPackagesArray.length);
+
                 for (String s : testPackagesArray) {
                     testPackages.add(s.trim());
                 }
@@ -223,16 +304,30 @@ public final class Configuration {
             return this;
         }
 
-        public Configuration build() {
-            return new Configuration(service, serviceTlsPin, securityMode, replyTimeout, debug, accountOneUsername,
+        public Builder addTestPackages(String[] testPackagesString) {
+            if (testPackagesString == null) {
+                return this;
+            }
+
+            ensureTestPackagesIsSet(testPackagesString.length);
+
+            for (String testPackage : testPackagesString) {
+                testPackages.add(testPackage);
+            }
+            return this;
+        }
+
+        public Configuration build() throws KeyManagementException, NoSuchAlgorithmException {
+            return new Configuration(service, serviceTlsPin, securityMode, replyTimeout, debugger, accountOneUsername,
                             accountOnePassword, accountTwoUsername, accountTwoPassword, accountThreeUsername, accountThreePassword, enabledTests, disabledTests,
-                            testPackages);
+                            testPackages, adminAccountUsername, adminAccountPassword);
         }
     }
 
     private static final String SINTTEST = "sinttest.";
 
-    public static Configuration newConfiguration() throws IOException {
+    public static Configuration newConfiguration(String[] testPackages)
+                    throws IOException, KeyManagementException, NoSuchAlgorithmException {
         Properties properties = new Properties();
 
         File propertiesFile = findPropertiesFile();
@@ -260,6 +355,12 @@ public final class Configuration {
         builder.setSecurityMode(properties.getProperty("securityMode"));
         builder.setReplyTimeout(properties.getProperty("replyTimeout", "60000"));
 
+        String adminAccountUsername = properties.getProperty("adminAccountUsername");
+        String adminAccountPassword = properties.getProperty("adminAccountPassword");
+        if (StringUtils.isNotEmpty(adminAccountUsername, adminAccountPassword)) {
+            builder.setAdminAccountUsernameAndPassword(adminAccountUsername, adminAccountPassword);
+        }
+
         String accountOneUsername = properties.getProperty("accountOneUsername");
         String accountOnePassword = properties.getProperty("accountOnePassword");
         String accountTwoUsername = properties.getProperty("accountTwoUsername");
@@ -272,10 +373,17 @@ public final class Configuration {
                             accountTwoPassword, accountThreeUsername, accountThreePassword);
         }
 
-        builder.setDebug(properties.getProperty("debug"));
+        String debugString = properties.getProperty("debug");
+        if (debugString != null) {
+            LOGGER.warning("Usage of depreacted 'debug' option detected, please use 'debugger' instead");
+            builder.setDebugger(debugString);
+        }
+        builder.setDebugger(properties.getProperty("debugger"));
         builder.setEnabledTests(properties.getProperty("enabledTests"));
         builder.setDisabledTests(properties.getProperty("disabledTests"));
-        builder.setTestPackages(properties.getProperty("testPackages"));
+
+        builder.addTestPackages(properties.getProperty("testPackages"));
+        builder.addTestPackages(testPackages);
 
         return builder.build();
     }

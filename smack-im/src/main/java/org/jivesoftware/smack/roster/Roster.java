@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2003-2007 Jive Software, 2016 Florian Schmaus.
+ * Copyright 2003-2007 Jive Software, 2016-2017 Florian Schmaus.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,38 +34,45 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.jivesoftware.smack.AbstractConnectionListener;
+import org.jivesoftware.smack.AsyncButOrdered;
 import org.jivesoftware.smack.ConnectionCreationListener;
-import org.jivesoftware.smack.ExceptionCallback;
 import org.jivesoftware.smack.Manager;
-import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.SmackException;
-import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.SmackException.FeatureNotSupportedException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.SmackException.NotLoggedInException;
+import org.jivesoftware.smack.SmackFuture;
+import org.jivesoftware.smack.StanzaListener;
+import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPConnectionRegistry;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
+import org.jivesoftware.smack.filter.AndFilter;
 import org.jivesoftware.smack.filter.PresenceTypeFilter;
 import org.jivesoftware.smack.filter.StanzaFilter;
 import org.jivesoftware.smack.filter.StanzaTypeFilter;
+import org.jivesoftware.smack.filter.ToMatchesFilter;
 import org.jivesoftware.smack.iqrequest.AbstractIqRequestHandler;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.IQ.Type;
-import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.packet.Presence;
-import org.jivesoftware.smack.packet.XMPPError.Condition;
+import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.packet.StanzaError.Condition;
 import org.jivesoftware.smack.roster.SubscribeListener.SubscribeAnswer;
 import org.jivesoftware.smack.roster.packet.RosterPacket;
-import org.jivesoftware.smack.roster.packet.RosterVer;
 import org.jivesoftware.smack.roster.packet.RosterPacket.Item;
+import org.jivesoftware.smack.roster.packet.RosterVer;
 import org.jivesoftware.smack.roster.packet.SubscriptionPreApproval;
 import org.jivesoftware.smack.roster.rosterstore.RosterStore;
+import org.jivesoftware.smack.util.ExceptionCallback;
 import org.jivesoftware.smack.util.Objects;
+import org.jivesoftware.smack.util.SuccessCallback;
+
 import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.EntityBareJid;
-import org.jxmpp.jid.Jid;
+import org.jxmpp.jid.EntityFullJid;
 import org.jxmpp.jid.FullJid;
+import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.impl.JidCreate;
 import org.jxmpp.jid.parts.Resourcepart;
 import org.jxmpp.util.cache.LruCache;
@@ -73,14 +80,13 @@ import org.jxmpp.util.cache.LruCache;
 /**
  * Represents a user's roster, which is the collection of users a person receives
  * presence updates for. Roster items are categorized into groups for easier management.
- * <p>
- * Others users may attempt to subscribe to this user using a subscription request. Three
+ *
+ * Other users may attempt to subscribe to this user using a subscription request. Three
  * modes are supported for handling these requests: <ul>
  * <li>{@link SubscriptionMode#accept_all accept_all} -- accept all subscription requests.</li>
  * <li>{@link SubscriptionMode#reject_all reject_all} -- reject all subscription requests.</li>
  * <li>{@link SubscriptionMode#manual manual} -- manually process all subscription requests.</li>
  * </ul>
- * </p>
  *
  * @author Matt Tucker
  * @see #getInstanceFor(XMPPConnection)
@@ -124,13 +130,15 @@ public final class Roster extends Manager {
 
     private static final StanzaFilter PRESENCE_PACKET_FILTER = StanzaTypeFilter.PRESENCE;
 
+    private static final StanzaFilter OUTGOING_USER_UNAVAILABLE_PRESENCE = new AndFilter(PresenceTypeFilter.UNAVAILABLE, ToMatchesFilter.MATCH_NO_TO_SET);
+
     private static boolean rosterLoadedAtLoginDefault = true;
 
     /**
      * The default subscription processing mode to use when a Roster is created. By default
-     * all subscription requests are automatically accepted.
+     * all subscription requests are automatically rejected.
      */
-    private static SubscriptionMode defaultSubscriptionMode = SubscriptionMode.accept_all;
+    private static SubscriptionMode defaultSubscriptionMode = SubscriptionMode.reject_all;
 
     /**
      * The initial maximum size of the map holding presence information of entities without an Roster entry. Currently
@@ -141,7 +149,7 @@ public final class Roster extends Manager {
     private static int defaultNonRosterPresenceMapMaxSize = INITIAL_DEFAULT_NON_ROSTER_PRESENCE_MAP_SIZE;
 
     private RosterStore rosterStore;
-    private final Map<String, RosterGroup> groups = new ConcurrentHashMap<String, RosterGroup>();
+    private final Map<String, RosterGroup> groups = new ConcurrentHashMap<>();
 
     /**
      * Concurrent hash map from JID to its roster entry.
@@ -207,7 +215,7 @@ public final class Roster extends Manager {
      * Returns the default subscription processing mode to use when a new Roster is created. The
      * subscription processing mode dictates what action Smack will take when subscription
      * requests from other users are made. The default subscription mode
-     * is {@link SubscriptionMode#accept_all}.
+     * is {@link SubscriptionMode#reject_all}.
      *
      * @return the default subscription mode to use for new Rosters
      */
@@ -219,13 +227,15 @@ public final class Roster extends Manager {
      * Sets the default subscription processing mode to use when a new Roster is created. The
      * subscription processing mode dictates what action Smack will take when subscription
      * requests from other users are made. The default subscription mode
-     * is {@link SubscriptionMode#accept_all}.
+     * is {@link SubscriptionMode#reject_all}.
      *
      * @param subscriptionMode the default subscription mode to use for new Rosters.
      */
     public static void setDefaultSubscriptionMode(SubscriptionMode subscriptionMode) {
         defaultSubscriptionMode = subscriptionMode;
     }
+
+    private final AsyncButOrdered<BareJid> asyncButOrdered = new AsyncButOrdered<>();
 
     /**
      * Creates a new roster.
@@ -243,9 +253,10 @@ public final class Roster extends Manager {
         connection.addSyncStanzaListener(presencePacketListener, PRESENCE_PACKET_FILTER);
 
         connection.addAsyncStanzaListener(new StanzaListener() {
+            @SuppressWarnings("fallthrough")
             @Override
-            public void processPacket(Stanza stanza) throws NotConnectedException,
-                            InterruptedException {
+            public void processStanza(Stanza stanza) throws NotConnectedException,
+                            InterruptedException, NotLoggedInException {
                 Presence presence = (Presence) stanza;
                 Jid from = presence.getFrom();
                 SubscribeAnswer subscribeAnswer = null;
@@ -271,13 +282,26 @@ public final class Roster extends Manager {
                     break;
                 }
 
+                if (subscribeAnswer == null) {
+                    return;
+                }
+
                 Presence response;
-                if (subscribeAnswer == SubscribeAnswer.Approve) {
+                switch (subscribeAnswer) {
+                case ApproveAndAlsoRequestIfRequired:
+                    BareJid bareFrom = from.asBareJid();
+                    RosterUtil.askForSubscriptionIfRequired(Roster.this, bareFrom);
+                    // The fall through is intended.
+                case Approve:
                     response = new Presence(Presence.Type.subscribed);
-                }
-                else {
+                    break;
+                case Deny:
                     response = new Presence(Presence.Type.unsubscribed);
+                    break;
+                default:
+                    throw new AssertionError();
                 }
+
                 response.setTo(presence.getFrom());
                 connection.sendStanza(response);
             }
@@ -315,6 +339,19 @@ public final class Roster extends Manager {
             }
 
         });
+
+        connection.addStanzaSendingListener(new StanzaListener() {
+            @Override
+            public void processStanza(Stanza stanzav) throws NotConnectedException, InterruptedException {
+                // Once we send an unavailable presence, the server is allowed to suppress sending presence status
+                // information to us as optimization (RFC 6121 § 4.4.2). Thus XMPP clients which are unavailable, should
+                // consider the presence information of their contacts as not up-to-date. We make the user obvious of
+                // this situation by setting the presences of all contacts to unavailable (while keeping the roster
+                // state).
+                setOfflinePresences();
+            }
+        }, OUTGOING_USER_UNAVAILABLE_PRESENCE);
+
         // If the connection is already established, call reload
         if (connection.isAuthenticated()) {
             try {
@@ -324,6 +361,7 @@ public final class Roster extends Manager {
                 LOGGER.log(Level.SEVERE, "Could not reload Roster", e);
             }
         }
+
     }
 
     /**
@@ -335,7 +373,7 @@ public final class Roster extends Manager {
     private Map<Resourcepart, Presence> getPresencesInternal(BareJid entity) {
         Map<Resourcepart, Presence> entityPresences = presenceMap.get(entity);
         if (entityPresences == null) {
-            entityPresences = nonRosterPresenceMap.get(entity);
+            entityPresences = nonRosterPresenceMap.lookup(entity);
         }
         return entityPresences;
     }
@@ -349,12 +387,14 @@ public final class Roster extends Manager {
     private synchronized Map<Resourcepart, Presence> getOrCreatePresencesInternal(BareJid entity) {
         Map<Resourcepart, Presence> entityPresences = getPresencesInternal(entity);
         if (entityPresences == null) {
-            entityPresences = new ConcurrentHashMap<>();
             if (contains(entity)) {
+                entityPresences = new ConcurrentHashMap<>();
                 presenceMap.put(entity, entityPresences);
             }
             else {
-                nonRosterPresenceMap.put(entity, entityPresences);
+                LruCache<Resourcepart, Presence> nonRosterEntityPresences = new LruCache<>(32);
+                nonRosterPresenceMap.put(entity, nonRosterEntityPresences);
+                entityPresences = nonRosterEntityPresences;
             }
         }
         return entityPresences;
@@ -363,7 +403,7 @@ public final class Roster extends Manager {
     /**
      * Returns the subscription processing mode, which dictates what action
      * Smack will take when subscription requests from other users are made.
-     * The default subscription mode is {@link SubscriptionMode#accept_all}.
+     * The default subscription mode is {@link SubscriptionMode#reject_all}.
      * <p>
      * If using the manual mode, a PacketListener should be registered that
      * listens for Presence packets that have a type of
@@ -379,7 +419,7 @@ public final class Roster extends Manager {
     /**
      * Sets the subscription processing mode, which dictates what action
      * Smack will take when subscription requests from other users are made.
-     * The default subscription mode is {@link SubscriptionMode#accept_all}.
+     * The default subscription mode is {@link SubscriptionMode#reject_all}.
      * <p>
      * If using the manual mode, a PacketListener should be registered that
      * listens for Presence packets that have a type of
@@ -400,7 +440,7 @@ public final class Roster extends Manager {
      * @throws NotConnectedException 
      * @throws InterruptedException 
      */
-    public void reload() throws NotLoggedInException, NotConnectedException, InterruptedException{
+    public void reload() throws NotLoggedInException, NotConnectedException, InterruptedException {
         final XMPPConnection connection = getAuthenticatedConnectionOrThrow();
 
         RosterPacket packet = new RosterPacket();
@@ -408,7 +448,11 @@ public final class Roster extends Manager {
             packet.setVersion(rosterStore.getRosterVersion());
         }
         rosterState = RosterState.loading;
-        connection.sendIqWithResponseCallback(packet, new RosterResultListener(), new ExceptionCallback() {
+
+        SmackFuture<IQ, Exception> future = connection.sendIqRequestAsync(packet);
+
+        future.onSuccess(new RosterResultListener()).onError(new ExceptionCallback<Exception>() {
+
             @Override
             public void processException(Exception exception) {
                 rosterState = RosterState.uninitialized;
@@ -418,11 +462,12 @@ public final class Roster extends Manager {
                 } else {
                     logLevel = Level.SEVERE;
                 }
-                LOGGER.log(logLevel, "Exception reloading roster" , exception);
+                LOGGER.log(logLevel, "Exception reloading roster", exception);
                 for (RosterLoadedListener listener : rosterLoadedListeners) {
                     listener.onRosterLoadingFailed(exception);
                 }
             }
+
         });
     }
 
@@ -459,7 +504,7 @@ public final class Roster extends Manager {
     }
 
     protected boolean waitUntilLoaded() throws InterruptedException {
-        long waitTime = connection().getPacketReplyTimeout();
+        long waitTime = connection().getReplyTimeout();
         long start = System.currentTimeMillis();
         while (!isLoaded()) {
             if (waitTime <= 0) {
@@ -600,7 +645,7 @@ public final class Roster extends Manager {
             }
         }
         rosterPacket.addRosterItem(item);
-        connection.createPacketCollectorAndSend(rosterPacket).nextResultOrThrow();
+        connection.createStanzaCollectorAndSend(rosterPacket).nextResultOrThrow();
 
         sendSubscriptionRequest(user);
     }
@@ -720,7 +765,7 @@ public final class Roster extends Manager {
         final XMPPConnection connection = getAuthenticatedConnectionOrThrow();
 
         // Only remove the entry if it's in the entry list.
-        // The actual removal logic takes place in RosterPacketListenerprocess>>Packet(Packet)
+        // The actual removal logic takes place in RosterPacketListenerProcess>>Packet(Packet)
         if (!entries.containsKey(entry.getJid())) {
             return;
         }
@@ -730,7 +775,7 @@ public final class Roster extends Manager {
         // Set the item type as REMOVE so that the server will delete the entry
         item.setItemType(RosterPacket.ItemType.remove);
         packet.addRosterItem(item);
-        connection.createPacketCollectorAndSend(packet).nextResultOrThrow();
+        connection.createStanzaCollectorAndSend(packet).nextResultOrThrow();
     }
 
     /**
@@ -747,7 +792,7 @@ public final class Roster extends Manager {
      * <p>
      * The method guarantees that the listener is only invoked after
      * {@link RosterEntries#rosterEntries(Collection)} has been invoked, and that all roster events
-     * that happen while <code>rosterEntires(Collection) </code> is called are queued until the
+     * that happen while <code>rosterEntries(Collection) </code> is called are queued until the
      * method returns.
      * </p>
      * <p>
@@ -1044,7 +1089,7 @@ public final class Roster extends Manager {
             res = Arrays.asList(presence);
         }
         else {
-            List<Presence> answer = new ArrayList<Presence>();
+            List<Presence> answer = new ArrayList<>();
             // Used in case no available presence is found
             Presence unavailable = null;
             for (Presence presence : userPresences.values()) {
@@ -1100,6 +1145,25 @@ public final class Roster extends Manager {
     }
 
     /**
+     * Check if the XMPP entity this roster belongs to is subscribed to the presence of the given JID.
+     *
+     * @param jid the jid to check.
+     * @return <code>true</code> if we are subscribed to the presence of the given jid.
+     * @since 4.2
+     */
+    public boolean iAmSubscribedTo(Jid jid) {
+        if (jid == null) {
+            return false;
+        }
+        BareJid bareJid = jid.asBareJid();
+        RosterEntry entry = getEntry(bareJid);
+        if (entry == null) {
+            return false;
+        }
+        return entry.canSeeHisPresence();
+    }
+
+    /**
      * Sets if the roster will be loaded from the server when logging in for newly created instances
      * of {@link Roster}.
      *
@@ -1140,11 +1204,9 @@ public final class Roster extends Manager {
 
     /**
      * Changes the presence of available contacts offline by simulating an unavailable
-     * presence sent from the server. After a disconnection, every Presence is set
-     * to offline.
-     * @throws NotConnectedException 
+     * presence sent from the server.
      */
-    private void setOfflinePresencesAndResetLoaded() {
+    private void setOfflinePresences() {
         Presence packetUnavailable;
         outerloop: for (Jid user : presenceMap.keySet()) {
             Map<Resourcepart, Presence> resources = presenceMap.get(user);
@@ -1158,11 +1220,11 @@ public final class Roster extends Manager {
                     }
                     packetUnavailable.setFrom(JidCreate.fullFrom(bareUserJid, resource));
                     try {
-                        presencePacketListener.processPacket(packetUnavailable);
+                        presencePacketListener.processStanza(packetUnavailable);
                     }
                     catch (NotConnectedException e) {
                         throw new IllegalStateException(
-                                        "presencePakcetListener should never throw a NotConnectedException when processPacket is called with a presence of type unavailable",
+                                        "presencePacketListener should never throw a NotConnectedException when processStanza is called with a presence of type unavailable",
                                         e);
                     }
                     catch (InterruptedException e) {
@@ -1171,6 +1233,15 @@ public final class Roster extends Manager {
                 }
             }
         }
+    }
+
+    /**
+     * Changes the presence of available contacts offline by simulating an unavailable
+     * presence sent from the server. After a disconnection, every Presence is set
+     * to offline.
+     */
+    private void setOfflinePresencesAndResetLoaded() {
+        setOfflinePresences();
         rosterState = RosterState.uninitialized;
     }
 
@@ -1245,7 +1316,7 @@ public final class Roster extends Manager {
         }
 
         // Add the entry/user to the groups
-        List<String> newGroupNames = new ArrayList<String>();
+        List<String> newGroupNames = new ArrayList<>();
         for (String groupName : item.getGroupNames()) {
             // Add the group name to the list.
             newGroupNames.add(groupName);
@@ -1261,8 +1332,8 @@ public final class Roster extends Manager {
         }
 
         // Remove user from the remaining groups.
-        List<String> oldGroupNames = new ArrayList<String>();
-        for (RosterGroup group: getGroups()) {
+        List<String> oldGroupNames = new ArrayList<>();
+        for (RosterGroup group : getGroups()) {
             oldGroupNames.add(group.getName());
         }
         oldGroupNames.removeAll(newGroupNames);
@@ -1284,7 +1355,7 @@ public final class Roster extends Manager {
         move(user, presenceMap, nonRosterPresenceMap);
         deletedEntries.add(user);
 
-        for (Entry<String,RosterGroup> e: groups.entrySet()) {
+        for (Entry<String,RosterGroup> e : groups.entrySet()) {
             RosterGroup group = e.getValue();
             group.removeEntryLocal(entry);
             if (group.getEntryCount() == 0) {
@@ -1356,14 +1427,14 @@ public final class Roster extends Manager {
     public enum SubscriptionMode {
 
         /**
-         * Automatically accept all subscription and unsubscription requests. This is
-         * the default mode and is suitable for simple client. More complex client will
+         * Automatically accept all subscription and unsubscription requests.
+         * This is suitable for simple clients. More complex clients will
          * likely wish to handle subscription requests manually.
          */
         accept_all,
 
         /**
-         * Automatically reject all subscription requests.
+         * Automatically reject all subscription requests. This is the default mode.
          */
         reject_all,
 
@@ -1382,7 +1453,7 @@ public final class Roster extends Manager {
     private class PresencePacketListener implements StanzaListener {
 
         @Override
-        public void processPacket(Stanza packet) throws NotConnectedException, InterruptedException {
+        public void processStanza(Stanza packet) throws NotConnectedException, InterruptedException {
             // Try to ensure that the roster is loaded when processing presence stanzas. While the
             // presence listener is synchronous, the roster result listener is not, which means that
             // the presence listener may be invoked with a not yet loaded roster.
@@ -1398,133 +1469,137 @@ public final class Roster extends Manager {
             if (!isLoaded() && rosterLoadedAtLogin) {
                 LOGGER.warning("Roster not loaded while processing " + packet);
             }
-            Presence presence = (Presence) packet;
-            Jid from = presence.getFrom();
-            Resourcepart fromResource = Resourcepart.EMPTY;
-            BareJid bareFrom = null;
-            FullJid fullFrom = null;
-            if (from != null) {
-                fromResource = from.getResourceOrNull();
-                if (fromResource == null) {
-                    fromResource = Resourcepart.EMPTY;
-                    bareFrom = from.asBareJid();
-                }
-                else {
-                    fullFrom = from.asFullJidIfPossible();
-                    // We know that this must be a full JID in this case.
-                    assert (fullFrom != null);
-                }
-            }
+            final Presence presence = (Presence) packet;
+            final Jid from = presence.getFrom();
 
-            BareJid key = from != null ? from.asBareJid() : null;
-            Map<Resourcepart, Presence> userPresences;
+            final BareJid key = from != null ? from.asBareJid() : null;
 
-            // If an "available" presence, add it to the presence map. Each presence
-            // map will hold for a particular user a map with the presence
-            // packets saved for each resource.
-            switch (presence.getType()) {
-            case available:
-                // Get the user presence map
-                userPresences = getOrCreatePresencesInternal(key);
-                // See if an offline presence was being stored in the map. If so, remove
-                // it since we now have an online presence.
-                userPresences.remove(Resourcepart.EMPTY);
-                // Add the new presence, using the resources as a key.
-                userPresences.put(fromResource, presence);
-                // If the user is in the roster, fire an event.
-                if (contains(key)) {
-                    fireRosterPresenceEvent(presence);
-                }
-                for (PresenceEventListener presenceEventListener : presenceEventListeners) {
-                    presenceEventListener.presenceAvailable(fullFrom, presence);
-                }
-                break;
-            // If an "unavailable" packet.
-            case unavailable:
-                // If no resource, this is likely an offline presence as part of
-                // a roster presence flood. In that case, we store it.
-                if (from.hasNoResource()) {
-                    // Get the user presence map
-                    userPresences = getOrCreatePresencesInternal(key);
-                    userPresences.put(Resourcepart.EMPTY, presence);
-                }
-                // Otherwise, this is a normal offline presence.
-                else if (presenceMap.get(key) != null) {
-                    userPresences = presenceMap.get(key);
-                    // Store the offline presence, as it may include extra information
-                    // such as the user being on vacation.
-                    userPresences.put(fromResource, presence);
-                }
-                // If the user is in the roster, fire an event.
-                if (contains(key)) {
-                    fireRosterPresenceEvent(presence);
-                }
-
-                // Ensure that 'from' is a full JID before invoking the presence unavailable
-                // listeners. Usually unavailable presences always have a resourcepart, i.e. are
-                // full JIDs, but RFC 6121 § 4.5.4 has an implementation note that unavailable
-                // presences from a bare JID SHOULD be treated as applying to all resources. I don't
-                // think any client or server ever implemented that, I do think that this
-                // implementation note is a terrible idea since it adds another corner case in
-                // client code, instead of just having the invariant
-                // "unavailable presences are always from the full JID".
-                if (fullFrom != null) {
-                    for (PresenceEventListener presenceEventListener : presenceEventListeners) {
-                        presenceEventListener.presenceUnavailable(fullFrom, presence);
+            asyncButOrdered.performAsyncButOrdered(key, new Runnable() {
+                @Override
+                public void run() {
+                    Resourcepart fromResource = Resourcepart.EMPTY;
+                    BareJid bareFrom = null;
+                    FullJid fullFrom = null;
+                    if (from != null) {
+                        fromResource = from.getResourceOrNull();
+                        if (fromResource == null) {
+                            fromResource = Resourcepart.EMPTY;
+                            bareFrom = from.asBareJid();
+                        }
+                        else {
+                            fullFrom = from.asFullJidIfPossible();
+                            // We know that this must be a full JID in this case.
+                            assert (fullFrom != null);
+                        }
                     }
-                } else {
-                    LOGGER.fine("Unavailable presence from bare JID: " + presence);
-                }
+                    Map<Resourcepart, Presence> userPresences;
+                    // If an "available" presence, add it to the presence map. Each presence
+                    // map will hold for a particular user a map with the presence
+                    // packets saved for each resource.
+                    switch (presence.getType()) {
+                    case available:
+                        // Get the user presence map
+                        userPresences = getOrCreatePresencesInternal(key);
+                        // See if an offline presence was being stored in the map. If so, remove
+                        // it since we now have an online presence.
+                        userPresences.remove(Resourcepart.EMPTY);
+                        // Add the new presence, using the resources as a key.
+                        userPresences.put(fromResource, presence);
+                        // If the user is in the roster, fire an event.
+                        if (contains(key)) {
+                            fireRosterPresenceEvent(presence);
+                        }
+                        for (PresenceEventListener presenceEventListener : presenceEventListeners) {
+                            presenceEventListener.presenceAvailable(fullFrom, presence);
+                        }
+                        break;
+                    // If an "unavailable" packet.
+                    case unavailable:
+                        // If no resource, this is likely an offline presence as part of
+                        // a roster presence flood. In that case, we store it.
+                        userPresences = getOrCreatePresencesInternal(key);
+                        if (from.hasNoResource()) {
+                            // Get the user presence map
+                            userPresences.put(Resourcepart.EMPTY, presence);
+                        }
+                        // Otherwise, this is a normal offline presence.
+                        else {
+                            // Store the offline presence, as it may include extra information
+                            // such as the user being on vacation.
+                            userPresences.put(fromResource, presence);
+                        }
+                        // If the user is in the roster, fire an event.
+                        if (contains(key)) {
+                            fireRosterPresenceEvent(presence);
+                        }
 
-                break;
-            // Error presence packets from a bare JID mean we invalidate all existing
-            // presence info for the user.
-            case error:
-                // No need to act on error presences send without from, i.e.
-                // directly send from the users XMPP service, or where the from
-                // address is not a bare JID
-                if (from == null || !from.isEntityBareJid()) {
-                    break;
-                }
-                userPresences = getOrCreatePresencesInternal(key);
-                // Any other presence data is invalidated by the error packet.
-                userPresences.clear();
+                        // Ensure that 'from' is a full JID before invoking the presence unavailable
+                        // listeners. Usually unavailable presences always have a resourcepart, i.e. are
+                        // full JIDs, but RFC 6121 § 4.5.4 has an implementation note that unavailable
+                        // presences from a bare JID SHOULD be treated as applying to all resources. I don't
+                        // think any client or server ever implemented that, I do think that this
+                        // implementation note is a terrible idea since it adds another corner case in
+                        // client code, instead of just having the invariant
+                        // "unavailable presences are always from the full JID".
+                        if (fullFrom != null) {
+                            for (PresenceEventListener presenceEventListener : presenceEventListeners) {
+                                presenceEventListener.presenceUnavailable(fullFrom, presence);
+                            }
+                        } else {
+                            LOGGER.fine("Unavailable presence from bare JID: " + presence);
+                        }
 
-                // Set the new presence using the empty resource as a key.
-                userPresences.put(Resourcepart.EMPTY, presence);
-                // If the user is in the roster, fire an event.
-                if (contains(key)) {
-                    fireRosterPresenceEvent(presence);
+                        break;
+                    // Error presence packets from a bare JID mean we invalidate all existing
+                    // presence info for the user.
+                    case error:
+                        // No need to act on error presences send without from, i.e.
+                        // directly send from the users XMPP service, or where the from
+                        // address is not a bare JID
+                        if (from == null || !from.isEntityBareJid()) {
+                            break;
+                        }
+                        userPresences = getOrCreatePresencesInternal(key);
+                        // Any other presence data is invalidated by the error packet.
+                        userPresences.clear();
+
+                        // Set the new presence using the empty resource as a key.
+                        userPresences.put(Resourcepart.EMPTY, presence);
+                        // If the user is in the roster, fire an event.
+                        if (contains(key)) {
+                            fireRosterPresenceEvent(presence);
+                        }
+                        for (PresenceEventListener presenceEventListener : presenceEventListeners) {
+                            presenceEventListener.presenceError(from, presence);
+                        }
+                        break;
+                    case subscribed:
+                        for (PresenceEventListener presenceEventListener : presenceEventListeners) {
+                            presenceEventListener.presenceSubscribed(bareFrom, presence);
+                        }
+                        break;
+                    case unsubscribed:
+                        for (PresenceEventListener presenceEventListener : presenceEventListeners) {
+                            presenceEventListener.presenceUnsubscribed(bareFrom, presence);
+                        }
+                        break;
+                    default:
+                        break;
+                    }
                 }
-                for (PresenceEventListener presenceEventListener : presenceEventListeners) {
-                    presenceEventListener.presenceError(from, presence);
-                }
-                break;
-            case subscribed:
-                for (PresenceEventListener presenceEventListener : presenceEventListeners) {
-                    presenceEventListener.presenceSubscribed(bareFrom, presence);
-                }
-                break;
-            case unsubscribed:
-                for (PresenceEventListener presenceEventListener : presenceEventListeners) {
-                    presenceEventListener.presenceUnsubscribed(bareFrom, presence);
-                }
-                break;
-            default:
-                break;
-            }
+            });
         }
     }
 
     /**
      * Handles Roster results as described in <a href="https://tools.ietf.org/html/rfc6121#section-2.1.4">RFC 6121 2.1.4</a>.
      */
-    private class RosterResultListener implements StanzaListener {
+    private class RosterResultListener implements SuccessCallback<IQ> {
 
         @Override
-        public void processPacket(Stanza packet) {
+        public void onSuccess(IQ packet) {
             final XMPPConnection connection = connection();
-            LOGGER.fine("RosterResultListener received stanza");
+            LOGGER.log(Level.FINE, "RosterResultListener received {}", packet);
             Collection<Jid> addedEntries = new ArrayList<>();
             Collection<Jid> updatedEntries = new ArrayList<>();
             Collection<Jid> deletedEntries = new ArrayList<>();
@@ -1535,7 +1610,7 @@ public final class Roster extends Manager {
                 RosterPacket rosterPacket = (RosterPacket) packet;
 
                 // Ignore items without valid subscription type
-                ArrayList<Item> validItems = new ArrayList<RosterPacket.Item>();
+                ArrayList<Item> validItems = new ArrayList<>();
                 for (RosterPacket.Item item : rosterPacket.getRosterItems()) {
                     if (hasValidSubscriptionType(item)) {
                         validItems.add(item);
@@ -1599,10 +1674,10 @@ public final class Roster extends Manager {
             fireRosterChangedEvent(addedEntries, updatedEntries, deletedEntries);
 
             // Call the roster loaded listeners after the roster events have been fired. This is
-            // imporant because the user may call getEntriesAndAddListener() in onRosterLoaded(),
+            // important because the user may call getEntriesAndAddListener() in onRosterLoaded(),
             // and if the order would be the other way around, the roster listener added by
             // getEntriesAndAddListener() would be invoked with information that was already
-            // available at the time getEntriesAndAddListenr() was called.
+            // available at the time getEntriesAndAddListener() was called.
             try {
                 synchronized (rosterLoadedListeners) {
                     for (RosterLoadedListener rosterLoadedListener : rosterLoadedListeners) {
@@ -1630,20 +1705,38 @@ public final class Roster extends Manager {
             final XMPPConnection connection = connection();
             RosterPacket rosterPacket = (RosterPacket) iqRequest;
 
+            EntityFullJid ourFullJid = connection.getUser();
+            if (ourFullJid == null) {
+                LOGGER.warning("Ignoring roster push " + iqRequest + " while " + connection
+                                + " has no bound resource. This may be a server bug.");
+                return null;
+            }
+
             // Roster push (RFC 6121, 2.1.6)
             // A roster push with a non-empty from not matching our address MUST be ignored
-            EntityBareJid jid = connection.getUser().asEntityBareJid();
+            EntityBareJid ourBareJid = ourFullJid.asEntityBareJid();
             Jid from = rosterPacket.getFrom();
-            if (from != null && !from.equals(jid)) {
-                LOGGER.warning("Ignoring roster push with a non matching 'from' ourJid='" + jid + "' from='" + from
-                                + "'");
-                return IQ.createErrorResponse(iqRequest, Condition.service_unavailable);
+            if (from != null) {
+                if (from.equals(ourFullJid)) {
+                    // Since RFC 6121 roster pushes are no longer allowed to
+                    // origin from the full JID as it was the case with RFC
+                    // 3921. Log a warning an continue processing the push.
+                    // See also SMACK-773.
+                    LOGGER.warning(
+                            "Received roster push from full JID. This behavior is since RFC 6121 not longer standard compliant. "
+                                    + "Please ask your server vendor to fix this and comply to RFC 6121 § 2.1.6. IQ roster push stanza: "
+                                    + iqRequest);
+                } else if (!from.equals(ourBareJid)) {
+                    LOGGER.warning("Ignoring roster push with a non matching 'from' ourJid='" + ourBareJid + "' from='"
+                            + from + "'");
+                    return IQ.createErrorResponse(iqRequest, Condition.service_unavailable);
+                }
             }
 
             // A roster push must contain exactly one entry
             Collection<Item> items = rosterPacket.getRosterItems();
             if (items.size() != 1) {
-                LOGGER.warning("Ignoring roster push with not exaclty one entry. size=" + items.size());
+                LOGGER.warning("Ignoring roster push with not exactly one entry. size=" + items.size());
                 return IQ.createErrorResponse(iqRequest, Condition.bad_request);
             }
 
@@ -1652,7 +1745,7 @@ public final class Roster extends Manager {
             Collection<Jid> deletedEntries = new ArrayList<>();
             Collection<Jid> unchangedEntries = new ArrayList<>();
 
-            // We assured above that the size of items is exaclty 1, therefore we are able to
+            // We assured above that the size of items is exactly 1, therefore we are able to
             // safely retrieve this single item here.
             Item item = items.iterator().next();
             RosterEntry entry = new RosterEntry(item, Roster.this, connection);

@@ -17,18 +17,19 @@
 
 package org.jivesoftware.smackx.muc.packet;
 
-import org.jivesoftware.smack.packet.NamedElement;
-import org.jivesoftware.smack.packet.Stanza;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.NamedElement;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.util.XmlStringBuilder;
+
 import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.EntityFullJid;
+import org.jxmpp.jid.EntityJid;
 
 /**
  * Represents extended presence information about roles, affiliations, full JIDs,
@@ -41,7 +42,7 @@ public class MUCUser implements ExtensionElement {
     public static final String ELEMENT = "x";
     public static final String NAMESPACE = MUCInitialPresence.NAMESPACE + "#user";
 
-    private final Set<Status> statusCodes = new HashSet<Status>(4);
+    private final Set<Status> statusCodes = new HashSet<>(4);
 
     private Invite invite;
     private Decline decline;
@@ -49,16 +50,18 @@ public class MUCUser implements ExtensionElement {
     private String password;
     private Destroy destroy;
 
+    @Override
     public String getElementName() {
         return ELEMENT;
     }
 
+    @Override
     public String getNamespace() {
         return NAMESPACE;
     }
 
     @Override
-    public XmlStringBuilder toXML() {
+    public XmlStringBuilder toXML(String enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.rightAngleBracket();
         xml.optElement(getInvite());
@@ -84,7 +87,7 @@ public class MUCUser implements ExtensionElement {
 
     /**
      * Returns the rejection to an invitation from another user to a room. The rejection will be
-     * sent to the room which in turn will forward the refusal to the inviter.
+     * sent to the room which in turn will forward the refusal to the inviting user.
      *
      * @return a rejection to an invitation from another user to a room.
      */
@@ -135,7 +138,7 @@ public class MUCUser implements ExtensionElement {
 
     /**
      * Returns the notification that the room has been destroyed. After a room has been destroyed,
-     * the room occupants will receive a Presence stanza(/packet) of type 'unavailable' with the reason for
+     * the room occupants will receive a Presence stanza of type 'unavailable' with the reason for
      * the room destruction if provided by the room owner.
      *
      * @return a notification that the room has been destroyed.
@@ -157,7 +160,7 @@ public class MUCUser implements ExtensionElement {
 
     /**
      * Sets the rejection to an invitation from another user to a room. The rejection will be
-     * sent to the room which in turn will forward the refusal to the inviter.
+     * sent to the room which in turn will forward the refusal to the inviting user.
      *
      * @param decline the rejection to an invitation from another user to a room.
      */
@@ -205,7 +208,7 @@ public class MUCUser implements ExtensionElement {
 
     /**
      * Sets the notification that the room has been destroyed. After a room has been destroyed,
-     * the room occupants will receive a Presence stanza(/packet) of type 'unavailable' with the reason for
+     * the room occupants will receive a Presence stanza of type 'unavailable' with the reason for
      * the room destruction if provided by the room owner.
      *
      * @param destroy the notification that the room has been destroyed.
@@ -244,10 +247,15 @@ public class MUCUser implements ExtensionElement {
      * @author Gaston Dombiak
      */
     public static class Invite implements NamedElement {
-        public static final String ELEMENT ="invite";
+        public static final String ELEMENT = "invite";
 
         private final String reason;
-        private final EntityFullJid from;
+
+        /**
+         * From XEP-0045 § 7.8.2: "… whose value is the bare JID, full JID, or occupant JID of the inviting user …"
+         */
+        private final EntityJid from;
+
         private final EntityBareJid to;
 
         public Invite(String reason, EntityFullJid from) {
@@ -258,19 +266,19 @@ public class MUCUser implements ExtensionElement {
             this(reason, null, to);
         }
 
-        public Invite(String reason, EntityFullJid from, EntityBareJid to) {
+        public Invite(String reason, EntityJid from, EntityBareJid to) {
             this.reason = reason;
             this.from = from;
             this.to = to;
         }
 
         /**
-         * Returns the bare JID of the inviter or, optionally, the room JID. (e.g.
+         * Returns the bare JID of the inviting user or, optionally, the room JID. (e.g.
          * 'crone1@shakespeare.lit/desktop').
          *
          * @return the room's occupant that sent the invitation.
          */
-        public EntityFullJid getFrom() {
+        public EntityJid getFrom() {
             return from;
         }
 
@@ -293,7 +301,7 @@ public class MUCUser implements ExtensionElement {
         }
 
         @Override
-        public XmlStringBuilder toXML() {
+        public XmlStringBuilder toXML(String enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder(this);
             xml.optAttribute("to", getTo());
             xml.optAttribute("from", getFrom());
@@ -311,7 +319,7 @@ public class MUCUser implements ExtensionElement {
 
     /**
      * Represents a rejection to an invitation from another user to a room. The rejection will be
-     * sent to the room which in turn will forward the refusal to the inviter.
+     * sent to the room which in turn will forward the refusal to the inviting user.
      *
      * @author Gaston Dombiak
      */
@@ -352,16 +360,16 @@ public class MUCUser implements ExtensionElement {
         }
 
         /**
-         * Returns the bare JID of the inviter. (e.g. 'hecate@shakespeare.lit')
+         * Returns the bare JID of the inviting user. (e.g. 'hecate@shakespeare.lit')
          *
-         * @return the bare JID of the inviter.
+         * @return the bare JID of the inviting user.
          */
         public EntityBareJid getTo() {
             return to;
         }
 
         @Override
-        public XmlStringBuilder toXML() {
+        public XmlStringBuilder toXML(String enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder(this);
             xml.optAttribute("to", getTo());
             xml.optAttribute("from", getFrom());
@@ -386,7 +394,7 @@ public class MUCUser implements ExtensionElement {
     public static final class Status implements NamedElement {
         public static final String ELEMENT = "status";
 
-        private static final Map<Integer, Status> statusMap = new HashMap<Integer, Status>(8);
+        private static final Map<Integer, Status> statusMap = new HashMap<>(8);
 
         public static final Status PRESENCE_TO_SELF_110 = Status.create(110);
         public static final Status ROOM_CREATED_201 = Status.create(201);
@@ -431,7 +439,7 @@ public class MUCUser implements ExtensionElement {
         }
 
         @Override
-        public XmlStringBuilder toXML() {
+        public XmlStringBuilder toXML(String enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder(this);
             xml.attribute("code", getCode());
             xml.closeEmptyElement();

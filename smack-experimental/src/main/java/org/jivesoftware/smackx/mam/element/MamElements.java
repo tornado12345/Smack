@@ -23,7 +23,9 @@ import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.XmlStringBuilder;
+
 import org.jivesoftware.smackx.forward.packet.Forwarded;
+
 import org.jxmpp.jid.Jid;
 
 /**
@@ -124,7 +126,7 @@ public class MamElements {
         }
 
         @Override
-        public CharSequence toXML() {
+        public CharSequence toXML(String enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder();
             xml.halfOpenElement(this);
             xml.xmlnsAttribute(NAMESPACE);
@@ -165,7 +167,7 @@ public class MamElements {
         }
 
         @Override
-        public CharSequence toXML() {
+        public CharSequence toXML(String enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder();
             xml.openElement("always");
 
@@ -199,7 +201,7 @@ public class MamElements {
         }
 
         @Override
-        public CharSequence toXML() {
+        public CharSequence toXML(String enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder();
             xml.openElement("never");
 

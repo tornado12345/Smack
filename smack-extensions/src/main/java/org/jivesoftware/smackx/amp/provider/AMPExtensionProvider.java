@@ -20,10 +20,12 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
+
 import org.jivesoftware.smackx.amp.AMPDeliverCondition;
 import org.jivesoftware.smackx.amp.AMPExpireAtCondition;
 import org.jivesoftware.smackx.amp.AMPMatchResourceCondition;
 import org.jivesoftware.smackx.amp.packet.AMPExtension;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -32,7 +34,7 @@ public class AMPExtensionProvider extends ExtensionElementProvider<AMPExtension>
     private static final Logger LOGGER = Logger.getLogger(AMPExtensionProvider.class.getName());
 
     /**
-     * Parses a AMPExtension stanza(/packet) (extension sub-packet).
+     * Parses a AMPExtension stanza (extension sub-packet).
      *
      * @param parser the XML parser, positioned at the starting element of the extension.
      * @return a PacketExtension.

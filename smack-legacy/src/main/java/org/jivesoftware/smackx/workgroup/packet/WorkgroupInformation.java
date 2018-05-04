@@ -21,44 +21,50 @@ import java.io.IOException;
 
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
+import org.jivesoftware.smack.util.ParserUtils;
+
+import org.jxmpp.jid.EntityBareJid;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 /**
- * A stanza(/packet) extension that contains information about the user and agent in a
- * workgroup chat. The stanza(/packet) extension is attached to group chat invitations.
+ * A stanza extension that contains information about the user and agent in a
+ * workgroup chat. The stanza extension is attached to group chat invitations.
  */
 public class WorkgroupInformation implements ExtensionElement {
 
     /**
-     * Element name of the stanza(/packet) extension.
+     * Element name of the stanza extension.
      */
     public static final String ELEMENT_NAME = "workgroup";
 
     /**
-     * Namespace of the stanza(/packet) extension.
+     * Namespace of the stanza extension.
      */
     public static final String NAMESPACE = "http://jabber.org/protocol/workgroup";
 
-    private String workgroupJID;
+    private final EntityBareJid workgroupJID;
 
-    public WorkgroupInformation(String workgroupJID){
+    public WorkgroupInformation(EntityBareJid workgroupJID) {
         this.workgroupJID = workgroupJID;
     }
 
-    public String getWorkgroupJID() {
+    public EntityBareJid getWorkgroupJID() {
         return workgroupJID;
     }
 
+    @Override
     public String getElementName() {
         return ELEMENT_NAME;
     }
 
+    @Override
     public String getNamespace() {
         return NAMESPACE;
     }
 
-    public String toXML() {
+    @Override
+    public String toXML(String enclosingNamespace) {
         StringBuilder buf = new StringBuilder();
 
         buf.append('<').append(ELEMENT_NAME);
@@ -79,7 +85,7 @@ public class WorkgroupInformation implements ExtensionElement {
         public WorkgroupInformation parse(XmlPullParser parser,
                         int initialDepth) throws XmlPullParserException,
                         IOException {
-            String workgroupJID = parser.getAttributeValue("", "jid");
+            EntityBareJid workgroupJID = ParserUtils.getBareJidAttribute(parser);
 
             // since this is a start and end tag, and we arrive on the start, this should guarantee
             //      we leave on the end

@@ -20,7 +20,9 @@ package org.jivesoftware.smackx.xevent.provider;
 import java.io.IOException;
 
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
+
 import org.jivesoftware.smackx.xevent.packet.MessageEvent;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -33,7 +35,7 @@ import org.xmlpull.v1.XmlPullParserException;
 public class MessageEventProvider extends ExtensionElementProvider<MessageEvent> {
 
     /**
-     * Parses a MessageEvent stanza(/packet) (extension sub-packet).
+     * Parses a MessageEvent stanza (extension sub-packet).
      *
      * @param parser the XML parser, positioned at the starting element of the extension.
      * @return a PacketExtension.

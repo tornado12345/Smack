@@ -22,14 +22,13 @@ package org.jivesoftware.smackx.pubsub;
  * 
  * @author Robin Collier
  */
-public enum PublishModel
-{
-	/** Only publishers may publish. */
-	publishers,
+public enum PublishModel {
+    /** Only publishers may publish. */
+    publishers,
 
-	/** Only subscribers may publish. */
-	subscribers,
+    /** Only subscribers may publish. */
+    subscribers,
 
-	/** Anyone may publish. */
-	open;
+    /** Anyone may publish. */
+    open
 }

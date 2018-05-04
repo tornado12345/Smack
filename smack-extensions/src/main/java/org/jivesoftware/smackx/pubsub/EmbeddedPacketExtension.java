@@ -18,8 +18,8 @@ package org.jivesoftware.smackx.pubsub;
 
 import java.util.List;
 
-import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.util.PacketParserUtils;
 
 /**
@@ -37,12 +37,11 @@ import org.jivesoftware.smack.util.PacketParserUtils;
  * 
  * @author Robin Collier
  */
-public interface EmbeddedPacketExtension extends ExtensionElement
-{
-	/**
-	 * Get the list of embedded {@link ExtensionElement} objects.
-	 *  
-	 * @return List of embedded {@link ExtensionElement}
-	 */
-	List<ExtensionElement> getExtensions();
+public interface EmbeddedPacketExtension extends ExtensionElement {
+    /**
+     * Get the list of embedded {@link ExtensionElement} objects.
+     *  
+     * @return List of embedded {@link ExtensionElement}
+     */
+    List<ExtensionElement> getExtensions();
 }

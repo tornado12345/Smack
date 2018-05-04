@@ -16,12 +16,6 @@
  */
 package org.jivesoftware.smackx.disco.packet;
 
-import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.util.StringUtils;
-import org.jivesoftware.smack.util.TypedCloneable;
-import org.jivesoftware.smack.util.XmlStringBuilder;
-import org.jxmpp.util.XmppStringUtils;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,6 +23,13 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+
+import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smack.util.StringUtils;
+import org.jivesoftware.smack.util.TypedCloneable;
+import org.jivesoftware.smack.util.XmlStringBuilder;
+
+import org.jxmpp.util.XmppStringUtils;
 
 /**
  * A DiscoverInfo IQ packet, which is used by XMPP clients to request and receive information 
@@ -44,10 +45,10 @@ public class DiscoverInfo extends IQ implements TypedCloneable<DiscoverInfo> {
     public static final String ELEMENT = QUERY_ELEMENT;
     public static final String NAMESPACE = "http://jabber.org/protocol/disco#info";
 
-    private final List<Feature> features = new LinkedList<Feature>();
-    private final Set<Feature> featuresSet = new HashSet<Feature>();
-    private final List<Identity> identities = new LinkedList<Identity>();
-    private final Set<String> identitiesSet = new HashSet<String>();
+    private final List<Feature> features = new LinkedList<>();
+    private final Set<Feature> featuresSet = new HashSet<>();
+    private final List<Identity> identities = new LinkedList<>();
+    private final Set<String> identitiesSet = new HashSet<>();
     private String node;
     private boolean containsDuplicateFeatures;
 
@@ -168,7 +169,7 @@ public class DiscoverInfo extends IQ implements TypedCloneable<DiscoverInfo> {
      * @return a list of Identites with the given category and type.
      */
     public List<Identity> getIdentities(String category, String type) {
-        List<Identity> res = new ArrayList<Identity>(identities.size());
+        List<Identity> res = new ArrayList<>(identities.size());
         for (Identity identity : identities) {
             if (identity.getCategory().equals(category) && identity.getType().equals(type)) {
                 res.add(identity);
@@ -207,7 +208,7 @@ public class DiscoverInfo extends IQ implements TypedCloneable<DiscoverInfo> {
      * Returns true if the specified feature is part of the discovered information.
      * 
      * @param feature the feature to check
-     * @return true if the requestes feature has been discovered
+     * @return true if the requests feature has been discovered
      */
     public boolean containsFeature(CharSequence feature) {
         return features.contains(new Feature(feature));
@@ -233,7 +234,7 @@ public class DiscoverInfo extends IQ implements TypedCloneable<DiscoverInfo> {
      * @return true if duplicate identities where found, otherwise false
      */
     public boolean containsDuplicateIdentities() {
-        List<Identity> checkedIdentities = new LinkedList<Identity>();
+        List<Identity> checkedIdentities = new LinkedList<>();
         for (Identity i : identities) {
             for (Identity i2 : checkedIdentities) {
                 if (i.equals(i2))
@@ -394,6 +395,7 @@ public class DiscoverInfo extends IQ implements TypedCloneable<DiscoverInfo> {
          * <a href="http://xmpp.org/extensions/xep-0115.html#ver-proc">XEP-0015 5.4 Processing Method (Step 3.3)</a>.
          *  
          */
+        @Override
         public boolean equals(Object obj) {
             if (obj == null)
                 return false;
@@ -437,6 +439,7 @@ public class DiscoverInfo extends IQ implements TypedCloneable<DiscoverInfo> {
          * @return a negative integer, zero, or a positive integer as this object is less than,
          *         equal to, or greater than the specified object.
          */
+        @Override
         public int compareTo(DiscoverInfo.Identity other) {
             String otherLang = other.lang == null ? "" : other.lang;
             String thisLang = lang == null ? "" : lang;
@@ -469,7 +472,7 @@ public class DiscoverInfo extends IQ implements TypedCloneable<DiscoverInfo> {
     }
 
     /**
-     * Represents the features offered by the item. This information helps requestors determine 
+     * Represents the features offered by the item. This information helps the requester to determine
      * what actions are possible with regard to this item (registration, search, join, etc.) 
      * as well as specific feature types of interest, if any (e.g., for the purpose of feature 
      * negotiation).
@@ -512,6 +515,7 @@ public class DiscoverInfo extends IQ implements TypedCloneable<DiscoverInfo> {
             return xml;
         }
 
+        @Override
         public boolean equals(Object obj) {
             if (obj == null)
                 return false;

@@ -38,6 +38,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smack.util.StringUtils;
 
 /**
  * The Socks5Proxy class represents a local SOCKS5 proxy server. It can be enabled/disabled by
@@ -92,12 +93,12 @@ public final class Socks5Proxy {
     private ServerSocket serverSocket;
 
     /* assigns a connection to a digest */
-    private final Map<String, Socket> connectionMap = new ConcurrentHashMap<String, Socket>();
+    private final Map<String, Socket> connectionMap = new ConcurrentHashMap<>();
 
     /* list of digests connections should be stored */
     private final List<String> allowedConnections = Collections.synchronizedList(new LinkedList<String>());
 
-    private final Set<String> localAddresses = new LinkedHashSet<String>(4);
+    private final Set<String> localAddresses = new LinkedHashSet<>(4);
 
     /**
      * Private constructor.
@@ -111,7 +112,7 @@ public final class Socks5Proxy {
         } catch (SocketException e) {
             throw new IllegalStateException(e);
         }
-        Set<String> localHostAddresses = new HashSet<String>();
+        Set<String> localHostAddresses = new HashSet<>();
         for (NetworkInterface networkInterface : Collections.list(networkInterfaces)) {
             // We can't use NetworkInterface.getInterfaceAddresses here, which
             // would return a List instead the deprecated Enumeration, because
@@ -279,7 +280,7 @@ public final class Socks5Proxy {
      * @return true if the address was removed.
      */
     public boolean removeLocalAddress(String address) {
-        synchronized(localAddresses) {
+        synchronized (localAddresses) {
             return localAddresses.remove(address);
         }
     }
@@ -292,7 +293,7 @@ public final class Socks5Proxy {
      */
     public List<String> getLocalAddresses() {
         synchronized (localAddresses) {
-            return new LinkedList<String>(localAddresses);
+            return new LinkedList<>(localAddresses);
         }
     }
 
@@ -310,7 +311,7 @@ public final class Socks5Proxy {
         if (addresses == null) {
             throw new IllegalArgumentException("list must not be null");
         }
-        synchronized(localAddresses) {
+        synchronized (localAddresses) {
             localAddresses.clear();
             localAddresses.addAll(addresses);
         }
@@ -347,7 +348,7 @@ public final class Socks5Proxy {
      * 
      * @param digest to be added to the list of allowed transfers
      */
-    protected void addTransfer(String digest) {
+    public void addTransfer(String digest) {
         this.allowedConnections.add(digest);
     }
 
@@ -381,6 +382,7 @@ public final class Socks5Proxy {
      */
     private class Socks5ServerProcess implements Runnable {
 
+        @Override
         public void run() {
             while (true) {
                 Socket socket = null;
@@ -470,7 +472,7 @@ public final class Socks5Proxy {
             byte[] connectionRequest = Socks5Utils.receiveSocks5Message(in);
 
             // extract digest
-            String responseDigest = new String(connectionRequest, 5, connectionRequest[4]);
+            String responseDigest = new String(connectionRequest, 5, connectionRequest[4], StringUtils.UTF8);
 
             // return error if digest is not allowed
             if (!Socks5Proxy.this.allowedConnections.contains(responseDigest)) {

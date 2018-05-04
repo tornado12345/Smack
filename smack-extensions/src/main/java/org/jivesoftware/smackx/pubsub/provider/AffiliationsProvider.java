@@ -21,7 +21,9 @@ import java.util.Map;
 
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.provider.EmbeddedExtensionProvider;
+
 import org.jivesoftware.smackx.pubsub.Affiliation;
+import org.jivesoftware.smackx.pubsub.Affiliation.AffiliationNamespace;
 import org.jivesoftware.smackx.pubsub.AffiliationsExtension;
 
 /**
@@ -29,13 +31,12 @@ import org.jivesoftware.smackx.pubsub.AffiliationsExtension;
  * as specified in the <a href="http://xmpp.org/extensions/xep-0060.html#schemas-pubsub">affiliation schema</a>.
  * 
  * @author Robin Collier
- */public class AffiliationsProvider extends EmbeddedExtensionProvider<AffiliationsExtension>
-{
-	@SuppressWarnings("unchecked")
-	@Override
-	protected AffiliationsExtension createReturnExtension(String currentElement, String currentNamespace, Map<String, String> attributeMap, List<? extends ExtensionElement> content)
-	{
-        return new AffiliationsExtension((List<Affiliation>)content);
-	}
+ */public class AffiliationsProvider extends EmbeddedExtensionProvider<AffiliationsExtension> {
+    @SuppressWarnings("unchecked")
+    @Override
+    protected AffiliationsExtension createReturnExtension(String currentElement, String currentNamespace, Map<String, String> attributeMap, List<? extends ExtensionElement> content) {
+        AffiliationNamespace affiliationsNamespace = AffiliationNamespace.fromXmlns(currentNamespace);
+        return new AffiliationsExtension(affiliationsNamespace, (List<Affiliation>) content);
+    }
 
 }

@@ -26,10 +26,12 @@ import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.packet.XMPPError;
+import org.jivesoftware.smack.packet.StanzaError;
+
 import org.jivesoftware.smackx.bytestreams.BytestreamRequest;
 import org.jivesoftware.smackx.bytestreams.socks5.packet.Bytestream;
 import org.jivesoftware.smackx.bytestreams.socks5.packet.Bytestream.StreamHost;
+
 import org.jxmpp.jid.Jid;
 import org.jxmpp.util.cache.Cache;
 import org.jxmpp.util.cache.ExpirationCache;
@@ -170,6 +172,7 @@ public class Socks5BytestreamRequest implements BytestreamRequest {
      * 
      * @return the sender of the SOCKS5 Bytestream initialization request.
      */
+    @Override
     public Jid getFrom() {
         return this.bytestreamRequest.getFrom();
     }
@@ -179,6 +182,7 @@ public class Socks5BytestreamRequest implements BytestreamRequest {
      * 
      * @return the session ID of the SOCKS5 Bytestream initialization request.
      */
+    @Override
     public String getSessionID() {
         return this.bytestreamRequest.getSessionID();
     }
@@ -195,6 +199,7 @@ public class Socks5BytestreamRequest implements BytestreamRequest {
      * @throws XMPPErrorException 
      * @throws SmackException 
      */
+    @Override
     public Socks5BytestreamSession accept() throws InterruptedException, XMPPErrorException, SmackException {
         Collection<StreamHost> streamHosts = this.bytestreamRequest.getStreamHosts();
 
@@ -264,6 +269,7 @@ public class Socks5BytestreamRequest implements BytestreamRequest {
      * @throws NotConnectedException 
      * @throws InterruptedException 
      */
+    @Override
     public void reject() throws NotConnectedException, InterruptedException {
         this.manager.replyRejectPacket(this.bytestreamRequest);
     }
@@ -277,10 +283,10 @@ public class Socks5BytestreamRequest implements BytestreamRequest {
      */
     private void cancelRequest() throws XMPPErrorException, NotConnectedException, InterruptedException {
         String errorMessage = "Could not establish socket with any provided host";
-        XMPPError.Builder error = XMPPError.from(XMPPError.Condition.item_not_found, errorMessage);
+        StanzaError.Builder error = StanzaError.from(StanzaError.Condition.item_not_found, errorMessage);
         IQ errorIQ = IQ.createErrorResponse(this.bytestreamRequest, error);
         this.manager.getConnection().sendStanza(errorIQ);
-        throw new XMPPErrorException(error);
+        throw new XMPPErrorException(errorIQ, error.build());
     }
 
     /**
@@ -304,7 +310,7 @@ public class Socks5BytestreamRequest implements BytestreamRequest {
      * @param address the address the connection failure counter should be increased
      */
     private static void incrementConnectionFailures(String address) {
-        Integer count = ADDRESS_BLACKLIST.get(address);
+        Integer count = ADDRESS_BLACKLIST.lookup(address);
         ADDRESS_BLACKLIST.put(address, count == null ? 1 : count + 1);
     }
 
@@ -315,7 +321,7 @@ public class Socks5BytestreamRequest implements BytestreamRequest {
      * @return number of connection failures
      */
     private static int getConnectionFailures(String address) {
-        Integer count = ADDRESS_BLACKLIST.get(address);
+        Integer count = ADDRESS_BLACKLIST.lookup(address);
         return count != null ? count : 0;
     }
 

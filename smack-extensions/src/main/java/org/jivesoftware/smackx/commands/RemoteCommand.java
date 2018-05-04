@@ -21,8 +21,10 @@ import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.IQ;
+
 import org.jivesoftware.smackx.commands.packet.AdHocCommandData;
 import org.jivesoftware.smackx.xdata.Form;
+
 import org.jxmpp.jid.Jid;
 
 /**
@@ -44,12 +46,12 @@ public class RemoteCommand extends AdHocCommand {
     /**
      * The connection that is used to execute this command
      */
-    private XMPPConnection connection;
+    private final XMPPConnection connection;
 
     /**
      * The full JID of the command host
      */
-    private Jid jid;
+    private final Jid jid;
 
     /**
      * The session ID of this execution.
@@ -130,8 +132,8 @@ public class RemoteCommand extends AdHocCommand {
      */
     private void executeAction(Action action, Form form) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         // TODO: Check that all the required fields of the form were filled, if
-        // TODO: not throw the corresponding exeption. This will make a faster response,
-        // TODO: since the request is stoped before it's sent.
+        // TODO: not throw the corresponding exception. This will make a faster response,
+        // TODO: since the request is stopped before it's sent.
         AdHocCommandData data = new AdHocCommandData();
         data.setType(IQ.Type.set);
         data.setTo(getOwnerJID());
@@ -143,11 +145,18 @@ public class RemoteCommand extends AdHocCommand {
             data.setForm(form.getDataFormToSend());
         }
 
-        AdHocCommandData responseData = (AdHocCommandData) connection.createPacketCollectorAndSend(
-                        data).nextResultOrThrow();
+        AdHocCommandData responseData = null;
+        try {
+            responseData = connection.createStanzaCollectorAndSend(data).nextResultOrThrow();
+        }
+        finally {
+            // We set the response data in a 'finally' block, so that it also gets set even if an error IQ was returned.
+            if (responseData != null) {
+                this.sessionID = responseData.getSessionID();
+                super.setData(responseData);
+            }
+        }
 
-        this.sessionID = responseData.getSessionID();
-        super.setData(responseData);
     }
 
     @Override

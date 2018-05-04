@@ -17,17 +17,18 @@
 
 package org.jivesoftware.smackx.xroster.packet;
 
-import org.jivesoftware.smack.packet.ExtensionElement;
-import org.jivesoftware.smack.roster.Roster;
-import org.jivesoftware.smack.roster.RosterEntry;
-import org.jivesoftware.smack.roster.RosterGroup;
-import org.jivesoftware.smackx.xroster.RemoteRosterEntry;
-import org.jivesoftware.smackx.xroster.RosterExchangeManager;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+
+import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.roster.Roster;
+import org.jivesoftware.smack.roster.RosterEntry;
+import org.jivesoftware.smack.roster.RosterGroup;
+
+import org.jivesoftware.smackx.xroster.RemoteRosterEntry;
+import org.jivesoftware.smackx.xroster.RosterExchangeManager;
 
 /**
  * Represents XMPP Roster Item Exchange packets.<p>
@@ -78,13 +79,13 @@ public class RosterExchange implements ExtensionElement {
      * @param rosterEntry a roster entry to add.
      */
     public void addRosterEntry(RosterEntry rosterEntry) {
-		// Obtain a String[] from the roster entry groups name 
-		List<String> groupNamesList = new ArrayList<String>();
-		String[] groupNames;
-		for (RosterGroup group : rosterEntry.getGroups()) {
-			groupNamesList.add(group.getName());
-		}
-		groupNames = groupNamesList.toArray(new String[groupNamesList.size()]);
+        // Obtain a String[] from the roster entry groups name 
+        List<String> groupNamesList = new ArrayList<>();
+        String[] groupNames;
+        for (RosterGroup group : rosterEntry.getGroups()) {
+            groupNamesList.add(group.getName());
+        }
+        groupNames = groupNamesList.toArray(new String[groupNamesList.size()]);
 
         // Create a new Entry based on the rosterEntry and add it to the packet
         RemoteRosterEntry remoteRosterEntry = new RemoteRosterEntry(rosterEntry.getJid(),
@@ -108,8 +109,9 @@ public class RosterExchange implements ExtensionElement {
     * Returns the XML element name of the extension sub-packet root element.
     * Always returns "x"
     *
-    * @return the XML element name of the stanza(/packet) extension.
+    * @return the XML element name of the stanza extension.
     */
+    @Override
     public String getElementName() {
         return RosterExchangeManager.ELEMENT;
     }
@@ -119,8 +121,9 @@ public class RosterExchange implements ExtensionElement {
      * According the specification the namespace is always "jabber:x:roster"
      * (which is not to be confused with the 'jabber:iq:roster' namespace
      *
-     * @return the XML namespace of the stanza(/packet) extension.
+     * @return the XML namespace of the stanza extension.
      */
+    @Override
     public String getNamespace() {
         return RosterExchangeManager.NAMESPACE;
     }
@@ -132,7 +135,7 @@ public class RosterExchange implements ExtensionElement {
      */
     public Iterator<RemoteRosterEntry> getRosterEntries() {
         synchronized (remoteRosterEntries) {
-            List<RemoteRosterEntry> entries = Collections.unmodifiableList(new ArrayList<RemoteRosterEntry>(remoteRosterEntries));
+            List<RemoteRosterEntry> entries = Collections.unmodifiableList(new ArrayList<>(remoteRosterEntries));
             return entries.iterator();
         }
     }
@@ -163,7 +166,8 @@ public class RosterExchange implements ExtensionElement {
      * </pre>
      * 
      */
-    public String toXML() {
+    @Override
+    public String toXML(String enclosingNamespace) {
         StringBuilder buf = new StringBuilder();
         buf.append('<').append(getElementName()).append(" xmlns=\"").append(getNamespace()).append(
             "\">");

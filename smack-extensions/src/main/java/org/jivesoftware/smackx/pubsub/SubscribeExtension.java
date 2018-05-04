@@ -21,43 +21,37 @@ package org.jivesoftware.smackx.pubsub;
  * 
  * @author Robin Collier
  */
-public class SubscribeExtension extends NodeExtension
-{
-	protected String jid;
+public class SubscribeExtension extends NodeExtension {
+    protected String jid;
 
-	public SubscribeExtension(String subscribeJid)
-	{
-		super(PubSubElementType.SUBSCRIBE);
-		jid = subscribeJid;
-	}
+    public SubscribeExtension(String subscribeJid) {
+        super(PubSubElementType.SUBSCRIBE);
+        jid = subscribeJid;
+    }
 
-	public SubscribeExtension(String subscribeJid, String nodeId)
-	{
-		super(PubSubElementType.SUBSCRIBE, nodeId);
-		jid = subscribeJid;
-	}
+    public SubscribeExtension(String subscribeJid, String nodeId) {
+        super(PubSubElementType.SUBSCRIBE, nodeId);
+        jid = subscribeJid;
+    }
 
-	public String getJid()
-	{
-		return jid;
-	}
+    public String getJid() {
+        return jid;
+    }
 
-	@Override
-	public String toXML()
-	{
-		StringBuilder builder = new StringBuilder("<");
-		builder.append(getElementName());
+    @Override
+    public String toXML(String enclosingNamespace) {
+        StringBuilder builder = new StringBuilder("<");
+        builder.append(getElementName());
 
-		if (getNode() != null)
-		{
-			builder.append(" node='");
-			builder.append(getNode());
-			builder.append('\'');
-		}
-		builder.append(" jid='");
-		builder.append(getJid());
-		builder.append("'/>");
+        if (getNode() != null) {
+            builder.append(" node='");
+            builder.append(getNode());
+            builder.append('\'');
+        }
+        builder.append(" jid='");
+        builder.append(getJid());
+        builder.append("'/>");
 
-		return builder.toString();
-	}
+        return builder.toString();
+    }
 }

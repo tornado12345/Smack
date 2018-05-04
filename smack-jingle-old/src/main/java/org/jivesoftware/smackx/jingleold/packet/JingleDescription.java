@@ -23,24 +23,25 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import org.jivesoftware.smack.packet.ExtensionElement;
+
 import org.jivesoftware.smackx.jingleold.media.PayloadType;
 
 /**
  * Jingle content description.
  *
- * @author Alvaro Saurin <alvaro.saurin@gmail.com>
+ * @author Alvaro Saurin
  */
 public abstract class JingleDescription implements ExtensionElement {
 
-	private static final Logger LOGGER = Logger.getLogger(JingleDescription.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(JingleDescription.class.getName());
 
-	// static
+    // static
 
     public static final String NODENAME = "description";
 
     // non-static
 
-    private final List<PayloadType> payloads = new ArrayList<PayloadType>();
+    private final List<PayloadType> payloads = new ArrayList<>();
 
     /**
      * Creates a content description..
@@ -54,6 +55,7 @@ public abstract class JingleDescription implements ExtensionElement {
      *
      * @return the XML element name of the element.
      */
+    @Override
     public String getElementName() {
         return NODENAME;
     }
@@ -63,6 +65,7 @@ public abstract class JingleDescription implements ExtensionElement {
      *
      * @return The namespace
      */
+    @Override
     public abstract String getNamespace();
 
     /**
@@ -111,7 +114,7 @@ public abstract class JingleDescription implements ExtensionElement {
      */
     public List<PayloadType> getPayloadTypesList() {
         synchronized (payloads) {
-            return new ArrayList<PayloadType>(payloads);
+            return new ArrayList<>(payloads);
         }
     }
 
@@ -121,7 +124,7 @@ public abstract class JingleDescription implements ExtensionElement {
      * @return a list of PayloadType.Audio
      */
     public List<PayloadType> getAudioPayloadTypesList() {
-        ArrayList<PayloadType> result = new ArrayList<PayloadType>();
+        ArrayList<PayloadType> result = new ArrayList<>();
         Iterator<PayloadType> jinglePtsIter = getPayloadTypes();
 
         while (jinglePtsIter.hasNext()) {
@@ -151,7 +154,8 @@ public abstract class JingleDescription implements ExtensionElement {
      *
      * @return a string with the XML representation
      */
-    public String toXML() {
+    @Override
+    public String toXML(String enclosingNamespace) {
         StringBuilder buf = new StringBuilder();
 
         synchronized (payloads) {
@@ -190,6 +194,7 @@ public abstract class JingleDescription implements ExtensionElement {
             addPayloadType(pt);
         }
 
+        @Override
         public String getNamespace() {
             return NAMESPACE;
         }

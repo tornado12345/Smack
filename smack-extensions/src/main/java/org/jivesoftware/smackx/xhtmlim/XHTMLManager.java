@@ -17,6 +17,8 @@
 
 package org.jivesoftware.smackx.xhtmlim;
 
+import java.util.List;
+
 import org.jivesoftware.smack.ConnectionCreationListener;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
@@ -24,11 +26,11 @@ import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPConnectionRegistry;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.Message;
+
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.xhtmlim.packet.XHTMLExtension;
-import org.jxmpp.jid.Jid;
 
-import java.util.List;
+import org.jxmpp.jid.Jid;
 
 /**
  * Manages XHTML formatted texts within messages. A XHTMLManager provides a high level access to 
@@ -40,6 +42,7 @@ import java.util.List;
 public class XHTMLManager {
     static {
         XMPPConnectionRegistry.addConnectionCreationListener(new ConnectionCreationListener() {
+            @Override
             public void connectionCreated(XMPPConnection connection) {
                 // Enable the XHTML support on every established connection
                 XHTMLManager.setServiceEnabled(connection, true);
@@ -82,7 +85,7 @@ public class XHTMLManager {
     /**
      * Returns true if the message contains an XHTML extension.
      *
-     * @param message the message to check if contains an XHTML extentsion or not
+     * @param message the message to check if contains an XHTML extension or not
      * @return a boolean indicating whether the message is an XHTML message
      */
     public static boolean isXHTMLMessage(Message message) {
@@ -98,7 +101,7 @@ public class XHTMLManager {
      * @param connection the connection where the service will be enabled or disabled
      * @param enabled indicates if the service will be enabled or disabled 
      */
-    public synchronized static void setServiceEnabled(XMPPConnection connection, boolean enabled) {
+    public static synchronized void setServiceEnabled(XMPPConnection connection, boolean enabled) {
         if (isServiceEnabled(connection) == enabled)
             return;
 

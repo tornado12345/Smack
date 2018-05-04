@@ -20,15 +20,17 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+
+import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smack.XMPPException.XMPPErrorException;
+import org.jivesoftware.smack.util.StringUtils;
 
 import org.igniterealtime.smack.inttest.AbstractSmackIntegrationTest;
 import org.igniterealtime.smack.inttest.SmackIntegrationTest;
 import org.igniterealtime.smack.inttest.SmackIntegrationTestEnvironment;
 import org.igniterealtime.smack.inttest.util.ResultSyncPoint;
-import org.jivesoftware.smack.SmackException;
-import org.jivesoftware.smack.XMPPException.XMPPErrorException;
-import org.jivesoftware.smack.util.StringUtils;
 
 public class FileTransferIntegrationTest extends AbstractSmackIntegrationTest {
 
@@ -43,7 +45,16 @@ public class FileTransferIntegrationTest extends AbstractSmackIntegrationTest {
         ftManagerTwo = FileTransferManager.getInstanceFor(conTwo);
     }
 
-    private static final byte[] dataToSend = StringUtils.insecureRandomString(1024 * 4 * 5).getBytes();
+    private static final byte[] dataToSend;
+
+    static {
+        try {
+            dataToSend = StringUtils.insecureRandomString(1024 * 4 * 5).getBytes(StringUtils.UTF8);
+        }
+        catch (UnsupportedEncodingException e) {
+            throw new AssertionError(e);
+        }
+    }
 
     @SmackIntegrationTest
     public void fileTransferTest() throws Exception {
@@ -62,10 +73,10 @@ public class FileTransferIntegrationTest extends AbstractSmackIntegrationTest {
         final FileTransferListener receiveListener = new FileTransferListener() {
             @Override
             public void fileTransferRequest(FileTransferRequest request) {
-                byte[] dataReceived = null;
+                byte[] dataReceived;
                 IncomingFileTransfer ift = request.accept();
                 try {
-                    InputStream is = ift.recieveFile();
+                    InputStream is = ift.receiveFile();
                     ByteArrayOutputStream os = new ByteArrayOutputStream();
                     int nRead;
                     byte[] buf = new byte[1024];
@@ -94,9 +105,9 @@ public class FileTransferIntegrationTest extends AbstractSmackIntegrationTest {
         while (!oft.isDone()) {
             switch (oft.getStatus()) {
             case error:
-                throw new Exception("Filetransfer error: " + oft.getError());
+                throw new Exception("FileTransfer error: " + oft.getError());
             default:
-                LOGGER.info("Filetransfer status: " + oft.getStatus() + ". Progress: " + oft.getProgress());
+                LOGGER.info("FileTransfer status: " + oft.getStatus() + ". Progress: " + oft.getProgress());
                 break;
             }
             Thread.sleep(1000);

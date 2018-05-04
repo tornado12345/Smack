@@ -21,7 +21,9 @@ import java.util.Locale;
 
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
+
 import org.jivesoftware.smackx.jingleold.media.ContentInfo;
+
 import org.xmlpull.v1.XmlPullParser;
 
 public class JingleError implements ExtensionElement {
@@ -73,7 +75,8 @@ public class JingleError implements ExtensionElement {
      *
      * @return the error as XML.
      */
-    public String toXML() {
+    @Override
+    public String toXML(String enclosingNamespace) {
         StringBuilder buf = new StringBuilder();
         if (message != null) {
             buf.append("<error type=\"cancel\">");
@@ -110,17 +113,20 @@ public class JingleError implements ExtensionElement {
         return null;
     }
 
+    @Override
     public String toString() {
         return getMessage();
     }
 
+    @Override
     public String getElementName() {
         return message;
     }
 
+    @Override
     public String getNamespace() {
-		return NAMESPACE;
-	}
+        return NAMESPACE;
+    }
 
     public static class Provider extends ExtensionElementProvider<ExtensionElement> {
 

@@ -16,39 +16,45 @@
  */
 package org.jivesoftware.smack.debugger;
 
+import java.io.Reader;
+import java.io.Writer;
+import java.util.logging.Logger;
+
+import org.jivesoftware.smack.AbstractConnectionListener;
+import org.jivesoftware.smack.AbstractXMPPConnection;
 import org.jivesoftware.smack.ConnectionListener;
-import org.jivesoftware.smack.StanzaListener;
+import org.jivesoftware.smack.ReconnectionListener;
+import org.jivesoftware.smack.ReconnectionManager;
 import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.packet.TopLevelStreamElement;
 import org.jivesoftware.smack.util.ObservableReader;
 import org.jivesoftware.smack.util.ObservableWriter;
 import org.jivesoftware.smack.util.ReaderListener;
 import org.jivesoftware.smack.util.WriterListener;
+
 import org.jxmpp.jid.EntityFullJid;
 
-import java.io.Reader;
-import java.io.Writer;
+public abstract class AbstractDebugger extends SmackDebugger {
 
-public abstract class AbstractDebugger implements SmackDebugger {
+    private static final Logger LOGGER = Logger.getLogger(AbstractDebugger.class.getName());
 
     public static boolean printInterpreted = false;
 
-    private final XMPPConnection connection;
-
-    private final StanzaListener listener;
     private final ConnectionListener connListener;
+    private final ReconnectionListener reconnectionListener;
     private final ReaderListener readerListener;
     private final WriterListener writerListener;
 
     private ObservableWriter writer;
     private ObservableReader reader;
 
-    public AbstractDebugger(final XMPPConnection connection, Writer writer, Reader reader) {
-        this.connection = connection;
+    public AbstractDebugger(final XMPPConnection connection) {
+        super(connection);
 
         // Create a special Reader that wraps the main Reader and logs data to the GUI.
         this.reader = new ObservableReader(reader);
         readerListener = new ReaderListener() {
+            @Override
             public void read(String str) {
                 log("RECV (" + connection.getConnectionCounter() + "): " + str);
             }
@@ -58,28 +64,20 @@ public abstract class AbstractDebugger implements SmackDebugger {
         // Create a special Writer that wraps the main Writer and logs data to the GUI.
         this.writer = new ObservableWriter(writer);
         writerListener = new WriterListener() {
+            @Override
             public void write(String str) {
                 log("SENT (" + connection.getConnectionCounter() + "): " + str);
             }
         };
         this.writer.addWriterListener(writerListener);
 
-        // Create a thread that will listen for all incoming packets and write them to
-        // the GUI. This is what we call "interpreted" packet data, since it's the packet
-        // data as Smack sees it and not as it's coming in as raw XML.
-        listener = new StanzaListener() {
-            public void processPacket(Stanza packet) {
-                if (printInterpreted) {
-                    log("RCV PKT (" + connection.getConnectionCounter() + "): " + packet.toXML());
-                }
-            }
-        };
-
-        connListener = new ConnectionListener() {
+        connListener = new AbstractConnectionListener() {
+            @Override
             public void connected(XMPPConnection connection) {
                 log("XMPPConnection connected ("
                                 + connection + ")");
             }
+            @Override
             public void authenticated(XMPPConnection connection, boolean resumed) {
                 String logString = "XMPPConnection authenticated (" + connection + ")";
                 if (resumed) {
@@ -87,6 +85,7 @@ public abstract class AbstractDebugger implements SmackDebugger {
                 }
                 log(logString);
             }
+            @Override
             public void connectionClosed() {
                 log(
                        "XMPPConnection closed (" +
@@ -94,24 +93,24 @@ public abstract class AbstractDebugger implements SmackDebugger {
                         ")");
             }
 
+            @Override
             public void connectionClosedOnError(Exception e) {
                 log(
                         "XMPPConnection closed due to an exception (" +
                         connection +
                         ")", e);
             }
+        };
+
+        reconnectionListener = new ReconnectionListener() {
+            @Override
             public void reconnectionFailed(Exception e) {
                 log(
                         "Reconnection failed due to an exception (" +
                         connection +
                         ")", e);
             }
-            public void reconnectionSuccessful() {
-                log(
-                        "XMPPConnection reconnected (" +
-                        connection +
-                        ")");
-            }
+            @Override
             public void reconnectingIn(int seconds) {
                 log(
                         "XMPPConnection (" +
@@ -119,12 +118,21 @@ public abstract class AbstractDebugger implements SmackDebugger {
                         ") will reconnect in " + seconds);
             }
         };
+
+        if (connection instanceof AbstractXMPPConnection) {
+            AbstractXMPPConnection abstractXmppConnection = (AbstractXMPPConnection) connection;
+            ReconnectionManager.getInstanceFor(abstractXmppConnection).addReconnectionListener(reconnectionListener);
+        } else {
+            LOGGER.info("The connection instance " + connection
+                            + " is not an instance of AbstractXMPPConnection, thus we can not install the ReconnectionListener");
+        }
     }
 
     protected abstract void log(String logMessage);
 
     protected abstract void log(String logMessage, Throwable throwable);
 
+    @Override
     public Reader newConnectionReader(Reader newReader) {
         reader.removeReaderListener(readerListener);
         ObservableReader debugReader = new ObservableReader(newReader);
@@ -133,6 +141,7 @@ public abstract class AbstractDebugger implements SmackDebugger {
         return reader;
     }
 
+    @Override
     public Writer newConnectionWriter(Writer newWriter) {
         writer.removeWriterListener(writerListener);
         ObservableWriter debugWriter = new ObservableWriter(newWriter);
@@ -159,19 +168,16 @@ public abstract class AbstractDebugger implements SmackDebugger {
         connection.addConnectionListener(connListener);
     }
 
-    public Reader getReader() {
-        return reader;
+    @Override
+    public void onIncomingStreamElement(TopLevelStreamElement streamElement) {
+        if (printInterpreted) {
+            log("RCV PKT (" + connection.getConnectionCounter() + "): " + streamElement.toXML(null));
+        }
     }
 
-    public Writer getWriter() {
-        return writer;
+    @Override
+    public void onOutgoingStreamElement(TopLevelStreamElement streamElement) {
+        // Does nothing (yet).
     }
 
-    public StanzaListener getReaderListener() {
-        return listener;
-    }
-
-    public StanzaListener getWriterListener() {
-        return null;
-    }
 }

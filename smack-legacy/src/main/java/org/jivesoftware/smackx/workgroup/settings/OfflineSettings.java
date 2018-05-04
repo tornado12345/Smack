@@ -22,6 +22,7 @@ import java.io.IOException;
 import org.jivesoftware.smack.packet.SimpleIQ;
 import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.util.StringUtils;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -80,19 +81,19 @@ public class OfflineSettings extends SimpleIQ {
         return (StringUtils.isNotEmpty(getRedirectURL()));
     }
 
-    public boolean isConfigured(){
+    public boolean isConfigured() {
         return StringUtils.isNotEmpty(getEmailAddress()) &&
                StringUtils.isNotEmpty(getSubject()) &&
                StringUtils.isNotEmpty(getOfflineText());
     }
 
     /**
-     * Element name of the stanza(/packet) extension.
+     * Element name of the stanza extension.
      */
     public static final String ELEMENT_NAME = "offline-settings";
 
     /**
-     * Namespace of the stanza(/packet) extension.
+     * Namespace of the stanza extension.
      */
     public static final String NAMESPACE = "http://jivesoftware.com/protocol/workgroup";
 
@@ -101,7 +102,7 @@ public class OfflineSettings extends SimpleIQ {
     }
 
     /**
-     * Stanza(/Packet) extension provider for AgentStatusRequest packets.
+     * Stanza extension provider for AgentStatusRequest packets.
      */
     public static class InternalProvider extends IQProvider<OfflineSettings> {
 

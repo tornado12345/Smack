@@ -23,9 +23,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jivesoftware.smack.SmackConfiguration;
-import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.util.StringUtils;
+
 import org.jxmpp.util.XmppStringUtils;
 
 /**
@@ -44,7 +45,7 @@ import org.jxmpp.util.XmppStringUtils;
  *      <li>jabber:iq:register</ul>
  *
  * Because many more IQ types are part of XMPP and its extensions, a pluggable IQ parsing
- * mechanism is provided. IQ providers are registered programatically or by creating a
+ * mechanism is provided. IQ providers are registered programmatically or by creating a
  * providers file. The file is an XML
  * document that contains one or more iqProvider entries, as in the following example:
  *
@@ -54,7 +55,7 @@ import org.jxmpp.util.XmppStringUtils;
  *     &lt;iqProvider&gt;
  *         &lt;elementName&gt;query&lt;/elementName&gt;
  *         &lt;namespace&gt;jabber:iq:time&lt;/namespace&gt;
- *         &lt;className&gt;org.jivesoftware.smack.packet.Time&lt/className&gt;
+ *         &lt;className&gt;org.jivesoftware.smack.packet.Time&lt;/className&gt;
  *     &lt;/iqProvider&gt;
  * &lt;/smackProviders&gt;</pre>
  *
@@ -64,7 +65,7 @@ import org.jxmpp.util.XmppStringUtils;
  * interface, or extend the IQ class. In the former case, each IQProvider is responsible for
  * parsing the raw XML stream to create an IQ instance. In the latter case, bean introspection
  * is used to try to automatically set properties of the IQ instance using the values found
- * in the IQ stanza(/packet) XML. For example, an XMPP time stanza(/packet) resembles the following:
+ * in the IQ stanza XML. For example, an XMPP time stanza resembles the following:
  * <pre>
  * &lt;iq type='result' to='joe@example.com' from='mary@example.com' id='time_1'&gt;
  *     &lt;query xmlns='jabber:iq:time'&gt;
@@ -74,13 +75,13 @@ import org.jxmpp.util.XmppStringUtils;
  *     &lt;/query&gt;
  * &lt;/iq&gt;</pre>
  *
- * In order for this stanza(/packet) to be automatically mapped to the Time object listed in the
+ * In order for this stanza to be automatically mapped to the Time object listed in the
  * providers file above, it must have the methods setUtc(String), setTz(String), and
  * setDisplay(String). The introspection service will automatically try to convert the String
  * value from the XML into a boolean, int, long, float, double, or Class depending on the
  * type the IQ instance expects.<p>
  *
- * A pluggable system for stanza(/packet) extensions, child elements in a custom namespace for
+ * A pluggable system for stanza extensions, child elements in a custom namespace for
  * message and presence packets, also exists. Each extension provider
  * is registered with a name space in the smack.providers file as in the following example:
  *
@@ -90,17 +91,17 @@ import org.jxmpp.util.XmppStringUtils;
  *     &lt;extensionProvider&gt;
  *         &lt;elementName&gt;x&lt;/elementName&gt;
  *         &lt;namespace&gt;jabber:iq:event&lt;/namespace&gt;
- *         &lt;className&gt;org.jivesoftware.smack.packet.MessageEvent&lt/className&gt;
+ *         &lt;className&gt;org.jivesoftware.smack.packet.MessageEvent&lt;/className&gt;
  *     &lt;/extensionProvider&gt;
  * &lt;/smackProviders&gt;</pre>
  *
  * If multiple provider entries attempt to register to handle the same element name and namespace,
- * the first entry loaded from the classpath will take precedence. Whenever a stanza(/packet) extension
+ * the first entry loaded from the classpath will take precedence. Whenever a stanza extension
  * is found in a packet, parsing will be passed to the correct provider. Each provider
  * can either implement the PacketExtensionProvider interface or be a standard Java Bean. In
  * the former case, each extension provider is responsible for parsing the raw XML stream to
- * contruct an object. In the latter case, bean introspection is used to try to automatically
- * set the properties of th class using the values in the stanza(/packet) extension sub-element. When an
+ * construct an object. In the latter case, bean introspection is used to try to automatically
+ * set the properties of th class using the values in the stanza extension sub-element. When an
  * extension provider is not registered for an element name and namespace combination, Smack will
  * store all top-level elements of the sub-packet in DefaultPacketExtension object and then
  * attach it to the packet.<p>
@@ -146,7 +147,7 @@ public final class ProviderManager {
     /**
      * Returns the IQ provider registered to the specified XML element name and namespace.
      * For example, if a provider was registered to the element name "query" and the
-     * namespace "jabber:iq:time", then the following stanza(/packet) would trigger the provider:
+     * namespace "jabber:iq:time", then the following stanza would trigger the provider:
      *
      * <pre>
      * &lt;iq type='result' to='joe@example.com' from='mary@example.com' id='time_1'&gt;
@@ -192,8 +193,7 @@ public final class ProviderManager {
      */
     @SuppressWarnings("unchecked")
     public static void addIQProvider(String elementName, String namespace,
-            Object provider)
-    {
+            Object provider) {
         validate(elementName, namespace);
         // First remove existing providers
         String key = removeIQProvider(elementName, namespace);
@@ -206,7 +206,7 @@ public final class ProviderManager {
 
     /**
      * Removes an IQ provider with the specified element name and namespace. This
-     * method is typically called to cleanup providers that are programatically added
+     * method is typically called to cleanup providers that are programmatically added
      * using the {@link #addIQProvider(String, String, Object) addIQProvider} method.
      *
      * @param elementName the XML element name.
@@ -220,9 +220,9 @@ public final class ProviderManager {
     }
 
     /**
-     * Returns the stanza(/packet) extension provider registered to the specified XML element name
+     * Returns the stanza extension provider registered to the specified XML element name
      * and namespace. For example, if a provider was registered to the element name "x" and the
-     * namespace "jabber:x:event", then the following stanza(/packet) would trigger the provider:
+     * namespace "jabber:x:event", then the following stanza would trigger the provider:
      *
      * <pre>
      * &lt;message to='romeo@montague.net' id='message_1'&gt;
@@ -236,7 +236,7 @@ public final class ProviderManager {
      *
      * @param elementName element name associated with extension provider.
      * @param namespace namespace associated with extension provider.
-     * @return the extenion provider.
+     * @return the extension provider.
      */
     public static ExtensionElementProvider<ExtensionElement> getExtensionProvider(String elementName, String namespace) {
         String key = getKey(elementName, namespace);
@@ -254,8 +254,7 @@ public final class ProviderManager {
      */
     @SuppressWarnings("unchecked")
     public static void addExtensionProvider(String elementName, String namespace,
-            Object provider)
-    {
+            Object provider) {
         validate(elementName, namespace);
         // First remove existing providers
         String key = removeExtensionProvider(elementName, namespace);
@@ -268,12 +267,12 @@ public final class ProviderManager {
 
     /**
      * Removes an extension provider with the specified element name and namespace. This
-     * method is typically called to cleanup providers that are programatically added
+     * method is typically called to cleanup providers that are programmatically added
      * using the {@link #addExtensionProvider(String, String, Object) addExtensionProvider} method.
      *
      * @param elementName the XML element name.
      * @param namespace the XML namespace.
-     * @return the key of the removed stanza(/packet) extension provider
+     * @return the key of the removed stanza extension provider
      */
     public static String removeExtensionProvider(String elementName, String namespace) {
         String key = getKey(elementName, namespace);

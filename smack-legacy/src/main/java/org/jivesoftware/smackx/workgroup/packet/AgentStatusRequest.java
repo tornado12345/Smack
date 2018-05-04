@@ -17,20 +17,23 @@
 
 package org.jivesoftware.smackx.workgroup.packet;
 
-import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.provider.IQProvider;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smack.provider.IQProvider;
+import org.jivesoftware.smack.util.ParserUtils;
+
+import org.jxmpp.jid.EntityBareJid;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+
 /**
- * Agent status request packet. This stanza(/packet) is used by agents to request the list of
- * agents in a workgroup. The response stanza(/packet) contains a list of packets. Presence
+ * Agent status request packet. This stanza is used by agents to request the list of
+ * agents in a workgroup. The response stanza contains a list of packets. Presence
  * packets from individual agents follow.
  *
  * @author Matt Tucker
@@ -38,12 +41,12 @@ import java.util.Set;
 public class AgentStatusRequest extends IQ {
 
      /**
-     * Element name of the stanza(/packet) extension.
+     * Element name of the stanza extension.
      */
     public static final String ELEMENT_NAME = "agent-status-request";
 
     /**
-     * Namespace of the stanza(/packet) extension.
+     * Namespace of the stanza extension.
      */
     public static final String NAMESPACE = "http://jabber.org/protocol/workgroup";
 
@@ -73,11 +76,11 @@ public class AgentStatusRequest extends IQ {
     protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder buf) {
         buf.rightAngleBracket();
         synchronized (agents) {
-            for (Iterator<Item> i=agents.iterator(); i.hasNext(); ) {
+            for (Iterator<Item> i = agents.iterator(); i.hasNext(); ) {
                 Item item = i.next();
                 buf.append("<agent jid=\"").append(item.getJID()).append("\">");
                 if (item.getName() != null) {
-                    buf.append("<name xmlns=\""+ AgentInfo.NAMESPACE + "\">");
+                    buf.append("<name xmlns=\"" + AgentInfo.NAMESPACE + "\">");
                     buf.append(item.getName());
                     buf.append("</name>");
                 }
@@ -89,17 +92,17 @@ public class AgentStatusRequest extends IQ {
 
     public static class Item {
 
-        private String jid;
-        private String type;
-        private String name;
+        private final EntityBareJid jid;
+        private final String type;
+        private final String name;
 
-        public Item(String jid, String type, String name) {
+        public Item(EntityBareJid jid, String type, String name) {
             this.jid = jid;
             this.type = type;
             this.name = name;
         }
 
-        public String getJID() {
+        public EntityBareJid getJID() {
             return jid;
         }
 
@@ -113,7 +116,7 @@ public class AgentStatusRequest extends IQ {
     }
 
     /**
-     * Stanza(/Packet) extension provider for AgentStatusRequest packets.
+     * Stanza extension provider for AgentStatusRequest packets.
      */
     public static class Provider extends IQProvider<AgentStatusRequest> {
 
@@ -128,8 +131,7 @@ public class AgentStatusRequest extends IQ {
                     statusRequest.agents.add(parseAgent(parser));
                 }
                 else if (eventType == XmlPullParser.END_TAG &&
-                        "agent-status-request".equals(parser.getName()))
-                {
+                        "agent-status-request".equals(parser.getName())) {
                     done = true;
                 }
             }
@@ -139,7 +141,7 @@ public class AgentStatusRequest extends IQ {
         private Item parseAgent(XmlPullParser parser) throws XmlPullParserException, IOException {
 
             boolean done = false;
-            String jid = parser.getAttributeValue("", "jid");
+            EntityBareJid jid = ParserUtils.getBareJidAttribute(parser);
             String type = parser.getAttributeValue("", "type");
             String name = null;
             while (!done) {
@@ -148,8 +150,7 @@ public class AgentStatusRequest extends IQ {
                     name = parser.nextText();
                 }
                 else if (eventType == XmlPullParser.END_TAG &&
-                        "agent".equals(parser.getName()))
-                {
+                        "agent".equals(parser.getName())) {
                     done = true;
                 }
             }

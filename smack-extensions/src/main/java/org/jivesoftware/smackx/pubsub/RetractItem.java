@@ -17,6 +17,7 @@
 package org.jivesoftware.smackx.pubsub;
 
 import org.jivesoftware.smack.packet.ExtensionElement;
+
 import org.jivesoftware.smackx.pubsub.packet.PubSubNamespace;
 
 /**
@@ -24,39 +25,36 @@ import org.jivesoftware.smackx.pubsub.packet.PubSubNamespace;
  * 
  * @author Robin Collier
  */
-public class RetractItem implements ExtensionElement
-{
-	private String id;
+public class RetractItem implements ExtensionElement {
+    private final String id;
 
-	/**
-	 * Construct a <tt>RetractItem</tt> with the specified id.
-	 * 
-	 * @param itemId The id if the item deleted
-	 */
-	public RetractItem(String itemId)
-	{
-		if (itemId == null)
-			throw new IllegalArgumentException("itemId must not be 'null'");
-		id = itemId;
-	}
+    /**
+     * Construct a <tt>RetractItem</tt> with the specified id.
+     * 
+     * @param itemId The id if the item deleted
+     */
+    public RetractItem(String itemId) {
+        if (itemId == null)
+            throw new IllegalArgumentException("itemId must not be 'null'");
+        id = itemId;
+    }
 
-	public String getId()
-	{
-		return id;
-	}
+    public String getId() {
+        return id;
+    }
 
-	public String getElementName()
-	{
-		return "retract";
-	}
+    @Override
+    public String getElementName() {
+        return "retract";
+    }
 
-	public String getNamespace()
-	{
-		return PubSubNamespace.EVENT.getXmlns();
-	}
+    @Override
+    public String getNamespace() {
+        return PubSubNamespace.event.getXmlns();
+    }
 
-	public String toXML()
-	{
-		return "<retract id='" + id + "'/>";
-	}
+    @Override
+    public String toXML(String enclosingNamespace) {
+        return "<retract id='" + id + "'/>";
+    }
 }

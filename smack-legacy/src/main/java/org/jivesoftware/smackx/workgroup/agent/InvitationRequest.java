@@ -17,6 +17,9 @@
 
 package org.jivesoftware.smackx.workgroup.agent;
 
+import org.jxmpp.jid.EntityBareJid;
+import org.jxmpp.jid.EntityJid;
+
 /**
  * Request sent by an agent to invite another agent or user.
  *
@@ -24,21 +27,21 @@ package org.jivesoftware.smackx.workgroup.agent;
  */
 public class InvitationRequest extends OfferContent {
 
-    private String inviter;
-    private String room;
-    private String reason;
+    private final EntityJid inviter;
+    private final EntityBareJid room;
+    private final String reason;
 
-    public InvitationRequest(String inviter, String room, String reason) {
+    public InvitationRequest(EntityJid inviter, EntityBareJid room, String reason) {
         this.inviter = inviter;
         this.room = room;
         this.reason = reason;
     }
 
-    public String getInviter() {
+    public EntityJid getInviter() {
         return inviter;
     }
 
-    public String getRoom() {
+    public EntityBareJid getRoom() {
         return room;
     }
 
@@ -46,14 +49,17 @@ public class InvitationRequest extends OfferContent {
         return reason;
     }
 
+    @Override
     boolean isUserRequest() {
         return false;
     }
 
+    @Override
     boolean isInvitation() {
         return true;
     }
 
+    @Override
     boolean isTransfer() {
         return false;
     }

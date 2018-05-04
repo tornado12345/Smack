@@ -24,9 +24,9 @@ package org.jivesoftware.smackx.workgroup.agent;
  */
 public class TransferRequest extends OfferContent {
 
-    private String inviter;
-    private String room;
-    private String reason;
+    private final String inviter;
+    private final String room;
+    private final String reason;
 
     public TransferRequest(String inviter, String room, String reason) {
         this.inviter = inviter;
@@ -46,14 +46,17 @@ public class TransferRequest extends OfferContent {
         return reason;
     }
 
+    @Override
     boolean isUserRequest() {
         return false;
     }
 
+    @Override
     boolean isInvitation() {
         return false;
     }
 
+    @Override
     boolean isTransfer() {
         return true;
     }

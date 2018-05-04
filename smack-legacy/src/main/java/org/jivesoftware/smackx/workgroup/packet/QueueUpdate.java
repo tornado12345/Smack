@@ -21,28 +21,29 @@ import java.io.IOException;
 
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 /**
- * An IQ stanza(/packet) that encapsulates both types of workgroup queue
+ * An IQ stanza that encapsulates both types of workgroup queue
  * status notifications -- position updates, and estimated time
  * left in the queue updates.
  */
 public class QueueUpdate implements ExtensionElement {
 
     /**
-     * Element name of the stanza(/packet) extension.
+     * Element name of the stanza extension.
      */
     public static final String ELEMENT_NAME = "queue-status";
 
     /**
-     * Namespace of the stanza(/packet) extension.
+     * Namespace of the stanza extension.
      */
     public static final String NAMESPACE = "http://jabber.org/protocol/workgroup";
 
-    private int position;
-    private int remainingTime;
+    private final int position;
+    private final int remainingTime;
 
     public QueueUpdate(int position, int remainingTime) {
         this.position = position;
@@ -69,7 +70,8 @@ public class QueueUpdate implements ExtensionElement {
         return remainingTime;
     }
 
-    public String toXML() {
+    @Override
+    public String toXML(String enclosingNamespace) {
         StringBuilder buf = new StringBuilder();
         buf.append("<queue-status xmlns=\"http://jabber.org/protocol/workgroup\">");
         if (position != -1) {
@@ -82,10 +84,12 @@ public class QueueUpdate implements ExtensionElement {
         return buf.toString();
     }
 
+    @Override
     public String getElementName() {
         return ELEMENT_NAME;
     }
 
+    @Override
     public String getNamespace() {
         return NAMESPACE;
     }

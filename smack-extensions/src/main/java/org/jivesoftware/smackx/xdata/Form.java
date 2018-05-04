@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 import org.jivesoftware.smack.packet.Stanza;
+
 import org.jivesoftware.smackx.xdata.packet.DataForm;
 
 /**
@@ -46,11 +47,11 @@ public class Form {
     private DataForm dataForm;
 
     /**
-     * Returns a new ReportedData if the stanza(/packet) is used for gathering data and includes an 
+     * Returns a new ReportedData if the stanza is used for gathering data and includes an 
      * extension that matches the elementName and namespace "x","jabber:x:data".  
      * 
-     * @param packet the stanza(/packet) used for gathering data.
-     * @return the data form parsed from the stanza(/packet) or <tt>null</tt> if there was not
+     * @param packet the stanza used for gathering data.
+     * @return the data form parsed from the stanza or <tt>null</tt> if there was not
      *      a form in the packet.
      */
     public static Form getFormFrom(Stanza packet) {
@@ -205,7 +206,7 @@ public class Form {
     }
 
     private static void validateThatFieldIsText(FormField field) {
-        switch(field.getType()) {
+        switch (field.getType()) {
         case text_multi:
         case text_private:
         case text_single:
@@ -234,7 +235,7 @@ public class Form {
         if (field.getType() != FormField.Type.bool) {
             throw new IllegalArgumentException("This field is not of type boolean.");
         }
-        setAnswer(field, (value ? "1" : "0"));
+        setAnswer(field, Boolean.toString(value));
     }
 
     /**
@@ -276,7 +277,7 @@ public class Form {
      * @throws IllegalStateException if the form is not of type "submit".
      * @throws IllegalArgumentException if the form does not include the specified variable.
      */
-    public void setAnswer(String variable, List<String> values) {
+    public void setAnswer(String variable, List<? extends CharSequence> values) {
         if (!isSubmitType()) {
             throw new IllegalStateException("Cannot set an answer if the form is not of type " +
             "\"submit\"");
@@ -323,7 +324,7 @@ public class Form {
             // Clear the old values
             field.resetValues();
             // Set the default value
-            for (String value : field.getValues()) {
+            for (CharSequence value : field.getValues()) {
                 field.addValue(value);
             }
         }
@@ -412,7 +413,7 @@ public class Form {
      */
     public void setInstructions(String instructions) {
         // Split the instructions into multiple instructions for each existent newline
-        ArrayList<String> instructionsList = new ArrayList<String>();
+        ArrayList<String> instructionsList = new ArrayList<>();
         StringTokenizer st = new StringTokenizer(instructions, "\n");
         while (st.hasMoreTokens()) {
             instructionsList.add(st.nextToken());
@@ -444,7 +445,7 @@ public class Form {
         if (isSubmitType()) {
             // Create a new DataForm that contains only the answered fields 
             DataForm dataFormToSend = new DataForm(getType());
-            for(FormField field : getFields()) {
+            for (FormField field : getFields()) {
                 if (!field.getValues().isEmpty()) {
                     dataFormToSend.addField(field);
                 }
@@ -503,10 +504,8 @@ public class Form {
                 if (field.getType() == FormField.Type.hidden) {
                     // Since a hidden field could have many values we need to collect them 
                     // in a list
-                    List<String> values = new ArrayList<String>();
-                    for (String value : field.getValues()) {
-                        values.add(value);
-                    }
+                    List<CharSequence> values = new ArrayList<>();
+                    values.addAll(field.getValues());
                     form.setAnswer(field.getVariable(), values);
                 }
             }

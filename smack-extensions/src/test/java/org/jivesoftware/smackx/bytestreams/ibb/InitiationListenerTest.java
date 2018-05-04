@@ -23,10 +23,12 @@ import static org.mockito.Mockito.verify;
 
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.packet.XMPPError;
+import org.jivesoftware.smack.packet.StanzaError;
+
 import org.jivesoftware.smackx.InitExtensions;
 import org.jivesoftware.smackx.bytestreams.BytestreamRequest;
 import org.jivesoftware.smackx.bytestreams.ibb.packet.Open;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.jxmpp.jid.EntityFullJid;
@@ -42,14 +44,14 @@ import org.powermock.reflect.Whitebox;
  */
 public class InitiationListenerTest extends InitExtensions {
 
-    static final EntityFullJid initiatorJID = JidTestUtil.DUMMY_AT_EXAMPLE_ORG_SLASH_DUMMYRESOURCE;
-    static final EntityFullJid targetJID = JidTestUtil.FULL_JID_1_RESOURCE_1;
-    String sessionID = "session_id";
+    private static final EntityFullJid initiatorJID = JidTestUtil.DUMMY_AT_EXAMPLE_ORG_SLASH_DUMMYRESOURCE;
+    private static final EntityFullJid targetJID = JidTestUtil.FULL_JID_1_RESOURCE_1;
+    private static final String sessionID = "session_id";
 
-    XMPPConnection connection;
-    InBandBytestreamManager byteStreamManager;
-    InitiationListener initiationListener;
-    Open initBytestream;
+    private XMPPConnection connection;
+    private InBandBytestreamManager byteStreamManager;
+    private InitiationListener initiationListener;
+    private Open initBytestream;
 
     /**
      * Initialize fields used in the tests.
@@ -95,7 +97,7 @@ public class InitiationListenerTest extends InitExtensions {
         // assert that reply is the correct error packet
         assertEquals(initiatorJID, argument.getValue().getTo());
         assertEquals(IQ.Type.error, argument.getValue().getType());
-        assertEquals(XMPPError.Condition.not_acceptable,
+        assertEquals(StanzaError.Condition.not_acceptable,
                         argument.getValue().getError().getCondition());
 
     }
@@ -123,7 +125,7 @@ public class InitiationListenerTest extends InitExtensions {
         // assert that reply is the correct error packet
         assertEquals(initiatorJID, argument.getValue().getTo());
         assertEquals(IQ.Type.error, argument.getValue().getType());
-        assertEquals(XMPPError.Condition.resource_constraint,
+        assertEquals(StanzaError.Condition.resource_constraint,
                         argument.getValue().getError().getCondition());
 
     }
@@ -213,7 +215,7 @@ public class InitiationListenerTest extends InitExtensions {
         // assert that reply is the correct error packet
         assertEquals(initiatorJID, argument.getValue().getTo());
         assertEquals(IQ.Type.error, argument.getValue().getType());
-        assertEquals(XMPPError.Condition.not_acceptable,
+        assertEquals(StanzaError.Condition.not_acceptable,
                         argument.getValue().getError().getCondition());
     }
 

@@ -16,17 +16,14 @@
  */
 package org.jivesoftware.smackx.pubsub;
 
-abstract public class NodeEvent
-{
-	private String nodeId;
+public abstract class NodeEvent {
+    private String nodeId;
 
-	protected NodeEvent(String id)
-	{
-		nodeId = id;
-	}
+    protected NodeEvent(String id) {
+        nodeId = id;
+    }
 
-	public String getNodeId()
-	{
-		return nodeId;
-	}
+    public String getNodeId() {
+        return nodeId;
+    }
 }

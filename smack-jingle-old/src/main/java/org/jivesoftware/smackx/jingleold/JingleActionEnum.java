@@ -36,9 +36,9 @@ public enum JingleActionEnum {
     SESSION_TERMINATE("session-terminate"),
     TRANSPORT_INFO("transport-info");
 
-    private String actionCode;
+    private final String actionCode;
 
-    private JingleActionEnum(String inActionCode) {
+    JingleActionEnum(String inActionCode) {
         actionCode = inActionCode;
     }
 
@@ -46,6 +46,7 @@ public enum JingleActionEnum {
      * Returns the String value for an Action.
      */
 
+    @Override
     public String toString() {
         return actionCode;
     }

@@ -17,25 +17,27 @@
 
 package org.jivesoftware.smackx.address;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 import org.jivesoftware.smack.SmackException;
-import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.FeatureNotSupportedException;
+import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.util.StringUtils;
+
 import org.jivesoftware.smackx.address.packet.MultipleAddresses;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
-import org.jxmpp.jid.EntityBareJid;
+
 import org.jxmpp.jid.DomainBareJid;
+import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.EntityFullJid;
 import org.jxmpp.jid.Jid;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 /**
  * A MultipleRecipientManager allows to send packets to multiple recipients by making use of
@@ -47,14 +49,14 @@ import java.util.List;
 public class MultipleRecipientManager {
 
     /**
-     * Sends the specified stanza(/packet) to the collection of specified recipients using the
+     * Sends the specified stanza to the collection of specified recipients using the
      * specified connection. If the server has support for XEP-33 then only one
-     * stanza(/packet) is going to be sent to the server with the multiple recipient instructions.
+     * stanza is going to be sent to the server with the multiple recipient instructions.
      * However, if XEP-33 is not supported by the server then the client is going to send
-     * the stanza(/packet) to each recipient.
+     * the stanza to each recipient.
      *
      * @param connection the connection to use to send the packet.
-     * @param packet     the stanza(/packet) to send to the list of recipients.
+     * @param packet     the stanza to send to the list of recipients.
      * @param to         the collection of JIDs to include in the TO list or <tt>null</tt> if no TO
      *                   list exists.
      * @param cc         the collection of JIDs to include in the CC list or <tt>null</tt> if no CC
@@ -69,19 +71,20 @@ public class MultipleRecipientManager {
      * @throws NotConnectedException 
      * @throws InterruptedException 
      */
-    public static void send(XMPPConnection connection, Stanza packet, Collection<? extends Jid> to, Collection<? extends Jid> cc, Collection<? extends Jid> bcc) throws NoResponseException, XMPPErrorException, FeatureNotSupportedException, NotConnectedException, InterruptedException
-   {
+    public static void send(XMPPConnection connection, Stanza packet, Collection<? extends Jid> to,
+            Collection<? extends Jid> cc, Collection<? extends Jid> bcc) throws NoResponseException, XMPPErrorException,
+            FeatureNotSupportedException, NotConnectedException, InterruptedException {
         send(connection, packet, to, cc, bcc, null, null, false);
     }
 
     /**
-     * Sends the specified stanza(/packet) to the collection of specified recipients using the specified
-     * connection. If the server has support for XEP-33 then only one stanza(/packet) is going to be sent to
+     * Sends the specified stanza to the collection of specified recipients using the specified
+     * connection. If the server has support for XEP-33 then only one stanza is going to be sent to
      * the server with the multiple recipient instructions. However, if XEP-33 is not supported by
-     * the server then the client is going to send the stanza(/packet) to each recipient.
+     * the server then the client is going to send the stanza to each recipient.
      * 
      * @param connection the connection to use to send the packet.
-     * @param packet the stanza(/packet) to send to the list of recipients.
+     * @param packet the stanza to send to the list of recipients.
      * @param to the collection of JIDs to include in the TO list or <tt>null</tt> if no TO list exists.
      * @param cc the collection of JIDs to include in the CC list or <tt>null</tt> if no CC list exists.
      * @param bcc the collection of JIDs to include in the BCC list or <tt>null</tt> if no BCC list
@@ -110,7 +113,7 @@ public class MultipleRecipientManager {
             connection.sendStanza(packet);
             return;
         }
-        DomainBareJid serviceAddress = getMultipleRecipienServiceAddress(connection);
+        DomainBareJid serviceAddress = getMultipleRecipientServiceAddress(connection);
         if (serviceAddress != null) {
             // Send packet to target users using multiple recipient service provided by the server
             sendThroughService(connection, packet, to, cc, bcc, replyTo, replyRoom, noReply,
@@ -130,19 +133,19 @@ public class MultipleRecipientManager {
     }
 
     /**
-     * Sends a reply to a previously received stanza(/packet) that was sent to multiple recipients. Before
-     * attempting to send the reply message some checkings are performed. If any of those checkings
-     * fail then an XMPPException is going to be thrown with the specific error detail.
+     * Sends a reply to a previously received stanza that was sent to multiple recipients. Before
+     * attempting to send the reply message some checks are performed. If any of those checks
+     * fails, then an XMPPException is going to be thrown with the specific error detail.
      *
      * @param connection the connection to use to send the reply.
-     * @param original   the previously received stanza(/packet) that was sent to multiple recipients.
+     * @param original   the previously received stanza that was sent to multiple recipients.
      * @param reply      the new message to send as a reply.
      * @throws SmackException 
      * @throws XMPPErrorException 
      * @throws InterruptedException 
      */
-    public static void reply(XMPPConnection connection, Message original, Message reply) throws SmackException, XMPPErrorException, InterruptedException
-         {
+    public static void reply(XMPPConnection connection, Message original, Message reply)
+            throws SmackException, XMPPErrorException, InterruptedException {
         MultipleRecipientInfo info = getMultipleRecipientInfo(original);
         if (info == null) {
             throw new SmackException("Original message does not contain multiple recipient info");
@@ -190,17 +193,16 @@ public class MultipleRecipientManager {
     }
 
     /**
-     * Returns the {@link MultipleRecipientInfo} contained in the specified stanza(/packet) or
+     * Returns the {@link MultipleRecipientInfo} contained in the specified stanza or
      * <tt>null</tt> if none was found. Only packets sent to multiple recipients will
      * contain such information.
      *
-     * @param packet the stanza(/packet) to check.
-     * @return the MultipleRecipientInfo contained in the specified stanza(/packet) or <tt>null</tt>
+     * @param packet the stanza to check.
+     * @return the MultipleRecipientInfo contained in the specified stanza or <tt>null</tt>
      *         if none was found.
      */
     public static MultipleRecipientInfo getMultipleRecipientInfo(Stanza packet) {
-        MultipleAddresses extension = (MultipleAddresses) packet
-                .getExtension(MultipleAddresses.ELEMENT, MultipleAddresses.NAMESPACE);
+        MultipleAddresses extension = packet.getExtension(MultipleAddresses.ELEMENT, MultipleAddresses.NAMESPACE);
         return extension == null ? null : new MultipleRecipientInfo(extension);
     }
 
@@ -209,19 +211,19 @@ public class MultipleRecipientManager {
         if (to != null) {
             for (Jid jid : to) {
                 packet.setTo(jid);
-                connection.sendStanza(new PacketCopy(packet.toXML()));
+                connection.sendStanza(new PacketCopy(packet.toXML(null)));
             }
         }
         if (cc != null) {
             for (Jid jid : cc) {
                 packet.setTo(jid);
-                connection.sendStanza(new PacketCopy(packet.toXML()));
+                connection.sendStanza(new PacketCopy(packet.toXML(null)));
             }
         }
         if (bcc != null) {
             for (Jid jid : bcc) {
                 packet.setTo(jid);
-                connection.sendStanza(new PacketCopy(packet.toXML()));
+                connection.sendStanza(new PacketCopy(packet.toXML(null)));
             }
         }
     }
@@ -281,39 +283,39 @@ public class MultipleRecipientManager {
      * @throws NotConnectedException 
      * @throws InterruptedException 
      */
-    private static DomainBareJid getMultipleRecipienServiceAddress(XMPPConnection connection) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+    private static DomainBareJid getMultipleRecipientServiceAddress(XMPPConnection connection) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         ServiceDiscoveryManager sdm = ServiceDiscoveryManager.getInstanceFor(connection);
         return sdm.findService(MultipleAddresses.NAMESPACE, true);
     }
 
     /**
-     * Stanza(/Packet) that holds the XML stanza to send. This class is useful when the same packet
-     * is needed to be sent to different recipients. Since using the same stanza(/packet) is not possible
-     * (i.e. cannot change the TO address of a queues stanza(/packet) to be sent) then this class was
+     * Stanza that holds the XML stanza to send. This class is useful when the same packet
+     * is needed to be sent to different recipients. Since using the same stanza is not possible
+     * (i.e. cannot change the TO address of a queues stanza to be sent) then this class was
      * created to keep the XML stanza to send.
      */
-    private static class PacketCopy extends Stanza {
+    private static final class PacketCopy extends Stanza {
 
-        private CharSequence text;
+        private final CharSequence text;
 
         /**
-         * Create a copy of a stanza(/packet) with the text to send. The passed text must be a valid text to
+         * Create a copy of a stanza with the text to send. The passed text must be a valid text to
          * send to the server, no validation will be done on the passed text.
          *
-         * @param text the whole text of the stanza(/packet) to send
+         * @param text the whole text of the stanza to send
          */
-        public PacketCopy(CharSequence text) {
+        private PacketCopy(CharSequence text) {
             this.text = text;
         }
 
         @Override
-        public CharSequence toXML() {
+        public CharSequence toXML(String enclosingNamespace) {
             return text;
         }
 
         @Override
         public String toString() {
-            return toXML().toString();
+            return toXML(null).toString();
         }
 
     }

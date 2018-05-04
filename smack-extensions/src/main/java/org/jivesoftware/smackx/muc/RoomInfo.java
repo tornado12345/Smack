@@ -19,6 +19,7 @@ package org.jivesoftware.smackx.muc;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,8 +27,10 @@ import java.util.logging.Logger;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
 import org.jivesoftware.smackx.xdata.Form;
 import org.jivesoftware.smackx.xdata.FormField;
+
 import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.Jid;
+import org.jxmpp.jid.util.JidUtil;
 
 /**
  * Represents the room information that was discovered using Service Discovery. It's possible to
@@ -74,7 +77,7 @@ public class RoomInfo {
      */
     private final boolean moderated;
     /**
-     * Every presence stanza(/packet) can include the JID of every occupant unless the owner deactives this
+     * Every presence stanza can include the JID of every occupant unless the owner deactives this
      * configuration.
      */
     private final boolean nonanonymous;
@@ -96,7 +99,7 @@ public class RoomInfo {
     /**
      * Contact Address
      */
-    private final List<String> contactJid;
+    private final List<EntityBareJid> contactJid;
 
     /**
      * Natural Language for Room Discussions
@@ -149,14 +152,14 @@ public class RoomInfo {
         if (!identities.isEmpty()) {
             this.name = identities.get(0).getName();
         } else {
-            LOGGER.warning("DiscoverInfo does not contain any Identity: " + info.toXML());
+            LOGGER.warning("DiscoverInfo does not contain any Identity: " + info.toXML(null));
             this.name = "";
         }
         String subject = "";
         int occupantsCount = -1;
         String description = "";
         int maxhistoryfetch = -1;
-        List<String> contactJid = null;
+        List<EntityBareJid> contactJid = null;
         String lang = null;
         String ldapgroup = null;
         Boolean subjectmod = null;
@@ -168,49 +171,48 @@ public class RoomInfo {
             FormField descField = form.getField("muc#roominfo_description");
             if (descField != null && !descField.getValues().isEmpty()) {
                 // Prefer the extended result description
-                description = descField.getValues().get(0);
+                description = descField.getFirstValue();
             }
 
             FormField subjField = form.getField("muc#roominfo_subject");
             if (subjField != null && !subjField.getValues().isEmpty()) {
-                subject = subjField.getValues().get(0);
+                subject = subjField.getFirstValue();
             }
 
             FormField occCountField = form.getField("muc#roominfo_occupants");
             if (occCountField != null && !occCountField.getValues().isEmpty()) {
-                occupantsCount = Integer.parseInt(occCountField.getValues().get(
-                                0));
+                occupantsCount = Integer.parseInt(occCountField.getFirstValue());
             }
 
             FormField maxhistoryfetchField = form.getField("muc#maxhistoryfetch");
             if (maxhistoryfetchField != null && !maxhistoryfetchField.getValues().isEmpty()) {
-                maxhistoryfetch = Integer.parseInt(maxhistoryfetchField.getValues().get(
-                                0));
+                maxhistoryfetch = Integer.parseInt(maxhistoryfetchField.getFirstValue());
             }
 
             FormField contactJidField = form.getField("muc#roominfo_contactjid");
             if (contactJidField != null && !contactJidField.getValues().isEmpty()) {
-                contactJid = contactJidField.getValues();
+                List<CharSequence> contactJidValues = contactJidField.getValues();
+                contactJid = JidUtil.filterEntityBareJidList(JidUtil.jidSetFrom(contactJidValues));
             }
 
             FormField langField = form.getField("muc#roominfo_lang");
             if (langField != null && !langField.getValues().isEmpty()) {
-                lang = langField.getValues().get(0);
+                lang = langField.getFirstValue();
             }
 
             FormField ldapgroupField = form.getField("muc#roominfo_ldapgroup");
             if (ldapgroupField != null && !ldapgroupField.getValues().isEmpty()) {
-                ldapgroup = ldapgroupField.getValues().get(0);
+                ldapgroup = ldapgroupField.getFirstValue();
             }
 
             FormField subjectmodField = form.getField("muc#roominfo_subjectmod");
             if (subjectmodField != null && !subjectmodField.getValues().isEmpty()) {
-                subjectmod = Boolean.valueOf(subjectmodField.getValues().get(0));
+                subjectmod = Boolean.valueOf(subjectmodField.getFirstValue());
             }
 
             FormField urlField = form.getField("muc#roominfo_logs");
             if (urlField != null && !urlField.getValues().isEmpty()) {
-                String urlString = urlField.getValues().get(0);
+                String urlString = urlField.getFirstValue();
                 try {
                     logs = new URL(urlString);
                 } catch (MalformedURLException e) {
@@ -220,7 +222,7 @@ public class RoomInfo {
 
             FormField pubsubField = form.getField("muc#roominfo_pubsub");
             if (pubsubField != null && !pubsubField.getValues().isEmpty()) {
-                pubsub = pubsubField.getValues().get(0);
+                pubsub = pubsubField.getFirstValue();
             }
         }
         this.description = description;
@@ -353,8 +355,8 @@ public class RoomInfo {
      *
      * @return a list of contact addresses for this room.
      */
-    public List<String> getContactJids() {
-        return contactJid;
+    public List<EntityBareJid> getContactJids() {
+        return Collections.unmodifiableList(contactJid);
     }
 
     /**

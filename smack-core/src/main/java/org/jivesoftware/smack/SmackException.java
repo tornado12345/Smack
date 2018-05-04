@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.jivesoftware.smack.filter.StanzaFilter;
 import org.jivesoftware.smack.util.dns.HostAddress;
+
 import org.jxmpp.jid.Jid;
 
 /**
@@ -56,9 +57,9 @@ public class SmackException extends Exception {
     }
 
     /**
-     * Exception thrown always when there was no response to an request within the stanza(/packet) reply timeout of the used
-     * connection instance. You can modify (e.g. increase) the stanza(/packet) reply timeout with
-     * {@link XMPPConnection#setPacketReplyTimeout(long)}.
+     * Exception thrown always when there was no response to an request within the stanza reply timeout of the used
+     * connection instance. You can modify (e.g. increase) the stanza reply timeout with
+     * {@link XMPPConnection#setReplyTimeout(long)}.
      */
     public static final class NoResponseException extends SmackException {
         /**
@@ -93,7 +94,7 @@ public class SmackException extends Exception {
         }
 
         public static NoResponseException newWith(XMPPConnection connection,
-                        PacketCollector collector) {
+                        StanzaCollector collector) {
             return newWith(connection, collector.getStanzaFilter());
         }
 
@@ -111,7 +112,7 @@ public class SmackException extends Exception {
         }
 
         private static StringBuilder getWaitingFor(XMPPConnection connection) {
-            final long replyTimeout = connection.getPacketReplyTimeout();
+            final long replyTimeout = connection.getReplyTimeout();
             final StringBuilder sb = new StringBuilder(256);
             sb.append("No response received within reply timeout. Timeout was "
                             + replyTimeout + "ms (~"
@@ -194,7 +195,7 @@ public class SmackException extends Exception {
         }
     }
 
-    public static abstract class SecurityRequiredException extends SmackException {
+    public abstract static class SecurityRequiredException extends SmackException {
 
         /**
          * 
@@ -257,7 +258,7 @@ public class SmackException extends Exception {
 
         public ConnectionException(Throwable wrappedThrowable) {
             super(wrappedThrowable);
-            failedAddresses = new ArrayList<HostAddress>(0);
+            failedAddresses = new ArrayList<>(0);
         }
 
         private ConnectionException(String message, List<HostAddress> failedAddresses) {

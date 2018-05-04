@@ -45,6 +45,7 @@ public class TestMediaSession extends JingleMediaSession {
     /**
      * Initialize the screen share channels.
      */
+    @Override
     public void initialize() {
 
     }
@@ -52,23 +53,26 @@ public class TestMediaSession extends JingleMediaSession {
     /**
      * Starts transmission and for NAT Traversal reasons start receiving also.
      */
-    public void startTrasmit() {
+    @Override
+    public void startTransmit() {
 
     }
 
     /**
-     * Set transmit activity. If the active is true, the instance should trasmit.
+     * Set transmit activity. If the active is true, the instance should transmit.
      * If it is set to false, the instance should pause transmit.
      *
      * @param active active state
      */
-    public void setTrasmit(boolean active) {
+    @Override
+    public void setTransmit(boolean active) {
 
     }
 
     /**
      * For NAT Reasons this method does nothing. Use startTransmit() to start transmit and receive jmf
      */
+    @Override
     public void startReceive() {
         // Do nothing
     }
@@ -76,13 +80,15 @@ public class TestMediaSession extends JingleMediaSession {
     /**
      * Stops transmission and for NAT Traversal reasons stop receiving also.
      */
-    public void stopTrasmit() {
+    @Override
+    public void stopTransmit() {
 
     }
 
     /**
      * For NAT Reasons this method does nothing. Use startTransmit() to start transmit and receive jmf
      */
+    @Override
     public void stopReceive() {
 
     }

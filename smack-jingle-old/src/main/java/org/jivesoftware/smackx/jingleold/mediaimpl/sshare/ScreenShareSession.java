@@ -41,8 +41,8 @@ import org.jivesoftware.smackx.jingleold.nat.TransportCandidate;
 
 /**
  * This Class implements a complete JingleMediaSession.
- * It sould be used to transmit and receive captured images from the Display.
- * This Class should be automaticly controlled by JingleSession.
+ * It should be used to transmit and receive captured images from the Display.
+ * This Class should be automatically controlled by JingleSession.
  * For better NAT Traversal support this implementation don't support only receive or only transmit.
  * To receive you MUST transmit. So the only implemented and functionally methods are startTransmit() and stopTransmit()
  *
@@ -50,9 +50,9 @@ import org.jivesoftware.smackx.jingleold.nat.TransportCandidate;
  */
 public class ScreenShareSession extends JingleMediaSession {
 
-	private static final Logger LOGGER = Logger.getLogger(ScreenShareSession.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ScreenShareSession.class.getName());
 
-	private ImageTransmitter transmitter = null;
+    private ImageTransmitter transmitter = null;
     private ImageReceiver receiver = null;
     private int width = 600;
     private int height = 600;
@@ -74,6 +74,7 @@ public class ScreenShareSession extends JingleMediaSession {
     /**
      * Initialize the screen share channels.
      */
+    @Override
     public void initialize() {
 
         JingleSession session = getJingleSession();
@@ -97,6 +98,7 @@ public class ScreenShareSession extends JingleMediaSession {
             window.setSize(600, 600);
 
             window.addWindowListener(new WindowAdapter() {
+                @Override
                 public void windowClosed(WindowEvent e) {
                     receiver.stop();
                 }
@@ -119,32 +121,68 @@ public class ScreenShareSession extends JingleMediaSession {
 
     /**
      * Starts transmission and for NAT Traversal reasons start receiving also.
+     *
+     * @deprecated use {@link #startTransmit()} instead.
      */
+    @Deprecated
     public void startTrasmit() {
+        startTransmit();
+    }
+
+    /**
+     * Starts transmission and for NAT Traversal reasons start receiving also.
+     */
+    @Override
+    public void startTransmit() {
         new Thread(transmitter).start();
     }
 
     /**
-     * Set transmit activity. If the active is true, the instance should trasmit.
+     * Set transmit activity. If the active is true, the instance should transmit.
+     * If it is set to false, the instance should pause transmit.
+     *
+     * @param active active state
+     * @deprecated use {@link #setTransmit(boolean)} instead.
+     */
+    @Deprecated
+    public void setTrasmit(boolean active) {
+        setTransmit(active);
+    }
+
+    /**
+     * Set transmit activity. If the active is true, the instance should transmit.
      * If it is set to false, the instance should pause transmit.
      *
      * @param active active state
      */
-    public void setTrasmit(boolean active) {
+    @Override
+    public void setTransmit(boolean active) {
         transmitter.setTransmit(true);
     }
 
     /**
      * For NAT Reasons this method does nothing. Use startTransmit() to start transmit and receive jmf
      */
+    @Override
     public void startReceive() {
         // Do nothing
     }
 
     /**
      * Stops transmission and for NAT Traversal reasons stop receiving also.
+     *
+     * @deprecated use {@link #stopTransmit()} instead.
      */
+    @Deprecated
     public void stopTrasmit() {
+        stopTransmit();
+    }
+
+    /**
+     * Stops transmission and for NAT Traversal reasons stop receiving also.
+     */
+    @Override
+    public void stopTransmit() {
         if (transmitter != null) {
             transmitter.stop();
         }
@@ -153,6 +191,7 @@ public class ScreenShareSession extends JingleMediaSession {
     /**
      * For NAT Reasons this method does nothing. Use startTransmit() to start transmit and receive jmf
      */
+    @Override
     public void stopReceive() {
         if (receiver != null) {
             receiver.stop();

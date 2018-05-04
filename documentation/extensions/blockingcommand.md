@@ -1,13 +1,16 @@
 Blocking Command
 ================
 
-Allows to manage communications blocking.
+[Back](index.md)
+
+Allows one to manage communications blocking.
 
   * Check push notifications support
   * Get blocking list
   * Block contact
   * Unblock contact
   * Unblock all
+  * Check if a message has a blocked error
 
 
 **XEP related:** [XEP-0191](http://xmpp.org/extensions/xep-0191.html)
@@ -41,18 +44,18 @@ Block contact
 -------------
 
 ```
-blockingCommandManager.blockContact(jid);
+blockingCommandManager.blockContacts(jids);
 ```
-*jid* is a `Jid`
+*jids* is a `java.util.List<Jid>`
 
 
 Unblock contact
 ---------------
 
 ```
-blockingCommandManager.unblockContact(jid);
+blockingCommandManager.unblockContacts(jids);
 ```
-*jid* is a `Jid`
+*jids* is a `java.util.List<Jid>`
 
 
 Unblock all
@@ -61,3 +64,13 @@ Unblock all
 ```
 blockingCommandManager.unblockAll();
 ```
+
+
+Check if a message has a blocked error
+--------------------------------------
+
+```
+BlockedErrorExtension.isInside(message));
+```
+*message* is a `Message`
+

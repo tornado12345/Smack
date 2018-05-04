@@ -19,9 +19,11 @@ package org.jivesoftware.smackx.muc;
 
 import java.util.logging.Logger;
 
+import org.jivesoftware.smack.packet.Presence;
+
 import org.jivesoftware.smackx.muc.packet.MUCItem;
 import org.jivesoftware.smackx.muc.packet.MUCUser;
-import org.jivesoftware.smack.packet.Presence;
+
 import org.jxmpp.jid.EntityFullJid;
 import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.parts.Resourcepart;
@@ -110,19 +112,21 @@ public class Occupant {
         return nick;
     }
 
+    @Override
     public boolean equals(Object obj) {
-        if(!(obj instanceof Occupant)) {
+        if (!(obj instanceof Occupant)) {
             return false;
         }
-        Occupant occupant = (Occupant)obj;
+        Occupant occupant = (Occupant) obj;
         return jid.equals(occupant.jid);
     }
 
+    @Override
     public int hashCode() {
         int result;
         result = affiliation.hashCode();
         result = 17 * result + role.hashCode();
-        result = 17 * result + jid.hashCode();
+        result = 17 * result + (jid != null ? jid.hashCode() : 0);
         result = 17 * result + (nick != null ? nick.hashCode() : 0);
         return result;
     }

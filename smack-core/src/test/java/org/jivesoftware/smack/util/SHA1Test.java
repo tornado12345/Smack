@@ -28,7 +28,7 @@ import org.junit.Test;
  */
 public class SHA1Test  {
 
-	@Test
+    @Test
     public void testHash() {
         // Test null
         // @TODO - should the StringUtils.hash(String) method be fixed to handle null input?
@@ -70,7 +70,7 @@ public class SHA1Test  {
      */
     private boolean isValidHash(String result) {
         boolean valid = true;
-        for (int i=0; i<result.length(); i++) {
+        for (int i = 0; i < result.length(); i++) {
             char c = result.charAt(i);
             if (HASH_CHARS.indexOf(c) < 0) {
                 valid = false;

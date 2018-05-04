@@ -30,9 +30,9 @@ public abstract class SetData implements NamedElement {
         DOUBLE,
         ;
 
-        private String toStringCache;
+        private final String toStringCache;
 
-        private Type() {
+        Type() {
             toStringCache = this.name().toLowerCase(Locale.US);
         }
 
@@ -79,10 +79,10 @@ public abstract class SetData implements NamedElement {
     /**
      * Returns the XML representation of this Element.
      *
-     * @return the stanza(/packet) extension as XML.
+     * @return the stanza extension as XML.
      */
     @Override
-    public final XmlStringBuilder toXML() {
+    public final XmlStringBuilder toXML(String enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.attribute("name", name);
         xml.attribute("value", value);

@@ -38,7 +38,7 @@ public class JingleContent implements ExtensionElement {
     private String name;
 
     private JingleDescription description;
-    private final List<JingleTransport> transports = new ArrayList<JingleTransport>();
+    private final List<JingleTransport> transports = new ArrayList<>();
 
     /**
      * Creates a content description..
@@ -62,6 +62,7 @@ public class JingleContent implements ExtensionElement {
      * 
      * @return the XML element name of the element.
      */
+    @Override
     public String getElementName() {
         return NODENAME;
     }
@@ -71,6 +72,7 @@ public class JingleContent implements ExtensionElement {
      * 
      * @return The namespace
      */
+    @Override
     public String getNamespace() {
         // There is no namespace for <content>
         return "";
@@ -99,7 +101,7 @@ public class JingleContent implements ExtensionElement {
      * Adds a JingleTransport type to the packet.
      * 
      * @param transport
-     *            the JignleTransport to add.
+     *            the JingleTransport to add.
      */
     public void addJingleTransport(final JingleTransport transport) {
         synchronized (transports) {
@@ -137,7 +139,7 @@ public class JingleContent implements ExtensionElement {
      */
     public List<JingleTransport> getJingleTransportsList() {
         synchronized (transports) {
-            return new ArrayList<JingleTransport>(transports);
+            return new ArrayList<>(transports);
         }
     }
 
@@ -157,7 +159,8 @@ public class JingleContent implements ExtensionElement {
      * 
      * @return a string with the XML representation
      */
-    public String toXML() {
+    @Override
+    public String toXML(String enclosingNamespace) {
         StringBuilder buf = new StringBuilder();
 
         synchronized (transports) {
@@ -168,12 +171,12 @@ public class JingleContent implements ExtensionElement {
 
             // Add the description.
             if (description != null) {
-                buf.append(description.toXML());
+                buf.append(description.toXML(null));
             }
 
             // Add all of the transports.
             for (JingleTransport transport : transports) {
-                buf.append(transport.toXML());
+                buf.append(transport.toXML(null));
             }
             buf.append("</").append(getElementName()).append('>');
         }

@@ -18,6 +18,7 @@ package org.jivesoftware.smackx.jingleold;
 
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.packet.IQ;
+
 import org.jivesoftware.smackx.jingleold.packet.Jingle;
 
 /**
@@ -61,6 +62,7 @@ public abstract class JingleSessionState {
     /**
      * For debugging just emit the short name of the class.
      */
+    @Override
     public String toString() {
         return this.getClass().getSimpleName();
     }

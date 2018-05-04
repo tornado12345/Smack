@@ -18,8 +18,8 @@
 package org.jivesoftware.smack.filter;
 
 import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.packet.Stanza;
 
 /**
  * Filters for packets of a particular type. The type is given as a Class object, so
@@ -42,7 +42,7 @@ public class PacketTypeFilter implements StanzaFilter {
     private final Class<? extends Stanza> packetType;
 
     /**
-     * Creates a new stanza(/packet) type filter that will filter for packets that are the
+     * Creates a new stanza type filter that will filter for packets that are the
      * same type as <tt>packetType</tt>.
      *
      * @param packetType the Class type.
@@ -51,6 +51,7 @@ public class PacketTypeFilter implements StanzaFilter {
         this.packetType = packetType;
     }
 
+    @Override
     public boolean accept(Stanza packet) {
         return packetType.isInstance(packet);
     }

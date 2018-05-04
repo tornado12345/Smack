@@ -24,17 +24,21 @@ import java.util.Set;
 import java.util.WeakHashMap;
 
 import org.jivesoftware.smack.Manager;
-import org.jivesoftware.smack.PacketCollector;
 import org.jivesoftware.smack.SmackException;
-import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
+import org.jivesoftware.smack.StanzaCollector;
+import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.filter.StanzaIdFilter;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.util.StringUtils;
+
+import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.iqregister.packet.Registration;
+
 import org.jxmpp.jid.parts.Localpart;
 
 /**
@@ -44,7 +48,7 @@ import org.jxmpp.jid.parts.Localpart;
  */
 public final class AccountManager extends Manager {
 
-    private static final Map<XMPPConnection, AccountManager> INSTANCES = new WeakHashMap<XMPPConnection, AccountManager>();
+    private static final Map<XMPPConnection, AccountManager> INSTANCES = new WeakHashMap<>();
 
     /**
      * Returns the AccountManager instance associated with a given XMPPConnection.
@@ -95,7 +99,7 @@ public final class AccountManager extends Manager {
     /**
      * Flag that indicates whether the server supports In-Band Registration.
      * In-Band Registration may be advertised as a stream feature. If no stream feature
-     * was advertised from the server then try sending an IQ stanza(/packet) to discover if In-Band
+     * was advertised from the server then try sending an IQ stanza to discover if In-Band
      * Registration is available.
      */
     private boolean accountCreationSupported = false;
@@ -112,10 +116,11 @@ public final class AccountManager extends Manager {
     /**
      * Sets whether the server supports In-Band Registration. In-Band Registration may be
      * advertised as a stream feature. If no stream feature was advertised from the server
-     * then try sending an IQ stanza(/packet) to discover if In-Band Registration is available.
+     * then try sending an IQ stanza to discover if In-Band Registration is available.
      *
      * @param accountCreationSupported true if the server supports In-Band Registration.
      */
+    // TODO: Remove this method and the accountCreationSupported boolean.
     void setSupportsAccountCreation(boolean accountCreationSupported) {
         this.accountCreationSupported = accountCreationSupported;
     }
@@ -132,6 +137,8 @@ public final class AccountManager extends Manager {
      * @throws InterruptedException 
      */
     public boolean supportsAccountCreation() throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+        // TODO: Replace this body with isSupported() and possible deprecate this method.
+
         // Check if we already know that the server supports creating new accounts
         if (accountCreationSupported) {
             return true;
@@ -240,7 +247,7 @@ public final class AccountManager extends Manager {
      */
     public void createAccount(Localpart username, String password) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException  {
         // Create a map for all the required attributes, but give them blank values.
-        Map<String, String> attributes = new HashMap<String, String>();
+        Map<String, String> attributes = new HashMap<>();
         for (String attributeName : getAccountAttributes()) {
             attributes.put(attributeName, "");
         }
@@ -278,13 +285,15 @@ public final class AccountManager extends Manager {
         Registration reg = new Registration(attributes);
         reg.setType(IQ.Type.set);
         reg.setTo(connection().getXMPPServiceDomain());
-        createPacketCollectorAndSend(reg).nextResultOrThrow();
+        createStanzaCollectorAndSend(reg).nextResultOrThrow();
     }
 
     /**
      * Changes the password of the currently logged-in account. This operation can only
      * be performed after a successful login operation has been completed. Not all servers
      * support changing passwords; an XMPPException will be thrown when that is the case.
+     *
+     * @param newPassword new password.
      *
      * @throws IllegalStateException if not currently logged-in to the server.
      * @throws XMPPErrorException if an error occurs when changing the password.
@@ -296,13 +305,13 @@ public final class AccountManager extends Manager {
         if (!connection().isSecureConnection() && !allowSensitiveOperationOverInsecureConnection) {
             throw new IllegalStateException("Changing password over insecure connection.");
         }
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, String> map = new HashMap<>();
         map.put("username",  connection().getUser().getLocalpart().toString());
         map.put("password",newPassword);
         Registration reg = new Registration(map);
         reg.setType(IQ.Type.set);
         reg.setTo(connection().getXMPPServiceDomain());
-        createPacketCollectorAndSend(reg).nextResultOrThrow();
+        createStanzaCollectorAndSend(reg).nextResultOrThrow();
     }
 
     /**
@@ -317,13 +326,32 @@ public final class AccountManager extends Manager {
      * @throws InterruptedException 
      */
     public void deleteAccount() throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
-        Map<String, String> attributes = new HashMap<String, String>();
+        Map<String, String> attributes = new HashMap<>();
         // To delete an account, we add a single attribute, "remove", that is blank.
         attributes.put("remove", "");
         Registration reg = new Registration(attributes);
         reg.setType(IQ.Type.set);
         reg.setTo(connection().getXMPPServiceDomain());
-        createPacketCollectorAndSend(reg).nextResultOrThrow();
+        createStanzaCollectorAndSend(reg).nextResultOrThrow();
+    }
+
+    public boolean isSupported()
+                    throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+        XMPPConnection connection = connection();
+
+        ExtensionElement extensionElement = connection.getFeature(Registration.Feature.ELEMENT,
+                        Registration.Feature.NAMESPACE);
+        if (extensionElement != null) {
+            return true;
+        }
+
+        // Fallback to disco#info only if this connection is authenticated, as otherwise we won't have an full JID and
+        // won't be able to do IQs.
+        if (connection.isAuthenticated()) {
+            return ServiceDiscoveryManager.getInstanceFor(connection).serverSupportsFeature(Registration.NAMESPACE);
+        }
+
+        return false;
     }
 
     /**
@@ -339,11 +367,10 @@ public final class AccountManager extends Manager {
     private synchronized void getRegistrationInfo() throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         Registration reg = new Registration();
         reg.setTo(connection().getXMPPServiceDomain());
-        info = createPacketCollectorAndSend(reg).nextResultOrThrow();
+        info = createStanzaCollectorAndSend(reg).nextResultOrThrow();
     }
 
-    private PacketCollector createPacketCollectorAndSend(IQ req) throws NotConnectedException, InterruptedException {
-        PacketCollector collector = connection().createPacketCollectorAndSend(new StanzaIdFilter(req.getStanzaId()), req);
-        return collector;
+    private StanzaCollector createStanzaCollectorAndSend(IQ req) throws NotConnectedException, InterruptedException {
+        return connection().createStanzaCollectorAndSend(new StanzaIdFilter(req.getStanzaId()), req);
     }
 }

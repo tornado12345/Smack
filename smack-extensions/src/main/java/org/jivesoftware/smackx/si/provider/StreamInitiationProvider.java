@@ -22,11 +22,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.jivesoftware.smack.provider.IQProvider;
-import org.jxmpp.util.XmppDateTime;
+
 import org.jivesoftware.smackx.si.packet.StreamInitiation;
 import org.jivesoftware.smackx.si.packet.StreamInitiation.File;
 import org.jivesoftware.smackx.xdata.packet.DataForm;
 import org.jivesoftware.smackx.xdata.provider.DataFormProvider;
+
+import org.jxmpp.util.XmppDateTime;
 import org.xmlpull.v1.XmlPullParser;
 
 /**
@@ -41,53 +43,53 @@ public class StreamInitiationProvider extends IQProvider<StreamInitiation> {
     @Override
     public StreamInitiation parse(XmlPullParser parser, int initialDepth)
                     throws Exception {
-		boolean done = false;
+        boolean done = false;
 
-		// si
-		String id = parser.getAttributeValue("", "id");
-		String mimeType = parser.getAttributeValue("", "mime-type");
+        // si
+        String id = parser.getAttributeValue("", "id");
+        String mimeType = parser.getAttributeValue("", "mime-type");
 
-		StreamInitiation initiation = new StreamInitiation();
+        StreamInitiation initiation = new StreamInitiation();
 
-		// file
-		String name = null;
-		String size = null;
-		String hash = null;
-		String date = null;
-		String desc = null;
-		boolean isRanged = false;
+        // file
+        String name = null;
+        String size = null;
+        String hash = null;
+        String date = null;
+        String desc = null;
+        boolean isRanged = false;
 
-		// feature
-		DataForm form = null;
-		DataFormProvider dataFormProvider = new DataFormProvider();
+        // feature
+        DataForm form = null;
+        DataFormProvider dataFormProvider = new DataFormProvider();
 
-		int eventType;
-		String elementName;
-		String namespace;
-		while (!done) {
-			eventType = parser.next();
-			elementName = parser.getName();
-			namespace = parser.getNamespace();
-			if (eventType == XmlPullParser.START_TAG) {
-				if (elementName.equals("file")) {
-					name = parser.getAttributeValue("", "name");
-					size = parser.getAttributeValue("", "size");
-					hash = parser.getAttributeValue("", "hash");
-					date = parser.getAttributeValue("", "date");
-				} else if (elementName.equals("desc")) {
-					desc = parser.nextText();
-				} else if (elementName.equals("range")) {
-					isRanged = true;
-				} else if (elementName.equals("x")
-						&& namespace.equals("jabber:x:data")) {
-					form = dataFormProvider.parse(parser);
-				}
-			} else if (eventType == XmlPullParser.END_TAG) {
-				if (elementName.equals("si")) {
-					done = true;
-				} else if (elementName.equals("file")) {
+        int eventType;
+        String elementName;
+        String namespace;
+        while (!done) {
+            eventType = parser.next();
+            elementName = parser.getName();
+            namespace = parser.getNamespace();
+            if (eventType == XmlPullParser.START_TAG) {
+                if (elementName.equals("file")) {
+                    name = parser.getAttributeValue("", "name");
+                    size = parser.getAttributeValue("", "size");
+                    hash = parser.getAttributeValue("", "hash");
+                    date = parser.getAttributeValue("", "date");
+                } else if (elementName.equals("desc")) {
+                    desc = parser.nextText();
+                } else if (elementName.equals("range")) {
+                    isRanged = true;
+                } else if (elementName.equals("x")
+                        && namespace.equals("jabber:x:data")) {
+                    form = dataFormProvider.parse(parser);
+                }
+            } else if (eventType == XmlPullParser.END_TAG) {
+                if (elementName.equals("si")) {
+                    done = true;
+                } else if (elementName.equals("file")) {
                     long fileSize = 0;
-                    if(size != null && size.trim().length() !=0){
+                    if (size != null && size.trim().length() != 0) {
                         try {
                             fileSize = Long.parseLong(size);
                         }
@@ -106,21 +108,21 @@ public class StreamInitiationProvider extends IQProvider<StreamInitiation> {
                     }
 
                     File file = new File(name, fileSize);
-					file.setHash(hash);
-					file.setDate(fileDate);
-					file.setDesc(desc);
-					file.setRanged(isRanged);
-					initiation.setFile(file);
-				}
-			}
-		}
+                    file.setHash(hash);
+                    file.setDate(fileDate);
+                    file.setDesc(desc);
+                    file.setRanged(isRanged);
+                    initiation.setFile(file);
+                }
+            }
+        }
 
-		initiation.setSessionID(id);
-		initiation.setMimeType(mimeType);
+        initiation.setSessionID(id);
+        initiation.setMimeType(mimeType);
 
-		initiation.setFeatureNegotiationForm(form);
+        initiation.setFeatureNegotiationForm(form);
 
-		return initiation;
-	}
+        return initiation;
+    }
 
 }

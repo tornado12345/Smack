@@ -17,19 +17,20 @@
 
 package org.jivesoftware.smackx.workgroup.settings;
 
-import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.provider.IQProvider;
-import org.jivesoftware.smack.util.StringUtils;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smack.provider.IQProvider;
+import org.jivesoftware.smack.util.StringUtils;
+
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+
 public class GenericSettings extends IQ {
 
-    private Map<String, String> map = new HashMap<String, String>();
+    private Map<String, String> map = new HashMap<>();
 
     private String query;
 
@@ -51,12 +52,12 @@ public class GenericSettings extends IQ {
 
 
     /**
-     * Element name of the stanza(/packet) extension.
+     * Element name of the stanza extension.
      */
     public static final String ELEMENT_NAME = "generic-metadata";
 
     /**
-     * Namespace of the stanza(/packet) extension.
+     * Namespace of the stanza extension.
      */
     public static final String NAMESPACE = "http://jivesoftware.com/protocol/workgroup";
 
@@ -74,7 +75,7 @@ public class GenericSettings extends IQ {
     }
 
     /**
-     * Stanza(/Packet) extension provider for SoundSetting Packets.
+     * Stanza extension provider for SoundSetting Packets.
      */
     public static class InternalProvider extends IQProvider<GenericSettings> {
 

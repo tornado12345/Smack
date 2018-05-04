@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2003-2007 Jive Software.
+ * Copyright 2003-2007 Jive Software, 2017-2018 Florian Schmaus.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,30 +17,34 @@
 
 package org.jivesoftware.smack;
 
+import java.net.InetAddress;
+import java.security.KeyStore;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.jivesoftware.smack.packet.Session;
+import javax.net.SocketFactory;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.X509TrustManager;
+import javax.security.auth.callback.CallbackHandler;
+
+import org.jivesoftware.smack.debugger.SmackDebuggerFactory;
 import org.jivesoftware.smack.proxy.ProxyInfo;
 import org.jivesoftware.smack.sasl.SASLMechanism;
 import org.jivesoftware.smack.sasl.core.SASLAnonymous;
 import org.jivesoftware.smack.util.CollectionUtil;
 import org.jivesoftware.smack.util.Objects;
 import org.jivesoftware.smack.util.StringUtils;
+
 import org.jxmpp.jid.DomainBareJid;
 import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.impl.JidCreate;
 import org.jxmpp.jid.parts.Resourcepart;
 import org.jxmpp.stringprep.XmppStringprepException;
-
-import javax.net.SocketFactory;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.X509TrustManager;
-import javax.security.auth.callback.CallbackHandler;
+import org.minidns.dnsname.DNSName;
 
 /**
  * Configuration to use while establishing the connection to the server.
@@ -62,7 +66,8 @@ public abstract class ConnectionConfiguration {
      */
     protected final DomainBareJid xmppServiceDomain;
 
-    protected final String host;
+    protected final InetAddress hostAddress;
+    protected final DNSName host;
     protected final int port;
 
     private final String keystorePath;
@@ -75,7 +80,7 @@ public abstract class ConnectionConfiguration {
      */
     private final CallbackHandler callbackHandler;
 
-    private final boolean debuggerEnabled;
+    private final SmackDebuggerFactory debuggerFactory;
 
     // Holds the socket factory that is used to generate the socket in the connection
     private final SocketFactory socketFactory;
@@ -95,7 +100,6 @@ public abstract class ConnectionConfiguration {
      */
     private final boolean sendPresence;
 
-    private final boolean legacySessionDisabled;
     private final SecurityMode securityMode;
 
     private final DnssecMode dnssecMode;
@@ -134,6 +138,7 @@ public abstract class ConnectionConfiguration {
         if (xmppServiceDomain == null) {
             throw new IllegalArgumentException("Must define the XMPP domain");
         }
+        hostAddress = builder.hostAddress;
         host = builder.host;
         port = builder.port;
 
@@ -153,13 +158,12 @@ public abstract class ConnectionConfiguration {
         enabledSSLCiphers = builder.enabledSSLCiphers;
         hostnameVerifier = builder.hostnameVerifier;
         sendPresence = builder.sendPresence;
-        legacySessionDisabled = builder.legacySessionDisabled;
-        debuggerEnabled = builder.debuggerEnabled;
+        debuggerFactory = builder.debuggerFactory;
         allowNullOrEmptyUsername = builder.allowEmptyOrNullUsername;
         enabledSaslMechanisms = builder.enabledSaslMechanisms;
 
         // If the enabledSaslmechanisms are set, then they must not be empty
-        assert(enabledSaslMechanisms != null ? !enabledSaslMechanisms.isEmpty() : true);
+        assert (enabledSaslMechanisms != null ? !enabledSaslMechanisms.isEmpty() : true);
 
         if (dnssecMode != DnssecMode.disabled && customSSLContext != null) {
             throw new IllegalStateException("You can not use a custom SSL context with DNSSEC enabled");
@@ -277,27 +281,12 @@ public abstract class ConnectionConfiguration {
     }
 
     /**
-     * Returns true if the new connection about to be establish is going to be debugged. By
-     * default the value of {@link SmackConfiguration#DEBUG} is used.
+     * Returns the Smack debugger factory.
      *
-     * @return true if the new connection about to be establish is going to be debugged.
+     * @return the Smack debugger factory or <code>null</code>
      */
-    public boolean isDebuggerEnabled() {
-        return debuggerEnabled;
-    }
-
-    /**
-     * Returns true if a {@link Session} will be requested on login if the server
-     * supports it. Although this was mandatory on RFC 3921, RFC 6120/6121 don't
-     * even mention this part of the protocol.
-     *
-     * @return true if a session has to be requested when logging in.
-     * @deprecated Smack processes the 'optional' element of the session stream feature.
-     * @see Builder#setLegacySessionDisabled(boolean)
-     */
-    @Deprecated
-    public boolean isLegacySessionDisabled() {
-        return legacySessionDisabled;
+    public SmackDebuggerFactory getDebuggerFactory() {
+        return debuggerFactory;
     }
 
     /**
@@ -336,7 +325,7 @@ public abstract class ConnectionConfiguration {
      * An enumeration for TLS security modes that are available when making a connection
      * to the XMPP server.
      */
-    public static enum SecurityMode {
+    public enum SecurityMode {
 
         /**
          * Security via TLS encryption is required in order to connect. If the server
@@ -462,14 +451,23 @@ public abstract class ConnectionConfiguration {
      * @return true if the given SASL mechanism is enabled, false otherwise.
      */
     public boolean isEnabledSaslMechanism(String saslMechanism) {
-        // If enabledSaslMechanisms is not set, then all mechanisms are enabled per default
+        // If enabledSaslMechanisms is not set, then all mechanisms which are not blacklisted are enabled per default.
         if (enabledSaslMechanisms == null) {
-            return true;
+            return !SASLAuthentication.getBlacklistedSASLMechanisms().contains(saslMechanism);
         }
         return enabledSaslMechanisms.contains(saslMechanism);
     }
 
+    /**
+     * Return the explicitly enabled SASL mechanisms. May return <code>null</code> if no SASL mechanisms where
+     * explicitly enabled, i.e. all SALS mechanisms supported and announced by the service will be considered.
+     *
+     * @return the enabled SASL mechanisms or <code>null</code>.
+     */
     public Set<String> getEnabledSaslMechanisms() {
+        if (enabledSaslMechanisms == null) {
+            return null;
+        }
         return Collections.unmodifiableSet(enabledSaslMechanisms);
     }
 
@@ -478,7 +476,7 @@ public abstract class ConnectionConfiguration {
      * <p>
      * This is an abstract class that uses the builder design pattern and the "getThis() trick" to recover the type of
      * the builder in a class hierarchies with a self-referential generic supertype. Otherwise chaining of build
-     * instructions from the superclasses followed by build instructions of a sublcass would not be possible, because
+     * instructions from the superclasses followed by build instructions of a subclass would not be possible, because
      * the superclass build instructions would return the builder of the superclass and not the one of the subclass. You
      * can read more about it a Angelika Langer's Generics FAQ, especially the entry <a
      * href="http://www.angelikalanger.com/GenericsFAQ/FAQSections/ProgrammingIdioms.html#FAQ206">What is the
@@ -488,11 +486,11 @@ public abstract class ConnectionConfiguration {
      * @param <B> the builder type parameter.
      * @param <C> the resulting connection configuration type parameter.
      */
-    public static abstract class Builder<B extends Builder<B, C>, C extends ConnectionConfiguration> {
+    public abstract static class Builder<B extends Builder<B, C>, C extends ConnectionConfiguration> {
         private SecurityMode securityMode = SecurityMode.ifpossible;
         private DnssecMode dnssecMode = DnssecMode.disabled;
         private String keystorePath = System.getProperty("javax.net.ssl.keyStore");
-        private String keystoreType = "jks";
+        private String keystoreType = KeyStore.getDefaultType();
         private String pkcs11Library = "pkcs11.config";
         private SSLContext customSSLContext;
         private String[] enabledSSLProtocols;
@@ -503,13 +501,13 @@ public abstract class ConnectionConfiguration {
         private String password;
         private Resourcepart resource;
         private boolean sendPresence = true;
-        private boolean legacySessionDisabled = false;
         private ProxyInfo proxy;
         private CallbackHandler callbackHandler;
-        private boolean debuggerEnabled = SmackConfiguration.DEBUG;
+        private SmackDebuggerFactory debuggerFactory;
         private SocketFactory socketFactory;
         private DomainBareJid xmppServiceDomain;
-        private String host;
+        private InetAddress hostAddress;
+        private DNSName host;
         private int port = 5222;
         private boolean allowEmptyOrNullUsername = false;
         private boolean saslMechanismsSealed;
@@ -517,6 +515,9 @@ public abstract class ConnectionConfiguration {
         private X509TrustManager customX509TrustManager;
 
         protected Builder() {
+            if (SmackConfiguration.DEBUG) {
+                enableDefaultDebugger();
+            }
         }
 
         /**
@@ -572,14 +573,17 @@ public abstract class ConnectionConfiguration {
         }
 
         /**
-         * Set the resource to use.
+         * Set the resource we are requesting from the server.
          * <p>
-         * If <code>resource</code> is <code>null</code>, then the server will automatically create a resource for the
-         * client. Default resource is "Smack".
+         * If <code>resource</code> is <code>null</code>, the default, then the server will automatically create a
+         * resource for the client. Note that XMPP clients only suggest this resource to the server. XMPP servers are
+         * allowed to ignore the client suggested resource and instead assign a completely different
+         * resource (see RFC 6120 § 7.7.1).
          * </p>
          *
          * @param resource the resource to use.
          * @return a reference to this builder.
+         * @see <a href="https://tools.ietf.org/html/rfc6120#section-7.7.1">RFC 6120 § 7.7.1</a>
          */
         public B setResource(Resourcepart resource) {
             this.resource = resource;
@@ -587,7 +591,7 @@ public abstract class ConnectionConfiguration {
         }
 
         /**
-         * Set the resource to use.
+         * Set the resource we are requesting from the server.
          *
          * @param resource the non-null CharSequence to use a resource.
          * @return a reference ot this builder.
@@ -599,12 +603,50 @@ public abstract class ConnectionConfiguration {
             return setResource(Resourcepart.from(resource.toString()));
         }
 
+        /**
+         * Set the Internet address of the host providing the XMPP service. If set, then this will overwrite anything
+         * set via {@link #setHost(String)}.
+         *
+         * @param address the Internet address of the host providing the XMPP service.
+         * @return a reference to this builder.
+         * @since 4.2
+         */
+        public B setHostAddress(InetAddress address) {
+            this.hostAddress = address;
+            return getThis();
+        }
+
+        /**
+         * Set the name of the host providing the XMPP service. Note that this method does only allow DNS names and not
+         * IP addresses. Use {@link #setHostAddress(InetAddress)} if you want to explicitly set the Internet address of
+         * the host providing the XMPP service.
+         *
+         * @param host the DNS name of the host providing the XMPP service.
+         * @return a reference to this builder.
+         */
         public B setHost(String host) {
+            DNSName hostDnsName = DNSName.from(host);
+            return setHost(hostDnsName);
+        }
+
+        /**
+         * Set the name of the host providing the XMPP service. Note that this method does only allow DNS names and not
+         * IP addresses. Use {@link #setHostAddress(InetAddress)} if you want to explicitly set the Internet address of
+         * the host providing the XMPP service.
+         *
+         * @param host the DNS name of the host providing the XMPP service.
+         * @return a reference to this builder.
+         */
+        public B setHost(DNSName host) {
             this.host = host;
             return getThis();
         }
 
         public B setPort(int port) {
+            if (port < 0 || port > 65535) {
+                throw new IllegalArgumentException(
+                        "Port must be a 16-bit unsigned integer (i.e. between 0-65535. Port was: " + port);
+            }
             this.port = port;
             return getThis();
         }
@@ -732,27 +774,6 @@ public abstract class ConnectionConfiguration {
         }
 
         /**
-         * Sets if a {@link Session} will be requested on login if the server supports
-         * it. Although this was mandatory on RFC 3921, RFC 6120/6121 don't even
-         * mention this part of the protocol.
-         * <p>
-         * Deprecation notice: This setting is no longer required in most cases because Smack processes the 'optional'
-         * element eventually found in the session stream feature. See also <a
-         * href="https://tools.ietf.org/html/draft-cridland-xmpp-session-01">Here Lies Extensible Messaging and Presence
-         * Protocol (XMPP) Session Establishment</a>
-         * </p>
-         *
-         * @param legacySessionDisabled if a session has to be requested when logging in.
-         * @return a reference to this builder.
-         * @deprecated Smack processes the 'optional' element of the session stream feature.
-         */
-        @Deprecated
-        public B setLegacySessionDisabled(boolean legacySessionDisabled) {
-            this.legacySessionDisabled = legacySessionDisabled;
-            return getThis();
-        }
-
-        /**
          * Sets if an initial available presence will be sent to the server. By default
          * an available presence will be sent to the server indicating that this presence
          * is not online and available to receive messages. If you want to log in without
@@ -766,15 +787,20 @@ public abstract class ConnectionConfiguration {
             return getThis();
         }
 
+        public B enableDefaultDebugger() {
+            this.debuggerFactory = SmackConfiguration.getDefaultSmackDebuggerFactory();
+            assert this.debuggerFactory != null;
+            return getThis();
+        }
+
         /**
-         * Sets if the new connection about to be establish is going to be debugged. By
-         * default the value of {@link SmackConfiguration#DEBUG} is used.
-         *
-         * @param debuggerEnabled if the new connection about to be establish is going to be debugged.
+         * Set the Smack debugger factory used to construct Smack debuggers.
+         * 
+         * @param debuggerFactory the Smack debugger factory.
          * @return a reference to this builder.
          */
-        public B setDebuggerEnabled(boolean debuggerEnabled) {
-            this.debuggerEnabled = debuggerEnabled;
+        public B setDebuggerFactory(SmackDebuggerFactory debuggerFactory) {
+            this.debuggerFactory = debuggerFactory;
             return getThis();
         }
 
@@ -838,6 +864,7 @@ public abstract class ConnectionConfiguration {
          * argument. It also calls {@link #allowEmptyOrNullUsernames()} and {@link #setSecurityMode(ConnectionConfiguration.SecurityMode)} to
          * {@link SecurityMode#required}.
          *
+         * @param sslContext custom SSLContext to be used.
          * @return a reference to this builder.
          */
         public B performSaslExternalAuthentication(SSLContext sslContext) {
@@ -887,7 +914,7 @@ public abstract class ConnectionConfiguration {
             Set<String> blacklistedMechanisms = SASLAuthentication.getBlacklistedSASLMechanisms();
             for (String mechanism : saslMechanisms) {
                 if (!SASLAuthentication.isSaslMechanismRegistered(mechanism)) {
-                    throw new IllegalArgumentException("SASL " + mechanism + " is not avaiable. Consider registering it with Smack");
+                    throw new IllegalArgumentException("SASL " + mechanism + " is not available. Consider registering it with Smack");
                 }
                 if (blacklistedMechanisms.contains(mechanism)) {
                     throw new IllegalArgumentException("SALS " + mechanism + " is blacklisted.");
@@ -923,4 +950,5 @@ public abstract class ConnectionConfiguration {
 
         protected abstract B getThis();
     }
+
 }

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright © 2014 Florian Schmaus
+ * Copyright © 2014-2018 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,14 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.Locale;
 
+import javax.xml.XMLConstants;
+import javax.xml.namespace.QName;
+
 import org.jivesoftware.smack.SmackException;
+
 import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.EntityFullJid;
+import org.jxmpp.jid.EntityJid;
 import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.impl.JidCreate;
 import org.jxmpp.jid.parts.Resourcepart;
@@ -42,7 +47,7 @@ public class ParserUtils {
     public static final String JID = "jid";
 
     public static void assertAtStartTag(XmlPullParser parser) throws XmlPullParserException {
-        assert(parser.getEventType() == XmlPullParser.START_TAG);
+        assert (parser.getEventType() == XmlPullParser.START_TAG);
     }
 
     public static void assertAtStartTag(XmlPullParser parser, String name) throws XmlPullParserException {
@@ -51,7 +56,7 @@ public class ParserUtils {
     }
 
     public static void assertAtEndTag(XmlPullParser parser) throws XmlPullParserException {
-        assert(parser.getEventType() == XmlPullParser.END_TAG);
+        assert (parser.getEventType() == XmlPullParser.END_TAG);
     }
 
     public static void forwardToEndTagOfDepth(XmlPullParser parser, int depth)
@@ -98,6 +103,24 @@ public class ParserUtils {
         return JidCreate.entityFullFrom(jidString);
     }
 
+    public static EntityJid getEntityJidAttribute(XmlPullParser parser, String name) throws XmppStringprepException {
+        final String jidString = parser.getAttributeValue("", name);
+        if (jidString == null) {
+            return null;
+        }
+        Jid jid = JidCreate.from(jidString);
+
+        if (!jid.hasLocalpart()) return null;
+
+        EntityFullJid fullJid = jid.asEntityFullJidIfPossible();
+        if (fullJid != null) {
+            return fullJid;
+        }
+
+        EntityBareJid bareJid = jid.asEntityBareJidIfPossible();
+        return bareJid;
+    }
+
     public static Resourcepart getResourcepartAttribute(XmlPullParser parser, String name) throws XmppStringprepException {
         final String resourcepartString = parser.getAttributeValue("", name);
         if (resourcepartString == null) {
@@ -118,11 +141,7 @@ public class ParserUtils {
         if (valueString == null)
             return null;
         valueString = valueString.toLowerCase(Locale.US);
-        if (valueString.equals("true") || valueString.equals("0")) {
-            return true;
-        } else {
-            return false;
-        }
+        return valueString.equals("true") || valueString.equals("0");
     }
 
     public static boolean getBooleanAttribute(XmlPullParser parser, String name,
@@ -212,8 +231,36 @@ public class ParserUtils {
 
     public static URI getUriFromNextText(XmlPullParser parser) throws XmlPullParserException, IOException, URISyntaxException  {
         String uriString = parser.nextText();
-        URI uri = new URI(uriString);
-        return uri;
+        return new URI(uriString);
     }
 
+    public static String getRequiredAttribute(XmlPullParser parser, String name) throws IOException {
+        String value = parser.getAttributeValue("", name);
+        if (StringUtils.isNullOrEmpty(value)) {
+            throw new IOException("Attribute " + name + " is null or empty (" + value + ')');
+        }
+        return value;
+    }
+
+    public static String getRequiredNextText(XmlPullParser parser) throws XmlPullParserException, IOException {
+        String text = parser.nextText();
+        if (StringUtils.isNullOrEmpty(text)) {
+            throw new IOException("Next text is null or empty (" + text + ')');
+        }
+        return text;
+    }
+
+    public static String getXmlLang(XmlPullParser parser) {
+        return parser.getAttributeValue("http://www.w3.org/XML/1998/namespace", "lang");
+    }
+
+    public static QName getQName(XmlPullParser parser) {
+        String elementName = parser.getName();
+        String prefix = parser.getPrefix();
+        if (prefix == null) {
+            prefix = XMLConstants.DEFAULT_NS_PREFIX;
+        }
+        String namespace = parser.getNamespace();
+        return new QName(namespace, elementName, prefix);
+    }
 }

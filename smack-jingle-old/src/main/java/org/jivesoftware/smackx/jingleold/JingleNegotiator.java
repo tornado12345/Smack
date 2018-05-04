@@ -24,17 +24,15 @@ import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.IQ;
+
 import org.jivesoftware.smackx.jingleold.listeners.JingleListener;
 
 /**
  * Basic Jingle negotiator.
- * <p/>
- * </p>
- * <p/>
+ * <p>
  * JingleNegotiator implements some basic behavior for every Jingle negotiation.
  * It implements a "state" pattern: each stage should process Jingle packets and
  * act depending on the current state in the negotiation...
- * <p/>
  * </p>
  *
  * @author Alvaro Saurin
@@ -42,13 +40,13 @@ import org.jivesoftware.smackx.jingleold.listeners.JingleListener;
  */
 public abstract class JingleNegotiator {
 
-	private static final Logger LOGGER = Logger.getLogger(JingleNegotiator.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(JingleNegotiator.class.getName());
 
-	//private XMPPConnection connection; // The connection associated
+    // private XMPPConnection connection; // The connection associated
 
     protected JingleSession session;
 
-    private final List<JingleListener> listeners = new ArrayList<JingleListener>();
+    private final List<JingleListener> listeners = new ArrayList<>();
 
     private String expectedAckId;
 
@@ -157,7 +155,7 @@ public abstract class JingleNegotiator {
      * @param id
      */
     public void removeExpectedId(String id) {
-        addExpectedId((String) null);
+        addExpectedId(null);
     }
 
     // Listeners
@@ -195,7 +193,7 @@ public abstract class JingleNegotiator {
         ArrayList<JingleListener> result;
 
         synchronized (listeners) {
-            result = new ArrayList<JingleListener>(listeners);
+            result = new ArrayList<>(listeners);
         }
 
         return result;
@@ -204,7 +202,7 @@ public abstract class JingleNegotiator {
     /**
      * Dispatch an incoming packet.
      * 
-     * The negotiators form a tree relationship that roughly matches the Jingle stanza(/packet) format:
+     * The negotiators form a tree relationship that roughly matches the Jingle stanza format:
      * 
      * JingleSession
      *      Content Negotiator
@@ -214,23 +212,23 @@ public abstract class JingleNegotiator {
      *          Media Negotiator
      *          Transport Negotiator
      *          
-     * <jingle>
-     *      <content>
-     *          <description>
-     *          <transport>
-     *      <content>
-     *          <description>
-     *          <transport>
+     * &lt;jingle&gt;
+     *      &lt;content&gt;
+     *          &lt;description&gt;
+     *          &lt;transport&gt;
+     *      &lt;content&gt;
+     *          &lt;description&gt;
+     *          &lt;transport&gt;
      *          
-     * This way, each segment of a Jingle stanza(/packet) has a corresponding negotiator that know how to deal with that
+     * This way, each segment of a Jingle stanza has a corresponding negotiator that know how to deal with that
      * part of the Jingle packet.  It also allows us to support Jingle packets of arbitraty complexity.
      * 
-     * Each parent calls dispatchIncomingPacket for each of its children.  The children then pass back a List<> of
+     * Each parent calls dispatchIncomingPacket for each of its children.  The children then pass back a List of
      * results that will get sent when we reach the top level negotiator (JingleSession).
      *
-     * @param iq the stanza(/packet) received
+     * @param iq the stanza received
      * @param id the ID of the response that will be sent
-     * @return the new stanza(/packet) to send (either a Jingle or an IQ error).
+     * @return the new stanza to send (either a Jingle or an IQ error).
      * @throws XMPPException
      * @throws InterruptedException 
      */
@@ -238,12 +236,12 @@ public abstract class JingleNegotiator {
 
     // CHECKSTYLE:OFF
     public void start() {
-    	isStarted = true;
-    	doStart();
+        isStarted = true;
+        doStart();
     }
 
     public boolean isStarted() {
-    	return isStarted;
+        return isStarted;
     }
     // CHECKSTYLE:ON
 

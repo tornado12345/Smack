@@ -16,25 +16,25 @@
  */
 package org.jivesoftware.smack.chat;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import org.jivesoftware.smack.DummyConnection;
-import org.jivesoftware.smack.chat.ChatManager.MatchMode;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Message.Type;
 import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.test.util.WaitForPacketListener;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.JidTestUtil;
 
+@SuppressWarnings({"deprecation", "ReferenceEquality"})
 public class ChatConnectionTest {
 
     private DummyConnection dc;
@@ -46,7 +46,7 @@ public class ChatConnectionTest {
     public void setUp() throws Exception {
         // Defaults
         ChatManager.setDefaultIsNormalIncluded(true);
-        ChatManager.setDefaultMatchMode(MatchMode.BARE_JID);
+        ChatManager.setDefaultMatchMode(ChatManager.MatchMode.BARE_JID);
 
         dc = DummyConnection.newConnectedDummyConnection();
         cm = ChatManager.getInstanceFor(dc);
@@ -77,14 +77,14 @@ public class ChatConnectionTest {
 
     @Test
     public void validateDefaultSetMatchModeNone() {
-        ChatManager.setDefaultMatchMode(MatchMode.NONE);
-        assertEquals(MatchMode.NONE, ChatManager.getInstanceFor(new DummyConnection()).getMatchMode());
+        ChatManager.setDefaultMatchMode(ChatManager.MatchMode.NONE);
+        assertEquals(ChatManager.MatchMode.NONE, ChatManager.getInstanceFor(new DummyConnection()).getMatchMode());
     }
 
     @Test
     public void validateDefaultSetMatchModeEntityBareJid() {
-        ChatManager.setDefaultMatchMode(MatchMode.BARE_JID);
-        assertEquals(MatchMode.BARE_JID, ChatManager.getInstanceFor(new DummyConnection()).getMatchMode());
+        ChatManager.setDefaultMatchMode(ChatManager.MatchMode.BARE_JID);
+        assertEquals(ChatManager.MatchMode.BARE_JID, ChatManager.getInstanceFor(new DummyConnection()).getMatchMode());
     }
 
     @Test
@@ -138,7 +138,7 @@ public class ChatConnectionTest {
     // No thread behaviour
     @Test
     public void chatMatchedOnJIDWhenNoThreadBareMode() {
-        // MatchMode.BARE_JID is the default, so setting required.
+        // ChatManager.MatchMode.BARE_JID is the default, so setting required.
         TestMessageListener msgListener = new TestMessageListener();
         TestChatManagerListener listener = new TestChatManagerListener(msgListener);
         cm.addChatListener(listener);
@@ -162,7 +162,7 @@ public class ChatConnectionTest {
     public void chatMatchedOnJIDWhenNoThreadJidMode() {
         TestMessageListener msgListener = new TestMessageListener();
         TestChatManagerListener listener = new TestChatManagerListener(msgListener);
-        cm.setMatchMode(MatchMode.SUPPLIED_JID);
+        cm.setMatchMode(ChatManager.MatchMode.SUPPLIED_JID);
         cm.addChatListener(listener);
         Stanza incomingChat = createChatPacket(null, true);
         processServerMessage(incomingChat);
@@ -188,7 +188,7 @@ public class ChatConnectionTest {
     public void chatMatchedOnJIDWhenNoThreadNoneMode() {
         TestMessageListener msgListener = new TestMessageListener();
         TestChatManagerListener listener = new TestChatManagerListener(msgListener);
-        cm.setMatchMode(MatchMode.NONE);
+        cm.setMatchMode(ChatManager.MatchMode.NONE);
         cm.addChatListener(listener);
         Stanza incomingChat = createChatPacket(null, true);
         processServerMessage(incomingChat);
@@ -342,20 +342,20 @@ public class ChatConnectionTest {
         try {
             chatServer.join();
         } catch (InterruptedException e) {
-            fail();
+            throw new AssertionError(e);
         }
         waitListener.waitAndReset();
     }
 
-    class TestChatManagerListener extends WaitForPacketListener implements ChatManagerListener {
+    static class TestChatManagerListener extends WaitForPacketListener implements ChatManagerListener {
         private Chat newChat;
         private ChatMessageListener listener;
 
-        public TestChatManagerListener(TestMessageListener msgListener) {
+        TestChatManagerListener(TestMessageListener msgListener) {
             listener = msgListener;
         }
 
-        public TestChatManagerListener() {
+        TestChatManagerListener() {
         }
 
         @Override
@@ -372,13 +372,13 @@ public class ChatConnectionTest {
         }
     }
 
-    private class TestChatServer extends Thread {
-        private Stanza chatPacket;
-        private DummyConnection con;
+    private static class TestChatServer extends Thread {
+        private final Stanza chatPacket;
+        private final DummyConnection con;
 
-        TestChatServer(Stanza chatMsg, DummyConnection conect) {
+        TestChatServer(Stanza chatMsg, DummyConnection connection) {
             chatPacket = chatMsg;
-            con = conect;
+            con = connection;
         }
 
         @Override
@@ -387,7 +387,7 @@ public class ChatConnectionTest {
         }
     }
 
-    private class TestMessageListener implements ChatMessageListener {
+    private static class TestMessageListener implements ChatMessageListener {
         private Chat msgChat;
         private int counter = 0;
 

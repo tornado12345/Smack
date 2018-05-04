@@ -45,18 +45,4 @@ public class AbstractConnectionListener implements ConnectionListener {
         // do nothing
     }
 
-    @Override
-    public void reconnectingIn(int seconds) {
-        // do nothing
-    }
-
-    @Override
-    public void reconnectionFailed(Exception e) {
-        // do nothing
-    }
-
-    @Override
-    public void reconnectionSuccessful() {
-        // do nothing
-    }
 }

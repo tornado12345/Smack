@@ -16,16 +16,17 @@
  */
 package org.jivesoftware.smackx.jingleold.nat;
 
-import org.jivesoftware.smack.SmackException.NotConnectedException;
-import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smackx.jingleold.JingleSession;
-
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.jivesoftware.smack.SmackException.NotConnectedException;
+import org.jivesoftware.smack.XMPPException;
+
+import org.jivesoftware.smackx.jingleold.JingleSession;
 
 /**
  * Basic Resolver takes all IP addresses of the interfaces and uses the
@@ -44,12 +45,13 @@ public class BasicResolver extends TransportResolver {
 
     /**
      * Resolve the IP address.
-     * <p/>
+     *
      * The BasicResolver takes the IP addresses of the interfaces and uses the
      * first non-loopback, non-linklocal and non-sitelocal address.
      * @throws NotConnectedException 
      * @throws InterruptedException 
      */
+    @Override
     public synchronized void resolve(JingleSession session) throws XMPPException, NotConnectedException, InterruptedException {
 
         setResolveInit();
@@ -115,10 +117,12 @@ public class BasicResolver extends TransportResolver {
 
     }
 
+    @Override
     public void initialize() throws XMPPException {
         setInitialized();
     }
 
+    @Override
     public void cancel() throws XMPPException {
         // Nothing to do here
     }

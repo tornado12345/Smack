@@ -19,28 +19,29 @@ package org.jivesoftware.smackx.workgroup.packet;
 
 import java.io.IOException;
 
-import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.IQ.IQChildElementXmlStringBuilder;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.jivesoftware.smack.util.XmlStringBuilder;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 /**
- * Stanza(/Packet) extension for {@link org.jivesoftware.smackx.workgroup.agent.TransferRequest}.
+ * Stanza extension for {@link org.jivesoftware.smackx.workgroup.agent.TransferRequest}.
  *
  * @author Gaston Dombiak
  */
 public class RoomTransfer implements ExtensionElement {
 
     /**
-     * Element name of the stanza(/packet) extension.
+     * Element name of the stanza extension.
      */
     public static final String ELEMENT_NAME = "transfer";
 
     /**
-     * Namespace of the stanza(/packet) extension.
+     * Namespace of the stanza extension.
      */
     public static final String NAMESPACE = "http://jabber.org/protocol/workgroup";
 
@@ -80,10 +81,12 @@ public class RoomTransfer implements ExtensionElement {
     private RoomTransfer() {
     }
 
+    @Override
     public String getElementName() {
         return ELEMENT_NAME;
     }
 
+    @Override
     public String getNamespace() {
         return NAMESPACE;
     }
@@ -105,14 +108,14 @@ public class RoomTransfer implements ExtensionElement {
     }
 
     @Override
-    public XmlStringBuilder toXML() {
+    public XmlStringBuilder toXML(String enclosingNamespace) {
         XmlStringBuilder xml = getIQChildElementBuilder(new IQChildElementXmlStringBuilder(this));
         xml.closeElement(this);
         return xml;
     }
 
     public IQ.IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder buf) {
-        buf.append("\" type=\"").append(type.name()).append("\">");
+        buf.append(" type=\"").append(type.name()).append("\">");
         buf.append("<session xmlns=\"http://jivesoftware.com/protocol/workgroup\" id=\"").append(sessionID).append("\"></session>");
         if (invitee != null) {
             buf.append("<invitee>").append(invitee).append("</invitee>");
@@ -130,7 +133,7 @@ public class RoomTransfer implements ExtensionElement {
     /**
      * Type of entity being invited to a groupchat support session.
      */
-    public static enum Type {
+    public enum Type {
         /**
          * A user is being invited to a groupchat support session. The user could be another agent
          * or just a regular XMPP user.

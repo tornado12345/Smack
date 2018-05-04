@@ -27,39 +27,44 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.jivesoftware.smack.AsyncButOrdered;
 import org.jivesoftware.smack.MessageListener;
-import org.jivesoftware.smack.PacketCollector;
-import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.PresenceListener;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
+import org.jivesoftware.smack.StanzaCollector;
+import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
-import org.jivesoftware.smack.chat.Chat;
-import org.jivesoftware.smack.chat.ChatManager;
 import org.jivesoftware.smack.chat.ChatMessageListener;
 import org.jivesoftware.smack.filter.AndFilter;
 import org.jivesoftware.smack.filter.FromMatchesFilter;
 import org.jivesoftware.smack.filter.MessageTypeFilter;
+import org.jivesoftware.smack.filter.MessageWithBodiesFilter;
 import org.jivesoftware.smack.filter.MessageWithSubjectFilter;
+import org.jivesoftware.smack.filter.MessageWithThreadFilter;
 import org.jivesoftware.smack.filter.NotFilter;
-import org.jivesoftware.smack.filter.StanzaFilter;
+import org.jivesoftware.smack.filter.OrFilter;
+import org.jivesoftware.smack.filter.PresenceTypeFilter;
 import org.jivesoftware.smack.filter.StanzaExtensionFilter;
+import org.jivesoftware.smack.filter.StanzaFilter;
+import org.jivesoftware.smack.filter.StanzaIdFilter;
 import org.jivesoftware.smack.filter.StanzaTypeFilter;
-import org.jivesoftware.smack.filter.ToFilter;
+import org.jivesoftware.smack.filter.ToMatchesFilter;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.util.StringUtils;
+
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
 import org.jivesoftware.smackx.iqregister.packet.Registration;
+import org.jivesoftware.smackx.muc.MultiUserChatException.MissingMucCreationAcknowledgeException;
 import org.jivesoftware.smackx.muc.MultiUserChatException.MucAlreadyJoinedException;
 import org.jivesoftware.smackx.muc.MultiUserChatException.MucNotJoinedException;
-import org.jivesoftware.smackx.muc.MultiUserChatException.MissingMucCreationAcknowledgeException;
 import org.jivesoftware.smackx.muc.MultiUserChatException.NotAMucServiceException;
 import org.jivesoftware.smackx.muc.filter.MUCUserStatusCodeFilter;
 import org.jivesoftware.smackx.muc.packet.Destroy;
@@ -72,11 +77,12 @@ import org.jivesoftware.smackx.muc.packet.MUCUser.Status;
 import org.jivesoftware.smackx.xdata.Form;
 import org.jivesoftware.smackx.xdata.FormField;
 import org.jivesoftware.smackx.xdata.packet.DataForm;
-import org.jxmpp.jid.EntityBareJid;
+
 import org.jxmpp.jid.DomainBareJid;
+import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.EntityFullJid;
-import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.EntityJid;
+import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.impl.JidCreate;
 import org.jxmpp.jid.parts.Resourcepart;
 import org.jxmpp.util.cache.ExpirationCache;
@@ -135,12 +141,17 @@ public class MultiUserChat {
     private final StanzaListener messageListener;
     private final StanzaListener presenceListener;
     private final StanzaListener subjectListener;
+
+    private static final AsyncButOrdered<MultiUserChat> asyncButOrdered = new AsyncButOrdered<>();
+
+    private static final StanzaFilter DECLINE_FILTER = new AndFilter(MessageTypeFilter.NORMAL,
+                    new StanzaExtensionFilter(MUCUser.ELEMENT, MUCUser.NAMESPACE));
     private final StanzaListener declinesListener;
 
     private String subject;
     private Resourcepart nickname;
     private boolean joined = false;
-    private PacketCollector messageCollector;
+    private StanzaCollector messageCollector;
 
     MultiUserChat(XMPPConnection connection, EntityBareJid room, MultiUserChatManager multiUserChatManager) {
         this.connection = connection;
@@ -152,105 +163,122 @@ public class MultiUserChat {
 
         messageListener = new StanzaListener() {
             @Override
-            public void processPacket(Stanza packet) throws NotConnectedException {
-                Message message = (Message) packet;
-                for (MessageListener listener : messageListeners) {
-                    listener.processMessage(message);
-                }
+            public void processStanza(Stanza packet) throws NotConnectedException {
+                final Message message = (Message) packet;
+
+                asyncButOrdered.performAsyncButOrdered(MultiUserChat.this, new Runnable() {
+                    @Override
+                    public void run() {
+                        for (MessageListener listener : messageListeners) {
+                            listener.processMessage(message);
+                        }
+                    }
+                });
             }
         };
 
         // Create a listener for subject updates.
         subjectListener = new StanzaListener() {
-            public void processPacket(Stanza packet) {
-                Message msg = (Message) packet;
-                EntityFullJid from = msg.getFrom().asEntityFullJidIfPossible();
-                if (from == null) {
-                    LOGGER.warning("Message subject not changed by a full JID: " + msg.getFrom());
-                    return;
-                }
+            @Override
+            public void processStanza(Stanza packet) {
+                final Message msg = (Message) packet;
+                final EntityFullJid from = msg.getFrom().asEntityFullJidIfPossible();
                 // Update the room subject
                 subject = msg.getSubject();
-                // Fire event for subject updated listeners
-                for (SubjectUpdatedListener listener : subjectUpdatedListeners) {
-                    listener.subjectUpdated(subject, from);
-                }
+
+                asyncButOrdered.performAsyncButOrdered(MultiUserChat.this, new Runnable() {
+                    @Override
+                    public void run() {
+                        // Fire event for subject updated listeners
+                        for (SubjectUpdatedListener listener : subjectUpdatedListeners) {
+                            listener.subjectUpdated(msg.getSubject(), from);
+                        }
+                    }
+                });
             }
         };
 
         // Create a listener for all presence updates.
         presenceListener = new StanzaListener() {
-            public void processPacket(Stanza packet) {
-                Presence presence = (Presence) packet;
+            @Override
+            public void processStanza(final Stanza packet) {
+                final Presence presence = (Presence) packet;
                 final EntityFullJid from = presence.getFrom().asEntityFullJidIfPossible();
                 if (from == null) {
                     LOGGER.warning("Presence not from a full JID: " + presence.getFrom());
                     return;
                 }
-                String myRoomJID = MultiUserChat.this.room + "/" + nickname;
-                boolean isUserStatusModification = presence.getFrom().equals(myRoomJID);
-                switch (presence.getType()) {
-                case available:
-                    Presence oldPresence = occupantsMap.put(from, presence);
-                    if (oldPresence != null) {
-                        // Get the previous occupant's affiliation & role
-                        MUCUser mucExtension = MUCUser.from(oldPresence);
-                        MUCAffiliation oldAffiliation = mucExtension.getItem().getAffiliation();
-                        MUCRole oldRole = mucExtension.getItem().getRole();
-                        // Get the new occupant's affiliation & role
-                        mucExtension = MUCUser.from(packet);
-                        MUCAffiliation newAffiliation = mucExtension.getItem().getAffiliation();
-                        MUCRole newRole = mucExtension.getItem().getRole();
-                        // Fire role modification events
-                        checkRoleModifications(oldRole, newRole, isUserStatusModification, from);
-                        // Fire affiliation modification events
-                        checkAffiliationModifications(
-                            oldAffiliation,
-                            newAffiliation,
-                            isUserStatusModification,
-                            from);
-                    }
-                    else {
-                        // A new occupant has joined the room
-                        if (!isUserStatusModification) {
-                            for (ParticipantStatusListener listener : participantStatusListeners) {
-                                listener.joined(from);
+                final String myRoomJID = MultiUserChat.this.room + "/" + nickname;
+                final boolean isUserStatusModification = presence.getFrom().equals(myRoomJID);
+
+                asyncButOrdered.performAsyncButOrdered(MultiUserChat.this, new Runnable() {
+                    @Override
+                    public void run() {
+                        switch (presence.getType()) {
+                        case available:
+                            Presence oldPresence = occupantsMap.put(from, presence);
+                            if (oldPresence != null) {
+                                // Get the previous occupant's affiliation & role
+                                MUCUser mucExtension = MUCUser.from(oldPresence);
+                                MUCAffiliation oldAffiliation = mucExtension.getItem().getAffiliation();
+                                MUCRole oldRole = mucExtension.getItem().getRole();
+                                // Get the new occupant's affiliation & role
+                                mucExtension = MUCUser.from(packet);
+                                MUCAffiliation newAffiliation = mucExtension.getItem().getAffiliation();
+                                MUCRole newRole = mucExtension.getItem().getRole();
+                                // Fire role modification events
+                                checkRoleModifications(oldRole, newRole, isUserStatusModification, from);
+                                // Fire affiliation modification events
+                                checkAffiliationModifications(
+                                    oldAffiliation,
+                                    newAffiliation,
+                                    isUserStatusModification,
+                                    from);
                             }
+                            else {
+                                // A new occupant has joined the room
+                                if (!isUserStatusModification) {
+                                    for (ParticipantStatusListener listener : participantStatusListeners) {
+                                        listener.joined(from);
+                                    }
+                                }
+                            }
+                            break;
+                        case unavailable:
+                            occupantsMap.remove(from);
+                            MUCUser mucUser = MUCUser.from(packet);
+                            if (mucUser != null && mucUser.hasStatus()) {
+                                // Fire events according to the received presence code
+                                checkPresenceCode(
+                                    mucUser.getStatus(),
+                                    presence.getFrom().equals(myRoomJID),
+                                    mucUser,
+                                    from);
+                            } else {
+                                // An occupant has left the room
+                                if (!isUserStatusModification) {
+                                    for (ParticipantStatusListener listener : participantStatusListeners) {
+                                        listener.left(from);
+                                    }
+                                }
+                            }
+                            break;
+                        default:
+                            break;
+                        }
+                        for (PresenceListener listener : presenceListeners) {
+                            listener.processPresence(presence);
                         }
                     }
-                    break;
-                case unavailable:
-                    occupantsMap.remove(from);
-                    MUCUser mucUser = MUCUser.from(packet);
-                    if (mucUser != null && mucUser.hasStatus()) {
-                        // Fire events according to the received presence code
-                        checkPresenceCode(
-                            mucUser.getStatus(),
-                            presence.getFrom().equals(myRoomJID),
-                            mucUser,
-                            from);
-                    } else {
-                        // An occupant has left the room
-                        if (!isUserStatusModification) {
-                            for (ParticipantStatusListener listener : participantStatusListeners) {
-                                listener.left(from);
-                            }
-                        }
-                    }
-                    break;
-                default:
-                    break;
-                }
-                for (PresenceListener listener : presenceListeners) {
-                    listener.processPresence(presence);
-                }
+                });
             }
         };
 
         // Listens for all messages that include a MUCUser extension and fire the invitation
         // rejection listeners if the message includes an invitation rejection.
         declinesListener = new StanzaListener() {
-            public void processPacket(Stanza packet) {
+            @Override
+            public void processStanza(Stanza packet) {
                 Message message = (Message) packet;
                 // Get the MUC User extension
                 MUCUser mucUser = MUCUser.from(packet);
@@ -266,7 +294,7 @@ public class MultiUserChat {
 
         presenceInterceptor = new StanzaListener() {
             @Override
-            public void processPacket(Stanza packet) {
+            public void processStanza(Stanza packet) {
                 Presence presence = (Presence) packet;
                 for (PresenceListener interceptor : presenceInterceptors) {
                     interceptor.processPresence(presence);
@@ -315,23 +343,39 @@ public class MultiUserChat {
         connection.addSyncStanzaListener(messageListener, fromRoomGroupchatFilter);
         connection.addSyncStanzaListener(presenceListener, new AndFilter(fromRoomFilter,
                         StanzaTypeFilter.PRESENCE));
-        connection.addSyncStanzaListener(subjectListener, new AndFilter(fromRoomFilter,
-                        MessageWithSubjectFilter.INSTANCE, new NotFilter(MessageTypeFilter.ERROR)));
-        connection.addSyncStanzaListener(declinesListener, new AndFilter(new StanzaExtensionFilter(MUCUser.ELEMENT,
-                        MUCUser.NAMESPACE), new NotFilter(MessageTypeFilter.ERROR)));
-        connection.addPacketInterceptor(presenceInterceptor, new AndFilter(new ToFilter(room),
+        // @formatter:off
+        connection.addSyncStanzaListener(subjectListener,
+                        new AndFilter(fromRoomFilter,
+                                      MessageWithSubjectFilter.INSTANCE,
+                                      new NotFilter(MessageTypeFilter.ERROR),
+                                      // According to XEP-0045 § 8.1 "A message with a <subject/> and a <body/> or a <subject/> and a <thread/> is a
+                                      // legitimate message, but it SHALL NOT be interpreted as a subject change."
+                                      new NotFilter(MessageWithBodiesFilter.INSTANCE),
+                                      new NotFilter(MessageWithThreadFilter.INSTANCE))
+                        );
+        // @formatter:on
+        connection.addSyncStanzaListener(declinesListener, new AndFilter(fromRoomFilter, DECLINE_FILTER));
+        connection.addStanzaInterceptor(presenceInterceptor, new AndFilter(ToMatchesFilter.create(room),
                         StanzaTypeFilter.PRESENCE));
-        messageCollector = connection.createPacketCollector(fromRoomGroupchatFilter);
+        messageCollector = connection.createStanzaCollector(fromRoomGroupchatFilter);
 
         // Wait for a presence packet back from the server.
-        // Use a bare JID filter, since the room may rewrite the nickname.
-        StanzaFilter responseFilter = new AndFilter(FromMatchesFilter.createBare(getRoom()), new StanzaTypeFilter(
-                        Presence.class), MUCUserStatusCodeFilter.STATUS_110_PRESENCE_TO_SELF);
+        // @formatter:off
+        StanzaFilter responseFilter = new AndFilter(StanzaTypeFilter.PRESENCE,
+                        new OrFilter(
+                            // We use a bare JID filter for positive responses, since the MUC service/room may rewrite the nickname.
+                            new AndFilter(FromMatchesFilter.createBare(getRoom()), MUCUserStatusCodeFilter.STATUS_110_PRESENCE_TO_SELF),
+                            // In case there is an error reply, we match on an error presence with the same stanza id and from the full
+                            // JID we send the join presence to.
+                            new AndFilter(FromMatchesFilter.createFull(joinPresence.getTo()), new StanzaIdFilter(joinPresence), PresenceTypeFilter.ERROR)
+                        )
+                    );
+        // @formatter:on
         Presence presence;
         try {
-            presence = connection.createPacketCollectorAndSend(responseFilter, joinPresence).nextResultOrThrow(conf.getTimeout());
+            presence = connection.createStanzaCollectorAndSend(responseFilter, joinPresence).nextResultOrThrow(conf.getTimeout());
         }
-        catch (InterruptedException | NoResponseException | XMPPErrorException e) {
+        catch (NotConnectedException | InterruptedException | NoResponseException | XMPPErrorException e) {
             // Ensure that all callbacks are removed if there is an exception
             removeConnectionCallbacks();
             throw e;
@@ -355,7 +399,7 @@ public class MultiUserChat {
      * @since 4.2
      */
     public MucEnterConfiguration.Builder getEnterConfigurationBuilder(Resourcepart nickname) {
-        return new MucEnterConfiguration.Builder(nickname, connection.getPacketReplyTimeout());
+        return new MucEnterConfiguration.Builder(nickname, connection.getReplyTimeout());
     }
 
     /**
@@ -442,7 +486,7 @@ public class MultiUserChat {
      * @deprecated use {@link #createOrJoin(MucEnterConfiguration)} instead.
      */
     @Deprecated
-    public MucCreateConfigFormHandle createOrJoin(Resourcepart nickname, String password, DiscussionHistory history, long timeout)
+    public MucCreateConfigFormHandle createOrJoin(Resourcepart nickname, String password, @SuppressWarnings("deprecation") DiscussionHistory history, long timeout)
                     throws NoResponseException, XMPPErrorException, InterruptedException, MucAlreadyJoinedException, NotConnectedException, NotAMucServiceException {
         MucEnterConfiguration.Builder builder = getEnterConfigurationBuilder(nickname).withPassword(
                         password).timeoutAfter(timeout);
@@ -643,7 +687,7 @@ public class MultiUserChat {
     public void join(
         Resourcepart nickname,
         String password,
-        DiscussionHistory history,
+        @SuppressWarnings("deprecation") DiscussionHistory history,
         long timeout)
         throws XMPPErrorException, NoResponseException, NotConnectedException, InterruptedException, NotAMucServiceException {
         MucEnterConfiguration.Builder builder = getEnterConfigurationBuilder(nickname).withPassword(
@@ -704,20 +748,19 @@ public class MultiUserChat {
      * @throws InterruptedException 
      */
     public synchronized void leave() throws NotConnectedException, InterruptedException {
-        // If not joined already, do nothing.
-        if (!joined) {
-            return;
-        }
+        //  Note that this method is intentionally not guarded by
+        // "if  (!joined) return" because it should be always be possible to leave the room in case the instance's
+        // state does not reflect the actual state.
+
+        // Reset occupant information first so that we are assume that we left the room even if sendStanza() would
+        // throw.
+        userHasLeft();
+
         // We leave a room by sending a presence packet where the "to"
         // field is in the form "roomName@service/nickname"
         Presence leavePresence = new Presence(Presence.Type.unavailable);
         leavePresence.setTo(JidCreate.fullFrom(room, nickname));
         connection.sendStanza(leavePresence);
-        // Reset occupant information.
-        occupantsMap.clear();
-        nickname = null;
-        joined = false;
-        userHasLeft();
     }
 
     /**
@@ -756,7 +799,7 @@ public class MultiUserChat {
         iq.setTo(room);
         iq.setType(IQ.Type.get);
 
-        IQ answer = connection.createPacketCollectorAndSend(iq).nextResultOrThrow();
+        IQ answer = connection.createStanzaCollectorAndSend(iq).nextResultOrThrow();
         return Form.getFormFrom(answer);
     }
 
@@ -776,7 +819,7 @@ public class MultiUserChat {
         iq.setType(IQ.Type.set);
         iq.addExtension(form.getDataFormToSend());
 
-        connection.createPacketCollectorAndSend(iq).nextResultOrThrow();
+        connection.createStanzaCollectorAndSend(iq).nextResultOrThrow();
     }
 
     /**
@@ -801,7 +844,7 @@ public class MultiUserChat {
         reg.setType(IQ.Type.get);
         reg.setTo(room);
 
-        IQ result = connection.createPacketCollectorAndSend(reg).nextResultOrThrow();
+        IQ result = connection.createStanzaCollectorAndSend(reg).nextResultOrThrow();
         return Form.getFormFrom(result);
     }
 
@@ -828,7 +871,7 @@ public class MultiUserChat {
         reg.setTo(room);
         reg.addExtension(form.getDataFormToSend());
 
-        connection.createPacketCollectorAndSend(reg).nextResultOrThrow();
+        connection.createStanzaCollectorAndSend(reg).nextResultOrThrow();
     }
 
     /**
@@ -855,12 +898,21 @@ public class MultiUserChat {
         Destroy destroy = new Destroy(alternateJID, reason);
         iq.setDestroy(destroy);
 
-        connection.createPacketCollectorAndSend(iq).nextResultOrThrow();
+        try {
+            connection.createStanzaCollectorAndSend(iq).nextResultOrThrow();
+        }
+        catch (XMPPErrorException e) {
+            // Note that we do not call userHasLeft() here because an XMPPErrorException would usually indicate that the
+            // room was not destroyed and we therefore we also did not leave the room.
+            throw e;
+        }
+        catch (NoResponseException | NotConnectedException | InterruptedException e) {
+            // Reset occupant information.
+            userHasLeft();
+            throw e;
+        }
 
         // Reset occupant information.
-        occupantsMap.clear();
-        nickname = null;
-        joined = false;
         userHasLeft();
     }
 
@@ -972,10 +1024,10 @@ public class MultiUserChat {
 
     /**
      * Adds a new {@link StanzaListener} that will be invoked every time a new presence
-     * is going to be sent by this MultiUserChat to the server. Stanza(/Packet) interceptors may
+     * is going to be sent by this MultiUserChat to the server. Stanza interceptors may
      * add new extensions to the presence that is going to be sent to the MUC service.
      *
-     * @param presenceInterceptor the new stanza(/packet) interceptor that will intercept presence packets.
+     * @param presenceInterceptor the new stanza interceptor that will intercept presence packets.
      */
     public void addPresenceInterceptor(PresenceListener presenceInterceptor) {
         presenceInterceptors.add(presenceInterceptor);
@@ -983,12 +1035,12 @@ public class MultiUserChat {
 
     /**
      * Removes a {@link StanzaListener} that was being invoked every time a new presence
-     * was being sent by this MultiUserChat to the server. Stanza(/Packet) interceptors may
+     * was being sent by this MultiUserChat to the server. Stanza interceptors may
      * add new extensions to the presence that is going to be sent to the MUC service.
      *
-     * @param presenceInterceptor the stanza(/packet) interceptor to remove.
+     * @param presenceInterceptor the stanza interceptor to remove.
      */
-    public void removePresenceInterceptor(StanzaListener presenceInterceptor) {
+    public void removePresenceInterceptor(PresenceListener presenceInterceptor) {
         presenceInterceptors.remove(presenceInterceptor);
     }
 
@@ -1080,7 +1132,7 @@ public class MultiUserChat {
             new AndFilter(
                 FromMatchesFilter.createFull(jid),
                 new StanzaTypeFilter(Presence.class));
-        PacketCollector response = connection.createPacketCollectorAndSend(responseFilter, joinPresence);
+        StanzaCollector response = connection.createStanzaCollectorAndSend(responseFilter, joinPresence);
         // Wait up to a certain number of seconds for a reply. If there is a negative reply, an
         // exception will be thrown
         response.nextResultOrThrow();
@@ -1552,8 +1604,7 @@ public class MultiUserChat {
      * @throws NotConnectedException 
      * @throws InterruptedException 
      */
-    private void changeAffiliationByAdmin(Jid jid, MUCAffiliation affiliation, String reason) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException
-            {
+    private void changeAffiliationByAdmin(Jid jid, MUCAffiliation affiliation, String reason) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         MUCAdmin iq = new MUCAdmin();
         iq.setTo(room);
         iq.setType(IQ.Type.set);
@@ -1561,7 +1612,7 @@ public class MultiUserChat {
         MUCItem item = new MUCItem(affiliation, jid, reason);
         iq.addItem(item);
 
-        connection.createPacketCollectorAndSend(iq).nextResultOrThrow();
+        connection.createStanzaCollectorAndSend(iq).nextResultOrThrow();
     }
 
     private void changeAffiliationByAdmin(Collection<? extends Jid> jids, MUCAffiliation affiliation)
@@ -1575,7 +1626,7 @@ public class MultiUserChat {
             iq.addItem(item);
         }
 
-        connection.createPacketCollectorAndSend(iq).nextResultOrThrow();
+        connection.createStanzaCollectorAndSend(iq).nextResultOrThrow();
     }
 
     private void changeRole(Resourcepart nickname, MUCRole role, String reason) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
@@ -1586,7 +1637,7 @@ public class MultiUserChat {
         MUCItem item = new MUCItem(role, nickname, reason);
         iq.addItem(item);
 
-        connection.createPacketCollectorAndSend(iq).nextResultOrThrow();
+        connection.createStanzaCollectorAndSend(iq).nextResultOrThrow();
     }
 
     private void changeRole(Collection<Resourcepart> nicknames, MUCRole role) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException  {
@@ -1599,7 +1650,7 @@ public class MultiUserChat {
             iq.addItem(item);
         }
 
-        connection.createPacketCollectorAndSend(iq).nextResultOrThrow();
+        connection.createStanzaCollectorAndSend(iq).nextResultOrThrow();
     }
 
     /**
@@ -1662,11 +1713,11 @@ public class MultiUserChat {
     }
 
     /**
-     * Adds a stanza(/packet) listener that will be notified of any new Presence packets
+     * Adds a stanza listener that will be notified of any new Presence packets
      * sent to the group chat. Using a listener is a suitable way to know when the list
      * of occupants should be re-loaded due to any changes.
      *
-     * @param listener a stanza(/packet) listener that will be notified of any presence packets
+     * @param listener a stanza listener that will be notified of any presence packets
      *      sent to the group chat.
      * @return true if the listener was not already added.
      */
@@ -1675,10 +1726,10 @@ public class MultiUserChat {
     }
 
     /**
-     * Removes a stanza(/packet) listener that was being notified of any new Presence packets
+     * Removes a stanza listener that was being notified of any new Presence packets
      * sent to the group chat.
      *
-     * @param listener a stanza(/packet) listener that was being notified of any presence packets
+     * @param listener a stanza listener that was being notified of any presence packets
      *      sent to the group chat.
      * @return true if the listener was removed, otherwise the listener was not added previously.
      */
@@ -1757,7 +1808,7 @@ public class MultiUserChat {
         MUCItem item = new MUCItem(affiliation);
         iq.addItem(item);
 
-        MUCAdmin answer = (MUCAdmin) connection.createPacketCollectorAndSend(iq).nextResultOrThrow();
+        MUCAdmin answer = (MUCAdmin) connection.createStanzaCollectorAndSend(iq).nextResultOrThrow();
 
         // Get the list of affiliates from the server's answer
         List<Affiliate> affiliates = new ArrayList<Affiliate>();
@@ -1812,7 +1863,7 @@ public class MultiUserChat {
         MUCItem item = new MUCItem(role);
         iq.addItem(item);
 
-        MUCAdmin answer = (MUCAdmin) connection.createPacketCollectorAndSend(iq).nextResultOrThrow();
+        MUCAdmin answer = (MUCAdmin) connection.createStanzaCollectorAndSend(iq).nextResultOrThrow();
         // Get the list of participants from the server's answer
         List<Occupant> participants = new ArrayList<Occupant>();
         for (MUCItem mucadminItem : answer.getItems()) {
@@ -1845,8 +1896,11 @@ public class MultiUserChat {
      * created chat.
      * @return new Chat for sending private messages to a given room occupant.
      */
-    public Chat createPrivateChat(EntityFullJid occupant, ChatMessageListener listener) {
-        return ChatManager.getInstanceFor(connection).createChat(occupant, listener);
+    // TODO This should be made new not using chat.Chat. Private MUC chats are different from XMPP-IM 1:1 chats in to many ways.
+    // API sketch: PrivateMucChat createPrivateChat(Resourcepart nick)
+    @SuppressWarnings("deprecation")
+    public org.jivesoftware.smack.chat.Chat createPrivateChat(EntityFullJid occupant, ChatMessageListener listener) {
+        return org.jivesoftware.smack.chat.ChatManager.getInstanceFor(connection).createChat(occupant, listener);
     }
 
     /**
@@ -1907,7 +1961,7 @@ public class MultiUserChat {
 
     /**
      * Returns the next available message in the chat. The method call will block
-     * (not return) until a stanza(/packet) is available or the <tt>timeout</tt> has elapased.
+     * (not return) until a stanza is available or the <tt>timeout</tt> has elapased.
      * If the timeout elapses without a result, <tt>null</tt> will be returned.
      *
      * @param timeout the maximum amount of time to wait for the next message.
@@ -1924,14 +1978,14 @@ public class MultiUserChat {
     }
 
     /**
-     * Adds a stanza(/packet) listener that will be notified of any new messages in the
+     * Adds a stanza listener that will be notified of any new messages in the
      * group chat. Only "group chat" messages addressed to this group chat will
      * be delivered to the listener. If you wish to listen for other packets
      * that may be associated with this group chat, you should register a
      * PacketListener directly with the XMPPConnection with the appropriate
      * PacketListener.
      *
-     * @param listener a stanza(/packet) listener.
+     * @param listener a stanza listener.
      * @return true if the listener was not already added.
      */
     public boolean addMessageListener(MessageListener listener) {
@@ -1939,11 +1993,11 @@ public class MultiUserChat {
     }
 
     /**
-     * Removes a stanza(/packet) listener that was being notified of any new messages in the
+     * Removes a stanza listener that was being notified of any new messages in the
      * multi user chat. Only "group chat" messages addressed to this multi user chat were
      * being delivered to the listener.
      *
-     * @param listener a stanza(/packet) listener.
+     * @param listener a stanza listener.
      * @return true if the listener was removed, otherwise the listener was not added previously.
      */
     public boolean removeMessageListener(MessageListener listener) {
@@ -1973,20 +2027,21 @@ public class MultiUserChat {
                 return subject.equals(msg.getSubject());
             }
         });
-        PacketCollector response = connection.createPacketCollectorAndSend(responseFilter, message);
+        StanzaCollector response = connection.createStanzaCollectorAndSend(responseFilter, message);
         // Wait up to a certain number of seconds for a reply.
         response.nextResultOrThrow();
     }
 
     /**
-     * Remove the connection callbacks (PacketListener, PacketInterceptor, PacketCollector) used by this MUC from the
+     * Remove the connection callbacks (PacketListener, PacketInterceptor, StanzaCollector) used by this MUC from the
      * connection.
      */
     private void removeConnectionCallbacks() {
         connection.removeSyncStanzaListener(messageListener);
         connection.removeSyncStanzaListener(presenceListener);
+        connection.removeSyncStanzaListener(subjectListener);
         connection.removeSyncStanzaListener(declinesListener);
-        connection.removePacketInterceptor(presenceInterceptor);
+        connection.removeStanzaInterceptor(presenceInterceptor);
         if (messageCollector != null) {
             messageCollector.cancel();
             messageCollector = null;
@@ -1997,6 +2052,11 @@ public class MultiUserChat {
      * Remove all callbacks and resources necessary when the user has left the room for some reason.
      */
     private synchronized void userHasLeft() {
+        // We do not reset nickname here, in case this method has been called erroneously, it should still be possible
+        // to call leave() in order to resync the state. And leave() requires the nickname to send the unsubscribe
+        // presence.
+        occupantsMap.clear();
+        joined = false;
         // Update the list of joined rooms
         multiUserChatManager.removeJoinedRoom(room);
         removeConnectionCallbacks();
@@ -2314,15 +2374,12 @@ public class MultiUserChat {
         if (statusCodes.contains(Status.KICKED_307)) {
             // Check if this occupant was kicked
             if (isUserModification) {
-                joined = false;
+                // Reset occupant information.
+                userHasLeft();
+
                 for (UserStatusListener listener : userStatusListeners) {
                     listener.kicked(mucUser.getItem().getActor(), mucUser.getItem().getReason());
                 }
-
-                // Reset occupant information.
-                occupantsMap.clear();
-                nickname = null;
-                userHasLeft();
             }
             else {
                 for (ParticipantStatusListener listener : participantStatusListeners) {
@@ -2371,7 +2428,7 @@ public class MultiUserChat {
                 listener.nicknameChanged(from, mucUser.getItem().getNick());
             }
         }
-        //The room has been destroyed
+        // The room has been destroyed.
         if (mucUser.getDestroy() != null) {
             MultiUserChat alternateMUC = multiUserChatManager.getMultiUserChat(mucUser.getDestroy().getJid());
             for (UserStatusListener listener : userStatusListeners) {

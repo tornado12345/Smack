@@ -16,13 +16,13 @@
  */
 package org.jivesoftware.smackx.jingleold.mediaimpl.sshare.api;
 
-import javax.imageio.ImageIO;
-
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.imageio.ImageIO;
 
 /**
  * Implements a default PNG Encoder.
@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 public class DefaultEncoder implements ImageEncoder{
     private static final Logger LOGGER = Logger.getLogger(DefaultEncoder.class.getName());
 
+    @Override
     public ByteArrayOutputStream encode(BufferedImage bufferedImage) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {

@@ -18,20 +18,18 @@ package org.jivesoftware.smack;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import org.junit.Ignore;
 import org.junit.Test;
 
 public class SmackConfigurationTest {
 
+    /**
+     * Test is Smack is able to initialize itself without throwing a Throwable.
+     */
     @Test
     public void testSmackConfiguration() {
-        try {
-            SmackConfiguration.getDefaultPacketReplyTimeout();
-        } catch (Throwable t) {
-            fail("SmackConfiguration threw Throwable");
-        }
+        SmackConfiguration.getDefaultReplyTimeout();
     }
 
     // As there is currently no annotation/way to run a testclass/single test in a separate VM,
@@ -40,7 +38,7 @@ public class SmackConfigurationTest {
     @Ignore
     @Test
     public void smackConfigurationShouldNotCauseInitializationTest() {
-        SmackConfiguration.getDefaultPacketReplyTimeout();
+        SmackConfiguration.getDefaultReplyTimeout();
 
         // Only a call to SmackConfiguration.getVersion() should cause Smack to become initialized.
         assertFalse(SmackConfiguration.isSmackInitialized());

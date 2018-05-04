@@ -21,8 +21,10 @@ import static org.junit.Assert.assertTrue;
 import org.jivesoftware.smack.DummyConnection;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.packet.Stanza;
+
 import org.jivesoftware.smackx.InitExtensions;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,7 +56,7 @@ public class FileTransferNegotiatorTest extends InitExtensions {
             // We do not expect an answer. This unit test only checks the request sent.
         }
         Stanza packet = connection.getSentPacket();
-        String xml = packet.toXML().toString();
+        String xml = packet.toXML(null).toString();
         assertTrue(xml.indexOf("var='stream-method' type='list-single'") != -1);
     }
 }

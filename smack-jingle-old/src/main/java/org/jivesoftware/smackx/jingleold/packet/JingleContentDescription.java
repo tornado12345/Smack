@@ -16,18 +16,19 @@
  */
 package org.jivesoftware.smackx.jingleold.packet;
 
-import org.jivesoftware.smack.packet.ExtensionElement;
-import org.jivesoftware.smackx.jingleold.media.PayloadType;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+import org.jivesoftware.smack.packet.ExtensionElement;
+
+import org.jivesoftware.smackx.jingleold.media.PayloadType;
+
 /**
  * Jingle content description.
  *
- * @author Alvaro Saurin <alvaro.saurin@gmail.com>
+ * @author Alvaro Saurin
  */
 public abstract class JingleContentDescription implements ExtensionElement {
 
@@ -37,7 +38,7 @@ public abstract class JingleContentDescription implements ExtensionElement {
 
     // non-static
 
-    private final List<JinglePayloadType> payloads = new ArrayList<JinglePayloadType>();
+    private final List<JinglePayloadType> payloads = new ArrayList<>();
 
     /**
      * Creates a content description..
@@ -51,6 +52,7 @@ public abstract class JingleContentDescription implements ExtensionElement {
      *
      * @return the XML element name of the element.
      */
+    @Override
     public String getElementName() {
         return NODENAME;
     }
@@ -60,6 +62,7 @@ public abstract class JingleContentDescription implements ExtensionElement {
      *
      * @return The namespace
      */
+    @Override
     public abstract String getNamespace();
 
     /**
@@ -104,7 +107,7 @@ public abstract class JingleContentDescription implements ExtensionElement {
      */
     public ArrayList<JinglePayloadType> getJinglePayloadTypesList() {
         synchronized (payloads) {
-            return new ArrayList<JinglePayloadType>(payloads);
+            return new ArrayList<>(payloads);
         }
     }
 
@@ -114,14 +117,14 @@ public abstract class JingleContentDescription implements ExtensionElement {
      * @return a list of PayloadType.Audio
      */
     public ArrayList<PayloadType.Audio> getAudioPayloadTypesList() {
-        ArrayList<PayloadType.Audio> result = new ArrayList<PayloadType.Audio>();
+        ArrayList<PayloadType.Audio> result = new ArrayList<>();
         Iterator<JinglePayloadType> jinglePtsIter = getJinglePayloadTypes();
 
         while (jinglePtsIter.hasNext()) {
             JinglePayloadType jpt = jinglePtsIter.next();
             if (jpt instanceof JinglePayloadType.Audio) {
                 JinglePayloadType.Audio jpta = (JinglePayloadType.Audio) jpt;
-                result.add((PayloadType.Audio)jpta.getPayloadType());
+                result.add((PayloadType.Audio) jpta.getPayloadType());
             }
         }
 
@@ -144,7 +147,8 @@ public abstract class JingleContentDescription implements ExtensionElement {
      *
      * @return a string with the XML representation
      */
-    public String toXML() {
+    @Override
+    public String toXML(String enclosingNamespace) {
         StringBuilder buf = new StringBuilder();
 
         synchronized (payloads) {
@@ -183,6 +187,7 @@ public abstract class JingleContentDescription implements ExtensionElement {
             addJinglePayloadType(pt);
         }
 
+        @Override
         public String getNamespace() {
             return NAMESPACE;
         }
@@ -279,16 +284,17 @@ public abstract class JingleContentDescription implements ExtensionElement {
                 super(audio);
             }
 
+            @Override
             protected String getChildAttributes() {
                 StringBuilder buf = new StringBuilder();
                 PayloadType pt = getPayloadType();
                 if (pt instanceof PayloadType.Audio) {
-					PayloadType.Audio pta = (PayloadType.Audio) pt;
+                    PayloadType.Audio pta = (PayloadType.Audio) pt;
 
-					buf.append(" clockrate=\"").append(pta.getClockRate()).append("\" ");
-				}
-				return buf.toString();
-			}
-		}
-	}
+                    buf.append(" clockrate=\"").append(pta.getClockRate()).append("\" ");
+                }
+                return buf.toString();
+            }
+        }
+    }
 }

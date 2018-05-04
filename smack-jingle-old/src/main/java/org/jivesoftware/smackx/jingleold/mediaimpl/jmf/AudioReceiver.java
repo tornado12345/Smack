@@ -47,9 +47,9 @@ import org.jivesoftware.smackx.jingleold.media.JingleMediaSession;
 public class AudioReceiver implements ReceiveStreamListener, SessionListener,
         ControllerListener {
 
-	private static final Logger LOGGER = Logger.getLogger(AudioReceiver.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(AudioReceiver.class.getName());
 
-	boolean dataReceived = false;
+    boolean dataReceived = false;
 
     final Object dataSync;
     JingleMediaSession jingleMediaSession;
@@ -62,6 +62,7 @@ public class AudioReceiver implements ReceiveStreamListener, SessionListener,
     /**
      * JingleSessionListener.
      */
+    @Override
     public synchronized void update(SessionEvent evt) {
         if (evt instanceof NewParticipantEvent) {
             Participant p = ((NewParticipantEvent) evt).getParticipant();
@@ -72,6 +73,7 @@ public class AudioReceiver implements ReceiveStreamListener, SessionListener,
     /**
      * ReceiveStreamListener.
      */
+    @Override
     public synchronized void update(ReceiveStreamEvent evt) {
 
         Participant participant = evt.getParticipant();    // could be null.
@@ -91,10 +93,10 @@ public class AudioReceiver implements ReceiveStreamListener, SessionListener,
                 // Find out the formats.
                 RTPControl ctl = (RTPControl) ds.getControl("javax.jmf.rtp.RTPControl");
                 if (ctl != null) {
-                    LOGGER.severe("  - Recevied new RTP stream: " + ctl.getFormat());
+                    LOGGER.severe("  - Received new RTP stream: " + ctl.getFormat());
                 }
                 else
-                    LOGGER.severe("  - Recevied new RTP stream");
+                    LOGGER.severe("  - Received new RTP stream");
 
                 if (participant == null)
                     LOGGER.severe("      The sender of this stream had yet to be identified.");
@@ -111,7 +113,7 @@ public class AudioReceiver implements ReceiveStreamListener, SessionListener,
                 p.realize();
                 jingleMediaSession.mediaReceived(participant != null ? participant.getCNAME() : "");
 
-                // Notify intialize() that a new stream had arrived.
+                // Notify initialize() that a new stream had arrived.
                 synchronized (dataSync) {
                     dataReceived = true;
                     dataSync.notifyAll();
@@ -147,6 +149,7 @@ public class AudioReceiver implements ReceiveStreamListener, SessionListener,
     /**
      * ControllerListener for the Players.
      */
+    @Override
     public synchronized void controllerUpdate(ControllerEvent ce) {
 
         Player p = (Player) ce.getSourceController();

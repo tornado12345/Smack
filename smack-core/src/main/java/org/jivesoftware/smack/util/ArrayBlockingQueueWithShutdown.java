@@ -53,18 +53,18 @@ public class ArrayBlockingQueueWithShutdown<E> extends AbstractQueue<E> implemen
 
     private volatile boolean isShutdown = false;
 
-    private final int inc(int i) {
+    private int inc(int i) {
         return (++i == items.length) ? 0 : i;
     }
 
-    private final void insert(E e) {
+    private void insert(E e) {
         items[putIndex] = e;
         putIndex = inc(putIndex);
         count++;
         notEmpty.signal();
     }
 
-    private final E extract() {
+    private E extract() {
         E e = items[takeIndex];
         items[takeIndex] = null;
         takeIndex = inc(takeIndex);
@@ -73,7 +73,7 @@ public class ArrayBlockingQueueWithShutdown<E> extends AbstractQueue<E> implemen
         return e;
     }
 
-    private final void removeAt(int i) {
+    private void removeAt(int i) {
         if (i == takeIndex) {
             items[takeIndex] = null;
             takeIndex = inc(takeIndex);
@@ -96,31 +96,31 @@ public class ArrayBlockingQueueWithShutdown<E> extends AbstractQueue<E> implemen
         notFull.signal();
     }
 
-    private final static void checkNotNull(Object o) {
+    private static void checkNotNull(Object o) {
         if (o == null) {
             throw new NullPointerException();
         }
     }
 
-    private final void checkNotShutdown() throws InterruptedException {
+    private void checkNotShutdown() throws InterruptedException {
         if (isShutdown) {
             throw new InterruptedException();
         }
     }
 
-    private final boolean hasNoElements() {
+    private boolean hasNoElements() {
         return count == 0;
     }
 
-    private final boolean hasElements() {
+    private boolean hasElements() {
         return !hasNoElements();
     }
 
-    private final boolean isFull() {
+    private boolean isFull() {
         return count == items.length;
     }
 
-    private final boolean isNotFull() {
+    private boolean isNotFull() {
         return !isFull();
     }
 
@@ -240,6 +240,7 @@ public class ArrayBlockingQueueWithShutdown<E> extends AbstractQueue<E> implemen
      * @param e the element to add.
      * @throws InterruptedException if interrupted while waiting or if the queue was shut down.
      */
+    @Override
     public void put(E e) throws InterruptedException {
         checkNotNull(e);
         lock.lockInterruptibly();
@@ -452,6 +453,7 @@ public class ArrayBlockingQueueWithShutdown<E> extends AbstractQueue<E> implemen
             }
         }
 
+        @Override
         public boolean hasNext() {
             return nextIndex >= 0;
         }
@@ -469,6 +471,7 @@ public class ArrayBlockingQueueWithShutdown<E> extends AbstractQueue<E> implemen
             }
         }
 
+        @Override
         public E next() {
             lock.lock();
             try {
@@ -486,6 +489,7 @@ public class ArrayBlockingQueueWithShutdown<E> extends AbstractQueue<E> implemen
             }
         }
 
+        @Override
         public void remove() {
             lock.lock();
             try {

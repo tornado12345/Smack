@@ -33,8 +33,10 @@ import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Stanza;
-import org.jivesoftware.smack.packet.XMPPError;
+import org.jivesoftware.smack.packet.StanzaError;
+
 import org.jivesoftware.smackx.bytestreams.socks5.packet.Bytestream;
+
 import org.jivesoftware.util.ConnectionUtils;
 import org.jivesoftware.util.Protocol;
 import org.junit.After;
@@ -53,16 +55,15 @@ import org.jxmpp.jid.impl.JidCreate;
 public class Socks5ByteStreamRequestTest {
 
     // settings
-    static final EntityFullJid initiatorJID = JidTestUtil.DUMMY_AT_EXAMPLE_ORG_SLASH_DUMMYRESOURCE;
-    static final EntityFullJid targetJID = JidTestUtil.FULL_JID_1_RESOURCE_1;
-    static final DomainBareJid xmppServer = JidTestUtil.DOMAIN_BARE_JID_1;
-    static final DomainBareJid proxyJID = JidTestUtil.MUC_EXAMPLE_ORG;
-    String proxyAddress = "127.0.0.1";
-    String sessionID = "session_id";
+    private static final EntityFullJid initiatorJID = JidTestUtil.DUMMY_AT_EXAMPLE_ORG_SLASH_DUMMYRESOURCE;
+    private static final EntityFullJid targetJID = JidTestUtil.FULL_JID_1_RESOURCE_1;
+    private static final DomainBareJid proxyJID = JidTestUtil.MUC_EXAMPLE_ORG;
+    private static final String proxyAddress = "127.0.0.1";
+    private static final String sessionID = "session_id";
 
-    Protocol protocol;
+    private Protocol protocol;
 
-    XMPPConnection connection;
+    private XMPPConnection connection;
 
     /**
      * Initialize fields used in the tests.
@@ -77,7 +78,7 @@ public class Socks5ByteStreamRequestTest {
         protocol = new Protocol();
 
         // create mocked XMPP connection
-        connection = ConnectionUtils.createMockedConnection(protocol, targetJID, xmppServer);
+        connection = ConnectionUtils.createMockedConnection(protocol, targetJID);
 
     }
 
@@ -118,8 +119,8 @@ public class Socks5ByteStreamRequestTest {
         assertTrue(IQ.class.isInstance(targetResponse));
         assertEquals(initiatorJID, targetResponse.getTo());
         assertEquals(IQ.Type.error, ((IQ) targetResponse).getType());
-        assertEquals(XMPPError.Condition.item_not_found,
-                        ((IQ) targetResponse).getError().getCondition());
+        assertEquals(StanzaError.Condition.item_not_found,
+                        targetResponse.getError().getCondition());
 
     }
 
@@ -162,8 +163,8 @@ public class Socks5ByteStreamRequestTest {
         assertTrue(IQ.class.isInstance(targetResponse));
         assertEquals(initiatorJID, targetResponse.getTo());
         assertEquals(IQ.Type.error, ((IQ) targetResponse).getType());
-        assertEquals(XMPPError.Condition.item_not_found,
-                        ((IQ) targetResponse).getError().getCondition());
+        assertEquals(StanzaError.Condition.item_not_found,
+                        targetResponse.getError().getCondition());
 
     }
 
@@ -210,8 +211,8 @@ public class Socks5ByteStreamRequestTest {
             assertTrue(IQ.class.isInstance(targetResponse));
             assertEquals(initiatorJID, targetResponse.getTo());
             assertEquals(IQ.Type.error, ((IQ) targetResponse).getType());
-            assertEquals(XMPPError.Condition.item_not_found,
-                            ((IQ) targetResponse).getError().getCondition());
+            assertEquals(StanzaError.Condition.item_not_found,
+                            targetResponse.getError().getCondition());
         }
 
         // create test data for stream
@@ -302,8 +303,8 @@ public class Socks5ByteStreamRequestTest {
             assertTrue(IQ.class.isInstance(targetResponse));
             assertEquals(initiatorJID, targetResponse.getTo());
             assertEquals(IQ.Type.error, ((IQ) targetResponse).getType());
-            assertEquals(XMPPError.Condition.item_not_found,
-                            ((IQ) targetResponse).getError().getCondition());
+            assertEquals(StanzaError.Condition.item_not_found,
+                            targetResponse.getError().getCondition());
         }
 
         // enable blacklisting

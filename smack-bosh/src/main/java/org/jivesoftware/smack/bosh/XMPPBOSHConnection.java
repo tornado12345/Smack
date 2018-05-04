@@ -27,24 +27,23 @@ import java.util.logging.Logger;
 
 import org.jivesoftware.smack.AbstractXMPPConnection;
 import org.jivesoftware.smack.SmackException;
-import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.SmackException.ConnectionException;
-import org.jivesoftware.smack.XMPPException.StreamErrorException;
+import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.XMPPException.StreamErrorException;
 import org.jivesoftware.smack.packet.Element;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.packet.Nonza;
 import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.packet.StanzaError;
+import org.jivesoftware.smack.packet.StreamOpen;
 import org.jivesoftware.smack.sasl.packet.SaslStreamElements.SASLFailure;
 import org.jivesoftware.smack.sasl.packet.SaslStreamElements.Success;
 import org.jivesoftware.smack.util.PacketParserUtils;
-import org.jxmpp.jid.DomainBareJid;
-import org.jxmpp.jid.parts.Resourcepart;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserFactory;
+
 import org.igniterealtime.jbosh.AbstractBody;
 import org.igniterealtime.jbosh.BOSHClient;
 import org.igniterealtime.jbosh.BOSHClientConfig;
@@ -56,6 +55,11 @@ import org.igniterealtime.jbosh.BOSHException;
 import org.igniterealtime.jbosh.BOSHMessageEvent;
 import org.igniterealtime.jbosh.BodyQName;
 import org.igniterealtime.jbosh.ComposableBody;
+
+import org.jxmpp.jid.DomainBareJid;
+import org.jxmpp.jid.parts.Resourcepart;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 /**
  * Creates a connection to an XMPP server via HTTP binding.
@@ -85,6 +89,7 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
     /**
      * Holds the initial configuration used while creating the connection.
      */
+    @SuppressWarnings("HidingField")
     private final BOSHConfiguration config;
 
     // Some flags which provides some info about the current state.
@@ -158,16 +163,8 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
             client.addBOSHClientResponseListener(new BOSHPacketReader());
 
             // Initialize the debugger
-            if (config.isDebuggerEnabled()) {
+            if (debugger != null) {
                 initDebugger();
-                if (isFirstInitialization) {
-                    if (debugger.getReaderListener() != null) {
-                        addAsyncStanzaListener(debugger.getReaderListener(), null);
-                    }
-                    if (debugger.getWriterListener() != null) {
-                        addPacketSendingListener(debugger.getWriterListener(), null);
-                    }
-                }
             }
 
             // Send the session creation request
@@ -182,10 +179,10 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
         // Wait for the response from the server
         synchronized (this) {
             if (!connected) {
-                final long deadline = System.currentTimeMillis() + getPacketReplyTimeout();
+                final long deadline = System.currentTimeMillis() + getReplyTimeout();
                 while (!notified) {
                     final long now = System.currentTimeMillis();
-                    if (now > deadline) break;
+                    if (now >= deadline) break;
                     wait(deadline - now);
                 }
             }
@@ -198,18 +195,15 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
                     + getHost() + ":" + getPort() + ".";
             throw new SmackException(errorMessage);
         }
-
-        // Wait with SASL auth until the SASL mechanisms have been received
-        saslFeatureReceived.checkIfSuccessOrWaitOrThrow();
-
-        callConnectionConnectedListener();
     }
 
+    @Override
     public boolean isSecureConnection() {
         // TODO: Implement SSL usage
         return false;
     }
 
+    @Override
     public boolean isUsingCompression() {
         // TODO: Implement compression
         return false;
@@ -219,7 +213,7 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
     protected void loginInternal(String username, String password, Resourcepart resource) throws XMPPException,
                     SmackException, IOException, InterruptedException {
         // Authenticate using SASL
-        saslAuthentication.authenticate(username, password, config.getAuthzid());
+        saslAuthentication.authenticate(username, password, config.getAuthzid(), null);
 
         bindResourceAndEstablishSession(resource);
 
@@ -241,7 +235,7 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
 
     private void sendElement(Element element) {
         try {
-            send(ComposableBody.builder().setPayloadXML(element.toXML().toString()).build());
+            send(ComposableBody.builder().setPayloadXML(element.toXML(StreamOpen.CLIENT_NAMESPACE).toString()).build());
             if (element instanceof Stanza) {
                 firePacketSendingListeners((Stanza) element);
             }
@@ -255,7 +249,7 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
      * Closes the connection by setting presence to unavailable and closing the 
      * HTTP client. The shutdown logic will be used during a planned disconnection or when
      * dealing with an unexpected disconnection. Unlike {@link #disconnect()} the connection's
-     * BOSH stanza(/packet) reader will not be removed; thus connection's state is kept.
+     * BOSH stanza reader will not be removed; thus connection's state is kept.
      *
      */
     @Override
@@ -297,6 +291,7 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
      * Send a HTTP request to the connection manager with the provided body element.
      * 
      * @param body the body which will be sent.
+     * @throws BOSHException
      */
     protected void send(ComposableBody body) throws BOSHException {
         if (!connected) {
@@ -315,16 +310,25 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
     /**
      * Initialize the SmackDebugger which allows to log and debug XML traffic.
      */
+    @Override
     protected void initDebugger() {
         // TODO: Maybe we want to extend the SmackDebugger for simplification
         //       and a performance boost.
 
         // Initialize a empty writer which discards all data.
         writer = new Writer() {
-                public void write(char[] cbuf, int off, int len) { /* ignore */}
-                public void close() { /* ignore */ }
-                public void flush() { /* ignore */ }
-            };
+            @Override
+            public void write(char[] cbuf, int off, int len) {
+                /* ignore */ }
+
+            @Override
+            public void close() {
+                /* ignore */ }
+
+            @Override
+            public void flush() {
+                /* ignore */ }
+        };
 
         // Initialize a pipe for received raw data.
         try {
@@ -340,6 +344,7 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
 
         // Add listeners for the received and sent raw data.
         client.addBOSHClientResponseListener(new BOSHClientResponseListener() {
+            @Override
             public void responseReceived(BOSHMessageEvent event) {
                 if (event.getBody() != null) {
                     try {
@@ -352,6 +357,7 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
             }
         });
         client.addBOSHClientRequestListener(new BOSHClientRequestListener() {
+            @Override
             public void requestSent(BOSHMessageEvent event) {
                 if (event.getBody() != null) {
                     try {
@@ -368,6 +374,7 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
             private Thread thread = this;
             private int bufferLength = 1024;
 
+            @Override
             public void run() {
                 try {
                     char[] cbuf = new char[bufferLength];
@@ -408,6 +415,7 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
          * Process the connection listeners and try to login if the
          * connection was formerly authenticated and is now reconnected.
          */
+        @Override
         public void connectionEvent(BOSHClientConnEvent connEvent) {
             try {
                 if (connEvent.isConnected()) {
@@ -424,7 +432,6 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
                                     throw new RuntimeException(e);
                                 }
                             }
-                            notifyReconnection();
                     }
                 }
                 else {
@@ -454,7 +461,7 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
 
     /**
      * Listens for XML traffic from the BOSH connection manager and parses it into
-     * stanza(/packet) objects.
+     * stanza objects.
      *
      * @author Guenther Niess
      */
@@ -465,6 +472,7 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
          *
          * @param event the BOSH client response which includes the received packet.
          */
+        @Override
         public void responseReceived(BOSHMessageEvent event) {
             AbstractBody body = event.getBody();
             if (body != null) {
@@ -515,7 +523,13 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
                                 }
                                 break;
                             case "error":
-                                throw new StreamErrorException(PacketParserUtils.parseStreamError(parser));
+                                // Some BOSH error isn't stream error.
+                                if ("urn:ietf:params:xml:ns:xmpp-streams".equals(parser.getNamespace(null))) {
+                                    throw new StreamErrorException(PacketParserUtils.parseStreamError(parser));
+                                } else {
+                                    StanzaError.Builder builder = PacketParserUtils.parseError(parser);
+                                    throw new XMPPException.XMPPErrorException(null, builder.build());
+                                }
                             }
                             break;
                         }

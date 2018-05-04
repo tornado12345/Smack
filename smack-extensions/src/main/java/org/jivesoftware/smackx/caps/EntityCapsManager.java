@@ -16,42 +16,9 @@
  */
 package org.jivesoftware.smackx.caps;
 
-import org.jivesoftware.smack.AbstractConnectionListener;
-import org.jivesoftware.smack.SmackException.NoResponseException;
-import org.jivesoftware.smack.SmackException.NotConnectedException;
-import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.ConnectionCreationListener;
-import org.jivesoftware.smack.Manager;
-import org.jivesoftware.smack.StanzaListener;
-import org.jivesoftware.smack.XMPPConnectionRegistry;
-import org.jivesoftware.smack.XMPPException.XMPPErrorException;
-import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.packet.Stanza;
-import org.jivesoftware.smack.roster.AbstractPresenceEventListener;
-import org.jivesoftware.smack.roster.Roster;
-import org.jivesoftware.smack.packet.ExtensionElement;
-import org.jivesoftware.smack.packet.Presence;
-import org.jivesoftware.smack.filter.PresenceTypeFilter;
-import org.jivesoftware.smack.filter.StanzaFilter;
-import org.jivesoftware.smack.filter.AndFilter;
-import org.jivesoftware.smack.filter.StanzaTypeFilter;
-import org.jivesoftware.smack.filter.StanzaExtensionFilter;
-import org.jivesoftware.smack.util.StringUtils;
-import org.jivesoftware.smack.util.stringencoder.Base64;
-import org.jivesoftware.smackx.caps.cache.EntityCapsPersistentCache;
-import org.jivesoftware.smackx.caps.packet.CapsExtension;
-import org.jivesoftware.smackx.disco.AbstractNodeInformationProvider;
-import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
-import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
-import org.jivesoftware.smackx.disco.packet.DiscoverInfo.Feature;
-import org.jivesoftware.smackx.disco.packet.DiscoverInfo.Identity;
-import org.jivesoftware.smackx.xdata.FormField;
-import org.jivesoftware.smackx.xdata.packet.DataForm;
-import org.jxmpp.jid.DomainBareJid;
-import org.jxmpp.jid.FullJid;
-import org.jxmpp.jid.Jid;
-import org.jxmpp.util.cache.LruCache;
-
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -65,8 +32,44 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+
+import org.jivesoftware.smack.AbstractConnectionListener;
+import org.jivesoftware.smack.ConnectionCreationListener;
+import org.jivesoftware.smack.Manager;
+import org.jivesoftware.smack.SmackException.NoResponseException;
+import org.jivesoftware.smack.SmackException.NotConnectedException;
+import org.jivesoftware.smack.StanzaListener;
+import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.XMPPConnectionRegistry;
+import org.jivesoftware.smack.XMPPException.XMPPErrorException;
+import org.jivesoftware.smack.filter.AndFilter;
+import org.jivesoftware.smack.filter.PresenceTypeFilter;
+import org.jivesoftware.smack.filter.StanzaExtensionFilter;
+import org.jivesoftware.smack.filter.StanzaFilter;
+import org.jivesoftware.smack.filter.StanzaTypeFilter;
+import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.roster.AbstractPresenceEventListener;
+import org.jivesoftware.smack.roster.Roster;
+import org.jivesoftware.smack.util.StringUtils;
+import org.jivesoftware.smack.util.stringencoder.Base64;
+
+import org.jivesoftware.smackx.caps.cache.EntityCapsPersistentCache;
+import org.jivesoftware.smackx.caps.packet.CapsExtension;
+import org.jivesoftware.smackx.disco.AbstractNodeInformationProvider;
+import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
+import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
+import org.jivesoftware.smackx.disco.packet.DiscoverInfo.Feature;
+import org.jivesoftware.smackx.disco.packet.DiscoverInfo.Identity;
+import org.jivesoftware.smackx.xdata.FormField;
+import org.jivesoftware.smackx.xdata.packet.DataForm;
+
+import org.jxmpp.jid.DomainBareJid;
+import org.jxmpp.jid.FullJid;
+import org.jxmpp.jid.Jid;
+import org.jxmpp.util.cache.LruCache;
 
 /**
  * Keeps track of entity capabilities.
@@ -93,7 +96,7 @@ public final class EntityCapsManager extends Manager {
 
     private static boolean autoEnableEntityCaps = true;
 
-    private static Map<XMPPConnection, EntityCapsManager> instances = new WeakHashMap<>();
+    private static final Map<XMPPConnection, EntityCapsManager> instances = new WeakHashMap<>();
 
     private static final StanzaFilter PRESENCES_WITH_CAPS = new AndFilter(new StanzaTypeFilter(Presence.class), new StanzaExtensionFilter(
                     ELEMENT, NAMESPACE));
@@ -101,7 +104,7 @@ public final class EntityCapsManager extends Manager {
     /**
      * Map of "node + '#' + hash" to DiscoverInfo data
      */
-    private static final LruCache<String, DiscoverInfo> CAPS_CACHE = new LruCache<String, DiscoverInfo>(1000);
+    static final LruCache<String, DiscoverInfo> CAPS_CACHE = new LruCache<>(1000);
 
     /**
      * Map of Full JID -&gt; DiscoverInfo/null. In case of c2s connection the
@@ -109,10 +112,11 @@ public final class EntityCapsManager extends Manager {
      * link-local connection the key is formed as user@host (no resource) In
      * case of a server or component the key is formed as domain
      */
-    private static final LruCache<Jid, NodeVerHash> JID_TO_NODEVER_CACHE = new LruCache<>(10000);
+    static final LruCache<Jid, NodeVerHash> JID_TO_NODEVER_CACHE = new LruCache<>(10000);
 
     static {
         XMPPConnectionRegistry.addConnectionCreationListener(new ConnectionCreationListener() {
+            @Override
             public void connectionCreated(XMPPConnection connection) {
                 getInstanceFor(connection);
             }
@@ -159,8 +163,8 @@ public final class EntityCapsManager extends Manager {
      *            the user (Full JID)
      * @return the node version (node#ver) or null
      */
-    public static String getNodeVersionByJid(String jid) {
-        NodeVerHash nvh = JID_TO_NODEVER_CACHE.get(jid);
+    public static String getNodeVersionByJid(Jid jid) {
+        NodeVerHash nvh = JID_TO_NODEVER_CACHE.lookup(jid);
         if (nvh != null) {
             return nvh.nodeVer;
         } else {
@@ -169,7 +173,7 @@ public final class EntityCapsManager extends Manager {
     }
 
     public static NodeVerHash getNodeVerHashByJid(Jid jid) {
-        return JID_TO_NODEVER_CACHE.get(jid);
+        return JID_TO_NODEVER_CACHE.lookup(jid);
     }
 
     /**
@@ -182,7 +186,7 @@ public final class EntityCapsManager extends Manager {
      * @return the discovered info
      */
     public static DiscoverInfo getDiscoverInfoByUser(Jid user) {
-        NodeVerHash nvh = JID_TO_NODEVER_CACHE.get(user);
+        NodeVerHash nvh = JID_TO_NODEVER_CACHE.lookup(user);
         if (nvh == null)
             return null;
 
@@ -198,7 +202,7 @@ public final class EntityCapsManager extends Manager {
      * @return The corresponding DiscoverInfo or null if none is known.
      */
     public static DiscoverInfo getDiscoveryInfoByNodeVer(String nodeVer) {
-        DiscoverInfo info = CAPS_CACHE.get(nodeVer);
+        DiscoverInfo info = CAPS_CACHE.lookup(nodeVer);
 
         // If it was not in CAPS_CACHE, try to retrieve the information from persistentCache
         if (info == null && persistentCache != null) {
@@ -317,7 +321,7 @@ public final class EntityCapsManager extends Manager {
             // Listen for remote presence stanzas with the caps extension
             // If we receive such a stanza, record the JID and nodeVer
             @Override
-            public void processPacket(Stanza packet) {
+            public void processStanza(Stanza packet) {
                 if (!entityCapsEnabled())
                     return;
 
@@ -335,18 +339,19 @@ public final class EntityCapsManager extends Manager {
             }
         });
 
-        connection.addPacketSendingListener(new StanzaListener() {
+        connection.addStanzaSendingListener(new StanzaListener() {
             @Override
-            public void processPacket(Stanza packet) {
+            public void processStanza(Stanza packet) {
                 presenceSend = (Presence) packet;
             }
-        }, PresenceTypeFilter.AVAILABLE);
+        }, PresenceTypeFilter.OUTGOING_PRESENCE_BROADCAST);
 
         // Intercept presence packages and add caps data when intended.
         // XEP-0115 specifies that a client SHOULD include entity capabilities
         // with every presence notification it sends.
         StanzaListener packetInterceptor = new StanzaListener() {
-            public void processPacket(Stanza packet) {
+            @Override
+            public void processStanza(Stanza packet) {
                 if (!entityCapsEnabled) {
                     // Be sure to not send stanzas with the caps extension if it's not enabled
                     packet.removeExtension(CapsExtension.ELEMENT, CapsExtension.NAMESPACE);
@@ -357,7 +362,7 @@ public final class EntityCapsManager extends Manager {
                 packet.overrideExtension(caps);
             }
         };
-        connection.addPacketInterceptor(packetInterceptor, PresenceTypeFilter.AVAILABLE);
+        connection.addStanzaInterceptor(packetInterceptor, PresenceTypeFilter.AVAILABLE);
         // It's important to do this as last action. Since it changes the
         // behavior of the SDM in some ways
         sdm.setEntityCapsManager(this);
@@ -403,13 +408,15 @@ public final class EntityCapsManager extends Manager {
      * @param user
      *            the user (Full JID)
      */
-    public static void removeUserCapsNode(String user) {
+    public static void removeUserCapsNode(Jid user) {
+        // While JID_TO_NODEVER_CHACHE has the generic types <Jid, NodeVerHash>, it is ok to call remove with String
+        // arguments, since the same Jid and String representations would be equal and have the same hash code.
         JID_TO_NODEVER_CACHE.remove(user);
     }
 
     /**
-     * Get our own caps version. The version depends on the enabled features. A
-     * caps version looks like '66/0NaeaBKkwk85efJTGmU47vXI='
+     * Get our own caps version. The version depends on the enabled features.
+     * A caps version looks like '66/0NaeaBKkwk85efJTGmU47vXI='
      * 
      * @return our own caps version
      */
@@ -488,7 +495,7 @@ public final class EntityCapsManager extends Manager {
         if (connection != null)
             JID_TO_NODEVER_CACHE.put(connection.getUser(), new NodeVerHash(entityNode, currentCapsVersion));
 
-        final List<Identity> identities = new LinkedList<Identity>(ServiceDiscoveryManager.getInstanceFor(connection).getIdentities());
+        final List<Identity> identities = new LinkedList<>(ServiceDiscoveryManager.getInstanceFor(connection).getIdentities());
         sdm.setNodeInformationProvider(localNodeVer, new AbstractNodeInformationProvider() {
             List<String> features = sdm.getFeatures();
             List<ExtensionElement> packetExtensions = sdm.getExtendedInfoAsList();
@@ -522,7 +529,7 @@ public final class EntityCapsManager extends Manager {
     }
 
     /**
-     * Verify DisoverInfo and Caps Node as defined in XEP-0115 5.4 Processing
+     * Verify DiscoverInfo and Caps Node as defined in XEP-0115 5.4 Processing
      * Method.
      * 
      * @see <a href="http://xmpp.org/extensions/xep-0115.html#ver-proc">XEP-0115
@@ -557,10 +564,10 @@ public final class EntityCapsManager extends Manager {
     /**
      * 
      * @param info
-     * @return true if the stanza(/packet) extensions is ill-formed
+     * @return true if the stanza extensions is ill-formed
      */
     protected static boolean verifyPacketExtensions(DiscoverInfo info) {
-        List<FormField> foundFormTypes = new LinkedList<FormField>();
+        List<FormField> foundFormTypes = new LinkedList<>();
         for (ExtensionElement pe : info.getExtensions()) {
             if (pe.getNamespace().equals(DataForm.NAMESPACE)) {
                 DataForm df = (DataForm) pe;
@@ -619,10 +626,9 @@ public final class EntityCapsManager extends Manager {
         // [NAME]. Note that each slash is included even if the LANG or
         // NAME is not included (in accordance with XEP-0030, the category and
         // type MUST be included.
-        SortedSet<DiscoverInfo.Identity> sortedIdentities = new TreeSet<DiscoverInfo.Identity>();
+        SortedSet<DiscoverInfo.Identity> sortedIdentities = new TreeSet<>();
 
-        for (DiscoverInfo.Identity i : discoverInfo.getIdentities())
-            sortedIdentities.add(i);
+        sortedIdentities.addAll(discoverInfo.getIdentities());
 
         // 3. For each identity, append the 'category/type/lang/name' to S,
         // followed by the '<' character.
@@ -638,7 +644,7 @@ public final class EntityCapsManager extends Manager {
         }
 
         // 4. Sort the supported service discovery features.
-        SortedSet<String> features = new TreeSet<String>();
+        SortedSet<String> features = new TreeSet<>();
         for (Feature f : discoverInfo.getFeatures())
             features.add(f.getVar());
 
@@ -657,7 +663,8 @@ public final class EntityCapsManager extends Manager {
                 // 6. If the service discovery information response includes
                 // XEP-0128 data forms, sort the forms by the FORM_TYPE (i.e.,
                 // by the XML character data of the <value/> element).
-                SortedSet<FormField> fs = new TreeSet<FormField>(new Comparator<FormField>() {
+                SortedSet<FormField> fs = new TreeSet<>(new Comparator<FormField>() {
+                    @Override
                     public int compare(FormField f1, FormField f2) {
                         return f1.getVariable().compareTo(f2.getVariable());
                     }
@@ -701,20 +708,25 @@ public final class EntityCapsManager extends Manager {
         // encoded using Base64 as specified in Section 4 of RFC 4648
         // (note: the Base64 output MUST NOT include whitespace and MUST set
         // padding bits to zero).
+        byte[] bytes;
+        try {
+            bytes = sb.toString().getBytes(StringUtils.UTF8);
+        }
+        catch (UnsupportedEncodingException e) {
+            throw new AssertionError(e);
+        }
         byte[] digest;
-        synchronized(md) {
-            digest = md.digest(sb.toString().getBytes());
+        synchronized (md) {
+            digest = md.digest(bytes);
         }
         String version = Base64.encodeToString(digest);
         return new CapsVersionAndHash(version, hash);
     }
 
-    private static void formFieldValuesToCaps(List<String> i, StringBuilder sb) {
-        SortedSet<String> fvs = new TreeSet<String>();
-        for (String s : i) {
-            fvs.add(s);
-        }
-        for (String fv : fvs) {
+    private static void formFieldValuesToCaps(List<CharSequence> i, StringBuilder sb) {
+        SortedSet<CharSequence> fvs = new TreeSet<>();
+        fvs.addAll(i);
+        for (CharSequence fv : fvs) {
             sb.append(fv);
             sb.append('<');
         }

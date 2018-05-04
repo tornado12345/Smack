@@ -16,6 +16,9 @@
  */
 package org.jivesoftware.smackx.jingleold.mediaimpl.sshare;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jivesoftware.smackx.jingleold.JingleSession;
 import org.jivesoftware.smackx.jingleold.media.JingleMediaManager;
 import org.jivesoftware.smackx.jingleold.media.JingleMediaSession;
@@ -24,9 +27,6 @@ import org.jivesoftware.smackx.jingleold.mediaimpl.sshare.api.ImageDecoder;
 import org.jivesoftware.smackx.jingleold.mediaimpl.sshare.api.ImageEncoder;
 import org.jivesoftware.smackx.jingleold.nat.JingleTransportManager;
 import org.jivesoftware.smackx.jingleold.nat.TransportCandidate;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Implements a JingleMediaManager for ScreenSharing.
@@ -39,7 +39,7 @@ public class ScreenShareMediaManager extends JingleMediaManager {
 
     public static final String MEDIA_NAME = "ScreenShare";
 
-    private List<PayloadType> payloads = new ArrayList<PayloadType>();
+    private List<PayloadType> payloads = new ArrayList<>();
 
     private ImageDecoder decoder = null;
     private ImageEncoder encoder = null;
@@ -61,6 +61,7 @@ public class ScreenShareMediaManager extends JingleMediaManager {
      *
      * @return The Payload List
      */
+    @Override
     public List<PayloadType> getPayloads() {
         return payloads;
     }
@@ -73,6 +74,7 @@ public class ScreenShareMediaManager extends JingleMediaManager {
      * @param local       local Candidate
      * @return JingleMediaSession JingleMediaSession
      */
+    @Override
     public JingleMediaSession createMediaSession(PayloadType payloadType, final TransportCandidate remote, final TransportCandidate local, final JingleSession jingleSession) {
         ScreenShareSession session = null;
         session = new ScreenShareSession(payloadType, remote, local, "Screen", jingleSession);
@@ -85,6 +87,7 @@ public class ScreenShareMediaManager extends JingleMediaManager {
         return session;
     }
 
+    @Override
     public PayloadType getPreferredPayloadType() {
         return super.getPreferredPayloadType();
     }
@@ -105,6 +108,7 @@ public class ScreenShareMediaManager extends JingleMediaManager {
         this.encoder = encoder;
     }
 
+    @Override
     public  String getName() {
         return MEDIA_NAME;
     }

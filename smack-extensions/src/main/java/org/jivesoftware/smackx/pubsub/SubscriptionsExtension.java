@@ -24,76 +24,96 @@ import java.util.List;
  * 
  * @author Robin Collier
  */
-public class SubscriptionsExtension extends NodeExtension
-{
-	protected List<Subscription> items = Collections.emptyList();
+public class SubscriptionsExtension extends NodeExtension {
+    public enum SubscriptionsNamespace {
+        basic(PubSubElementType.SUBSCRIPTIONS),
+        owner(PubSubElementType.SUBSCRIPTIONS_OWNER),
+        ;
+        public final PubSubElementType type;
 
-	/**
-	 * Subscriptions to the root node.
-	 * 
-	 * @param subList The list of subscriptions
-	 */
-	public SubscriptionsExtension(List<Subscription> subList)
-	{
-		super(PubSubElementType.SUBSCRIPTIONS);
+        SubscriptionsNamespace(PubSubElementType type) {
+            this.type = type;
+        }
 
-		if (subList != null)
-			items = subList;
-	}
+        public static SubscriptionsNamespace fromXmlns(String xmlns) {
+            for (SubscriptionsNamespace subscriptionsNamespace : SubscriptionsNamespace.values()) {
+                if (subscriptionsNamespace.type.getNamespace().getXmlns().equals(xmlns)) {
+                    return subscriptionsNamespace;
+                }
+            }
+            throw new IllegalArgumentException("Invalid Subscription namespace: " + xmlns);
+        }
+    }
 
-	/**
-	 * Subscriptions to the specified node.
-	 * 
-	 * @param nodeId The node subscribed to
-	 * @param subList The list of subscriptions
-	 */
-	public SubscriptionsExtension(String nodeId, List<Subscription> subList)
-	{
-		super(PubSubElementType.SUBSCRIPTIONS, nodeId);
+    protected List<Subscription> items = Collections.emptyList();
 
-		if (subList != null)
-			items = subList;
-	}
+    /**
+     * Subscriptions to the root node.
+     * 
+     * @param subList The list of subscriptions
+     */
+    public SubscriptionsExtension(List<Subscription> subList) {
+        this(SubscriptionsNamespace.basic, null, subList);
+    }
 
-	/**
-	 * Gets the list of subscriptions.
-	 * 
-	 * @return List of subscriptions
-	 */
-	public List<Subscription> getSubscriptions()
-	{
-		return items;
-	}
+    /**
+     * Subscriptions to the specified node.
+     * 
+     * @param nodeId The node subscribed to
+     * @param subList The list of subscriptions
+     */
+    public SubscriptionsExtension(String nodeId, List<Subscription> subList) {
+        this(SubscriptionsNamespace.basic, nodeId, subList);
+    }
 
-	@Override
-	public CharSequence toXML()
-	{
-		if ((items == null) || (items.size() == 0))
-		{
-			return super.toXML();
-		}
-		else
-		{
-			StringBuilder builder = new StringBuilder("<");
-			builder.append(getElementName());
+    /**
+     * Subscriptions to the specified node.
+     * 
+     * @param subscriptionsNamespace the namespace used by this element
+     * @param nodeId The node subscribed to
+     * @param subList The list of subscriptions
+     * @since 4.3
+     */
+    public SubscriptionsExtension(SubscriptionsNamespace subscriptionsNamespace, String nodeId, List<Subscription> subList) {
+        super(subscriptionsNamespace.type, nodeId);
 
-			if (getNode() != null)
-			{
-				builder.append(" node='");
-				builder.append(getNode());
-				builder.append('\'');
-			}
-			builder.append('>');
+        if (subList != null)
+            items = subList;
+    }
 
-			for (Subscription item : items)
-			{
-				builder.append(item.toXML());
-			}
+    /**
+     * Gets the list of subscriptions.
+     * 
+     * @return List of subscriptions
+     */
+    public List<Subscription> getSubscriptions() {
+        return items;
+    }
 
-			builder.append("</");
-			builder.append(getElementName());
-			builder.append('>');
-			return builder.toString();
-		}
-	}
+    @Override
+    public CharSequence toXML(String enclosingNamespace) {
+        if ((items == null) || (items.size() == 0)) {
+            return super.toXML(enclosingNamespace);
+        }
+        else {
+            StringBuilder builder = new StringBuilder("<");
+            builder.append(getElementName());
+
+            if (getNode() != null) {
+                builder.append(" node='");
+                builder.append(getNode());
+                builder.append('\'');
+            }
+            builder.append('>');
+
+            for (Subscription item : items) {
+                builder.append(item.toXML(null));
+            }
+
+            builder.append("</");
+            builder.append(getElementName());
+            builder.append('>');
+            return builder.toString();
+        }
+    }
 }

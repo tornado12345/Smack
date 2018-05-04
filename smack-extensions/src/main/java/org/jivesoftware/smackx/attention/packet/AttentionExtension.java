@@ -18,6 +18,7 @@ package org.jivesoftware.smackx.attention.packet;
 
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
+
 import org.xmlpull.v1.XmlPullParser;
 
 /**
@@ -47,6 +48,7 @@ public class AttentionExtension implements ExtensionElement {
      * 
      * @see org.jivesoftware.smack.packet.PacketExtension#getElementName()
      */
+    @Override
     public String getElementName() {
         return ELEMENT_NAME;
     }
@@ -56,6 +58,7 @@ public class AttentionExtension implements ExtensionElement {
      * 
      * @see org.jivesoftware.smack.packet.PacketExtension#getNamespace()
      */
+    @Override
     public String getNamespace() {
         return NAMESPACE;
     }
@@ -65,7 +68,8 @@ public class AttentionExtension implements ExtensionElement {
      * 
      * @see org.jivesoftware.smack.packet.PacketExtension#toXML()
      */
-    public String toXML() {
+    @Override
+    public String toXML(String enclosingNamespace) {
         final StringBuilder sb = new StringBuilder();
         sb.append('<').append(getElementName()).append(" xmlns=\"").append(
                 getNamespace()).append("\"/>");

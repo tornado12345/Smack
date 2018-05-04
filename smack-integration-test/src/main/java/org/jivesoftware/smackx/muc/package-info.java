@@ -16,6 +16,6 @@
  */
 
 /**
- * TODO describe me.
+ * Classes and Interfaces that implement Multi-User Chat (MUC) as defined in XEP-0045.
  */
 package org.jivesoftware.smackx.muc;

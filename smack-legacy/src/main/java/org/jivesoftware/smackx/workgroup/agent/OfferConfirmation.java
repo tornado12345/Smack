@@ -24,6 +24,7 @@ import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.SimpleIQ;
 import org.jivesoftware.smack.provider.IQProvider;
+
 import org.jxmpp.jid.Jid;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -96,9 +97,9 @@ public class OfferConfirmation extends SimpleIQ {
 
 
     /**
-     * Stanza(/Packet) for notifying server of RoomName
+     * Stanza for notifying server of RoomName
      */
-    private class NotifyServicePacket extends IQ {
+    private static class NotifyServicePacket extends IQ {
         String roomName;
 
         NotifyServicePacket(Jid workgroup, String roomName) {

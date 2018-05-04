@@ -38,9 +38,9 @@ import java.util.logging.Logger;
  */
 public class ImageTransmitter implements Runnable {
 
-	private static final Logger LOGGER = Logger.getLogger(ImageTransmitter.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ImageTransmitter.class.getName());
 
-	private Robot robot;
+    private Robot robot;
     private InetAddress localHost;
     private InetAddress remoteHost;
     private int localPort;
@@ -54,7 +54,7 @@ public class ImageTransmitter implements Runnable {
     private int maxI;
     private int maxJ;
     private ImageEncoder encoder;
-    public final static int KEYFRAME = 10;
+    public static final int KEYFRAME = 10;
 
     public ImageTransmitter(DatagramSocket socket, InetAddress remoteHost, int remotePort, Rectangle area) {
 
@@ -178,6 +178,7 @@ public class ImageTransmitter implements Runnable {
         }
     }
 
+    @Override
     public void run() {
         start();
     }

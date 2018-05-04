@@ -16,8 +16,8 @@
  */
 package org.jivesoftware.smackx.shim.packet;
 
-import org.jivesoftware.smack.packet.NamedElement;
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.NamedElement;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 
 /**
@@ -44,16 +44,18 @@ public class Header implements ExtensionElement {
         return value;
     }
 
+    @Override
     public String getElementName() {
         return ELEMENT;
     }
 
+    @Override
     public String getNamespace() {
         return HeadersExtension.NAMESPACE;
     }
 
     @Override
-    public XmlStringBuilder toXML() {
+    public XmlStringBuilder toXML(String enclosingNamespace) {
         // Upcast to NamedElement since we don't want a xmlns attribute
         XmlStringBuilder xml = new XmlStringBuilder((NamedElement) this);
         xml.attribute("name", name);

@@ -20,6 +20,7 @@ import java.io.Serializable;
 
 import org.jivesoftware.smack.packet.NamedElement;
 import org.jivesoftware.smack.util.XmlStringBuilder;
+
 import org.jxmpp.jid.EntityBareJid;
 
 /**
@@ -68,7 +69,7 @@ public class Destroy implements NamedElement, Serializable {
     }
 
     @Override
-    public XmlStringBuilder toXML() {
+    public XmlStringBuilder toXML(String enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.optAttribute("jid", getJid());
         xml.rightAngleBracket();

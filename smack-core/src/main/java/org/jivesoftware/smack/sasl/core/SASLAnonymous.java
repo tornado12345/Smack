@@ -16,10 +16,10 @@
  */
 package org.jivesoftware.smack.sasl.core;
 
+import javax.security.auth.callback.CallbackHandler;
+
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.sasl.SASLMechanism;
-
-import javax.security.auth.callback.CallbackHandler;
 
 /**
  * Implementation of the SASL ANONYMOUS mechanism.
@@ -30,6 +30,7 @@ public class SASLAnonymous extends SASLMechanism {
 
     public static final String NAME = "ANONYMOUS";
 
+    @Override
     public String getName() {
         return NAME;
     }

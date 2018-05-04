@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.jivesoftware.smack.packet.NamedElement;
 import org.jivesoftware.smack.util.XmlStringBuilder;
+
 import org.jivesoftware.smackx.iot.element.NodeInfo;
 
 public class NodeElement implements NamedElement {
@@ -49,7 +50,7 @@ public class NodeElement implements NamedElement {
     }
 
     @Override
-    public XmlStringBuilder toXML() {
+    public XmlStringBuilder toXML(String enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         nodeInfo.appendTo(xml);
         xml.rightAngleBracket();

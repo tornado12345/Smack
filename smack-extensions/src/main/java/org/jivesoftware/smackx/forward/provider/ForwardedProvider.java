@@ -23,14 +23,16 @@ import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.jivesoftware.smack.util.PacketParserUtils;
+
 import org.jivesoftware.smackx.delay.packet.DelayInformation;
 import org.jivesoftware.smackx.delay.provider.DelayInformationProvider;
 import org.jivesoftware.smackx.forward.packet.Forwarded;
+
 import org.xmlpull.v1.XmlPullParser;
 
 /**
  * This class implements the {@link ExtensionElementProvider} to parse
- * forwarded messages from a packet.  It will return a {@link Forwarded} stanza(/packet) extension.
+ * forwarded messages from a packet.  It will return a {@link Forwarded} stanza extension.
  *
  * @author Georg Lukas
  */

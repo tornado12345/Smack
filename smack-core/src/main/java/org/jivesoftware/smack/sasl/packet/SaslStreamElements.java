@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2014 Florian Schmaus
+ * Copyright 2014-2018 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ public class SaslStreamElements {
         }
 
         @Override
-        public XmlStringBuilder toXML() {
+        public XmlStringBuilder toXML(String enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder();
             xml.halfOpenElement(ELEMENT).xmlnsAttribute(NAMESPACE).attribute("mechanism", mechanism).rightAngleBracket();
             xml.optAppend(authenticationText);
@@ -84,7 +84,7 @@ public class SaslStreamElements {
         }
 
         @Override
-        public XmlStringBuilder toXML() {
+        public XmlStringBuilder toXML(String enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder().halfOpenElement(ELEMENT).xmlnsAttribute(
                             NAMESPACE).rightAngleBracket();
             xml.optAppend(data);
@@ -120,7 +120,7 @@ public class SaslStreamElements {
         }
 
         @Override
-        public XmlStringBuilder toXML() {
+        public XmlStringBuilder toXML(String enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder();
             xml.halfOpenElement(ELEMENT).xmlnsAttribute(NAMESPACE).rightAngleBracket();
             xml.optAppend(authenticationText);
@@ -149,7 +149,7 @@ public class SaslStreamElements {
     public static class Success implements Nonza {
         public static final String ELEMENT = "success";
 
-        final private String data;
+        private final String data;
 
         /**
          * Construct a new SASL success stream element with optional additional data for the SASL layer.
@@ -171,7 +171,7 @@ public class SaslStreamElements {
         }
 
         @Override
-        public XmlStringBuilder toXML() {
+        public XmlStringBuilder toXML(String enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder();
             xml.halfOpenElement(ELEMENT).xmlnsAttribute(NAMESPACE).rightAngleBracket();
             xml.optAppend(data);
@@ -236,7 +236,7 @@ public class SaslStreamElements {
         }
 
         @Override
-        public XmlStringBuilder toXML() {
+        public XmlStringBuilder toXML(String enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder();
             xml.halfOpenElement(ELEMENT).xmlnsAttribute(NAMESPACE).rightAngleBracket();
             xml.emptyElement(saslErrorString);
@@ -247,7 +247,7 @@ public class SaslStreamElements {
 
         @Override
         public String toString() {
-            return toXML().toString();
+            return toXML(null).toString();
         }
 
         @Override

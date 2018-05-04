@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2014 Florian Schmaus
+ * Copyright 2014-2017 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 package org.jivesoftware.smack.sasl.provided;
+
+import java.io.UnsupportedEncodingException;
 
 import javax.security.auth.callback.CallbackHandler;
 
@@ -101,15 +103,21 @@ public class SASLDigestMD5Mechanism extends SASLMechanism {
         if (challenge.length == 0) {
             throw new SmackException("Initial challenge has zero length");
         }
-        String[] challengeParts = (new String(challenge)).split(",");
+        String challengeString;
+        try {
+            challengeString = new String(challenge, StringUtils.UTF8);
+        }
+        catch (UnsupportedEncodingException e) {
+            throw new AssertionError(e);
+        }
+        String[] challengeParts = challengeString.split(",");
         byte[] response = null;
         switch (state) {
         case INITIAL:
             for (String part : challengeParts) {
-                String[] keyValue = part.split("=");
-                assert (keyValue.length == 2);
+                String[] keyValue = part.split("=", 2);
                 String key = keyValue[0];
-                // RFC 2831 § 7.1 about the formating of the digest-challenge:
+                // RFC 2831 § 7.1 about the formatting of the digest-challenge:
                 // "The full form is "<n>#<m>element" indicating at least <n> and
                 // at most <m> elements, each separated by one or more commas
                 // (",") and OPTIONAL linear white space (LWS)."
@@ -140,7 +148,7 @@ public class SASLDigestMD5Mechanism extends SASLMechanism {
             byte[] a1FirstPart = MD5.bytes(authenticationId + ':' + serviceName + ':'
                             + password);
             cnonce = StringUtils.randomString(32);
-            byte[] a1 = ByteUtils.concact(a1FirstPart, toBytes(':' + nonce + ':' + cnonce));
+            byte[] a1 = ByteUtils.concat(a1FirstPart, toBytes(':' + nonce + ':' + cnonce));
             digestUri = "xmpp/" + serviceName;
             hex_hashed_a1 = StringUtils.encodeHex(MD5.bytes(a1));
             String responseValue = calcResponse(DigestType.ClientResponse);

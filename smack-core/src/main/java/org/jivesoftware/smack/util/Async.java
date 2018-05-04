@@ -60,7 +60,7 @@ public class Async {
      * If the exception is an instance of {@link RuntimeException}, then it will be re-thrown, otherwise <b>it will be
      * simply logged.</b>
      */
-    public static abstract class ThrowingRunnable implements Runnable {
+    public abstract static class ThrowingRunnable implements Runnable {
 
         public static final Logger LOGGER = Logger.getLogger(ThrowingRunnable.class.getName());
 
@@ -73,7 +73,7 @@ public class Async {
                 if (e instanceof RuntimeException) {
                     throw (RuntimeException) e;
                 }
-                LOGGER.log(Level.WARNING, "Catched Exception", e);
+                LOGGER.log(Level.WARNING, "Caught Exception", e);
             }
         }
 

@@ -20,11 +20,12 @@ import java.io.IOException;
 
 import org.jivesoftware.smackx.bytestreams.ibb.packet.Data;
 import org.jivesoftware.smackx.bytestreams.ibb.packet.DataPacketExtension;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 /**
- * Parses an In-Band Bytestream data stanza(/packet) which can be a stanza(/packet) extension of
+ * Parses an In-Band Bytestream data stanza which can be a stanza extension of
  * either an IQ stanza or a message stanza.
  * 
  * @author Henning Staib
@@ -39,8 +40,7 @@ public class DataPacketProvider {
         public Data parse(XmlPullParser parser, int initialDepth)
                         throws Exception {
             DataPacketExtension data = packetExtensionProvider.parse(parser);
-            Data iq = new Data(data);
-            return iq;
+            return new Data(data);
         }
     }
 

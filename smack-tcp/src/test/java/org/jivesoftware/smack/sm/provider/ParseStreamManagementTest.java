@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2014 Vyacheslav Blinov
+ * Copyright 2014 Vyacheslav Blinov, 2017-2018 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
 package org.jivesoftware.smack.sm.provider;
-
-import com.jamesmurty.utils.XMLBuilder;
-
-import org.jivesoftware.smack.packet.XMPPError;
-import org.jivesoftware.smack.sm.packet.StreamManagement;
-import org.jivesoftware.smack.util.PacketParserUtils;
-import org.junit.Test;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-
-import java.io.IOException;
-import java.util.Properties;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -36,6 +22,20 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Properties;
+
+import org.jivesoftware.smack.packet.StanzaError;
+import org.jivesoftware.smack.packet.StanzaErrorTextElement;
+import org.jivesoftware.smack.sm.packet.StreamManagement;
+import org.jivesoftware.smack.util.PacketParserUtils;
+
+import com.jamesmurty.utils.XMLBuilder;
+import org.junit.Test;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
 
 public class ParseStreamManagementTest {
     private static final Properties outputProperties = initOutputProperties();
@@ -68,11 +68,11 @@ public class ParseStreamManagementTest {
 
     @Test
     public void testParseEnabledInvariant() throws XmlPullParserException, IOException {
-        String enabledString = (new StreamManagement.Enabled("stream-id", false)).toXML().toString();
+        String enabledString = (new StreamManagement.Enabled("stream-id", false)).toXML(null).toString();
         XmlPullParser parser = PacketParserUtils.getParserFor(enabledString);
         StreamManagement.Enabled enabled = ParseStreamManagement.enabled(parser);
 
-        assertEquals(enabledString, enabled.toXML().toString());
+        assertEquals(enabledString, enabled.toXML(null).toString());
     }
 
     @Test
@@ -90,11 +90,11 @@ public class ParseStreamManagementTest {
 
     @Test
     public void testParseFailedError() throws Exception {
-        XMPPError.Condition errorCondition = XMPPError.Condition.unexpected_request;
+        StanzaError.Condition errorCondition = StanzaError.Condition.unexpected_request;
 
         String failedStanza = XMLBuilder.create("failed")
                 .a("xmlns", "urn:xmpp:sm:3")
-                .element(errorCondition.toString(), XMPPError.NAMESPACE)
+                .element(errorCondition.toString(), StanzaError.NAMESPACE)
                 .asString(outputProperties);
 
         StreamManagement.Failed failedPacket = ParseStreamManagement.failed(
@@ -102,6 +102,30 @@ public class ParseStreamManagementTest {
 
         assertThat(failedPacket, is(notNullValue()));
         assertTrue(failedPacket.getXMPPErrorCondition() == errorCondition);
+    }
+
+    @Test
+    public void testParseFailedWithTExt() throws XmlPullParserException, IOException {
+        // @formatter:off
+        final String failedNonza = "<failed h='20' xmlns='urn:xmpp:sm:3'>"
+                                   +  "<item-not-found xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>"
+                                   +  "<text xml:lang='en' xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'>"
+                                   +    "Previous session timed out"
+                                   +  "</text>"
+                                   + "</failed>";
+        // @formatter:on
+        XmlPullParser parser = PacketParserUtils.getParserFor(failedNonza);
+
+        StreamManagement.Failed failed = ParseStreamManagement.failed(parser);
+
+        assertEquals(StanzaError.Condition.item_not_found, failed.getXMPPErrorCondition());
+
+        List<StanzaErrorTextElement> textElements = failed.getTextElements();
+        assertEquals(1, textElements.size());
+
+        StanzaErrorTextElement textElement = textElements.get(0);
+        assertEquals("Previous session timed out", textElement.getText());
+        assertEquals("en", textElement.getLang());
     }
 
     @Test
@@ -138,7 +162,6 @@ public class ParseStreamManagementTest {
         assertThat(acknowledgementPacket, is(notNullValue()));
         assertThat(acknowledgementPacket.getHandledCount(), equalTo(handledPackets));
     }
-
 
     private static Properties initOutputProperties() {
         Properties properties = new Properties();

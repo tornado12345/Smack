@@ -22,6 +22,7 @@ import java.io.IOException;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.util.StringUtils;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -66,12 +67,12 @@ public class WorkgroupProperties extends IQ {
 
 
     /**
-     * Element name of the stanza(/packet) extension.
+     * Element name of the stanza extension.
      */
     public static final String ELEMENT_NAME = "workgroup-properties";
 
     /**
-     * Namespace of the stanza(/packet) extension.
+     * Namespace of the stanza extension.
      */
     public static final String NAMESPACE = "http://jivesoftware.com/protocol/workgroup";
 
@@ -89,7 +90,7 @@ public class WorkgroupProperties extends IQ {
     }
 
     /**
-     * Stanza(/Packet) extension provider for SoundSetting Packets.
+     * Stanza extension provider for SoundSetting Packets.
      */
     public static class InternalProvider extends IQProvider<WorkgroupProperties> {
 
@@ -103,7 +104,7 @@ public class WorkgroupProperties extends IQ {
             while (!done) {
                 int eventType = parser.next();
                 if ((eventType == XmlPullParser.START_TAG) && ("authRequired".equals(parser.getName()))) {
-                    props.setAuthRequired(new Boolean(parser.nextText()).booleanValue());
+                    props.setAuthRequired(Boolean.valueOf(parser.nextText()).booleanValue());
                 }
                 else if ((eventType == XmlPullParser.START_TAG) && ("email".equals(parser.getName()))) {
                     props.setEmail(parser.nextText());

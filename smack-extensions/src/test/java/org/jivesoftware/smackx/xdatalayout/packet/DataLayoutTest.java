@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 import org.jivesoftware.smack.util.PacketParserUtils;
+
 import org.jivesoftware.smackx.xdata.packet.DataForm;
 import org.jivesoftware.smackx.xdata.provider.DataFormProvider;
 import org.jivesoftware.smackx.xdatalayout.packet.DataLayout.Fieldref;
@@ -30,6 +31,7 @@ import org.jivesoftware.smackx.xdatalayout.packet.DataLayout.Reportedref;
 import org.jivesoftware.smackx.xdatalayout.packet.DataLayout.Section;
 import org.jivesoftware.smackx.xdatalayout.packet.DataLayout.Text;
 import org.jivesoftware.smackx.xdatalayout.provider.DataLayoutProvider;
+
 import org.junit.Test;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -76,10 +78,10 @@ public class DataLayoutTest {
         Section section = new Section("section Label");
         section.getSectionLayout().add(new Text("SectionText"));
         layout.getPageLayout().add(section);
-        layout.getPageLayout().add(new Text( "PageText"));
+        layout.getPageLayout().add(new Text("PageText"));
 
-        assertNotNull( layout.toXML());
-        String output = layout.toXML().toString();
+        assertNotNull(layout.toXML(null));
+        String output = layout.toXML(null).toString();
         assertEquals(TEST_OUTPUT_2, output);
 
         XmlPullParser parser = PacketParserUtils.getParserFor(output);
@@ -89,8 +91,8 @@ public class DataLayoutTest {
         assertEquals(3 , layout.getPageLayout().size());
         assertEquals("Label", layout.getLabel());
 
-        assertNotNull( layout.toXML());
-        output = layout.toXML().toString();
+        assertNotNull(layout.toXML(null));
+        output = layout.toXML(null).toString();
         assertEquals(TEST_OUTPUT_2, output);
     }
 
@@ -101,19 +103,19 @@ public class DataLayoutTest {
         Fieldref reffield = new Fieldref("testField1");
         layout.getPageLayout().add(reffield);
         Section section = new Section("section Label - & \u00E9 \u00E1 ");
-        section.getSectionLayout().add(new Text( "SectionText - & \u00E9 \u00E1 "));
+        section.getSectionLayout().add(new Text("SectionText - & \u00E9 \u00E1 "));
         layout.getPageLayout().add(section);
-        layout.getPageLayout().add(new Text( "PageText - & \u00E9 \u00E1 "));
+        layout.getPageLayout().add(new Text("PageText - & \u00E9 \u00E1 "));
 
         section = new Section("<html>Number of Persons by<br/> Nationality and Status</html>");
         section.getSectionLayout().add(new Reportedref());
         layout.getPageLayout().add(section);
 
-        layout.getPageLayout().add(new Text( "<html><font color='red'><em>DO NOT DELAY</em></font><br/>supply further information</html>"));
+        layout.getPageLayout().add(new Text("<html><font color='red'><em>DO NOT DELAY</em></font><br/>supply further information</html>"));
 
 
-        assertNotNull( layout.toXML());
-        String output = layout.toXML().toString();
+        assertNotNull(layout.toXML(null));
+        String output = layout.toXML(null).toString();
         assertEquals(TEST_OUTPUT_SPECIAL, output);
 
         XmlPullParser parser = PacketParserUtils.getParserFor(output);
@@ -124,7 +126,7 @@ public class DataLayoutTest {
         assertEquals("Label - & \u00E9 \u00E1 ", layout.getLabel());
         section = (Section) layout.getPageLayout().get(1);
         assertEquals("section Label - & \u00E9 \u00E1 ", section.getLabel());
-        Text text = (Text)layout.getPageLayout().get(2);
+        Text text = (Text) layout.getPageLayout().get(2);
         assertEquals("PageText - & \u00E9 \u00E1 ", text.getText());
         section = (Section) layout.getPageLayout().get(3);
         assertEquals("<html>Number of Persons by<br/> Nationality and Status</html>", section.getLabel());
@@ -132,8 +134,8 @@ public class DataLayoutTest {
         assertEquals("<html><font color='red'><em>DO NOT DELAY</em></font><br/>supply further information</html>", text.getText());
 
 
-        assertNotNull( layout.toXML());
-        output = layout.toXML().toString();
+        assertNotNull(layout.toXML(null));
+        output = layout.toXML(null).toString();
         assertEquals(TEST_OUTPUT_SPECIAL, output);
     }
 
@@ -146,7 +148,7 @@ public class DataLayoutTest {
         parser.next();
 
         DataForm form = pr.parse(parser);
-        assertNotNull( form);
+        assertNotNull(form);
         assertEquals(1 , form.getExtensionElements().size());
 
         DataLayout layout = (DataLayout) form.getExtensionElements().get(0);
@@ -155,7 +157,7 @@ public class DataLayoutTest {
         assertEquals("Label - & \u00E9 \u00E1 ", layout.getLabel());
         Section section = (Section) layout.getPageLayout().get(1);
         assertEquals("section Label - & \u00E9 \u00E1 ", section.getLabel());
-        Text text = (Text)layout.getPageLayout().get(2);
+        Text text = (Text) layout.getPageLayout().get(2);
         assertEquals("PageText - & \u00E9 \u00E1 ", text.getText());
         section = (Section) layout.getPageLayout().get(3);
         assertEquals("<html>Number of Persons by<br/> Nationality and Status</html>", section.getLabel());
@@ -163,8 +165,8 @@ public class DataLayoutTest {
         assertEquals("<html><font color='red'><em>DO NOT DELAY</em></font><br/>supply further information</html>", text.getText());
 
 
-        assertNotNull( layout.toXML());
-        String output = layout.toXML().toString();
+        assertNotNull(layout.toXML(null));
+        String output = layout.toXML(null).toString();
         assertEquals(TEST_OUTPUT_SPECIAL, output);
     }
 }

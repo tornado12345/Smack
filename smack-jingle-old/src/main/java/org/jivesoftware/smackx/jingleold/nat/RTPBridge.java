@@ -28,33 +28,35 @@ import java.util.logging.Logger;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
+import org.jivesoftware.smack.StanzaCollector;
 import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.PacketCollector;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.provider.ProviderManager;
+
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 /**
- * RTPBridge IQ Stanza(/Packet) used to request and retrieve a RTPBridge Candidates that can be used for a Jingle Media Transmission between two parties that are behind NAT.
+ * RTPBridge IQ Stanza used to request and retrieve a RTPBridge Candidates that can be used for a Jingle Media Transmission between two parties that are behind NAT.
  * This Jingle Bridge has all the needed information to establish a full UDP Channel (Send and Receive) between two parties.
  * <i>This transport method should be used only if other transport methods are not allowed. Or if you want a more reliable transport.</i>
- * <p/>
+ *
  * High Level Usage Example:
- * <p/>
+ *
  * RTPBridge rtpBridge = RTPBridge.getRTPBridge(connection, sessionID);
  *
  * @author Thiago Camargo
  */
 public class RTPBridge extends IQ {
 
-	private static final Logger LOGGER = Logger.getLogger(RTPBridge.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(RTPBridge.class.getName());
 
-	private String sid;
+    private String sid;
     private String pass;
     private String ip;
     private String name;
@@ -70,17 +72,17 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Element name of the stanza(/packet) extension.
+     * Element name of the stanza extension.
      */
     public static final String NAME = "rtpbridge";
 
     /**
-     * Element name of the stanza(/packet) extension.
+     * Element name of the stanza extension.
      */
     public static final String ELEMENT_NAME = "rtpbridge";
 
     /**
-     * Namespace of the stanza(/packet) extension.
+     * Namespace of the stanza extension.
      */
     public static final String NAMESPACE = "http://www.jivesoftware.com/protocol/rtpbridge";
 
@@ -121,7 +123,7 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Creates a RTPBridge Stanza(/Packet) without Session ID.
+     * Creates a RTPBridge Stanza without Session ID.
      */
     public RTPBridge() {
         super(ELEMENT_NAME, NAMESPACE);
@@ -155,7 +157,7 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Get the Session ID of the Stanza(/Packet) (usually same as Jingle Session ID).
+     * Get the Session ID of the Stanza (usually same as Jingle Session ID).
      *
      * @return the session ID
      */
@@ -164,7 +166,7 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Set the Session ID of the Stanza(/Packet) (usually same as Jingle Session ID).
+     * Set the Session ID of the Stanza (usually same as Jingle Session ID).
      *
      * @param sid
      */
@@ -211,7 +213,7 @@ public class RTPBridge extends IQ {
     /**
      * Get Side A receive port.
      *
-     * @return the side A receive prot
+     * @return the side A receive port
      */
     public int getPortA() {
         return portA;
@@ -303,6 +305,7 @@ public class RTPBridge extends IQ {
      *
      * @return the Child Element XML of the Packet
      */
+    @Override
     protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder str) {
         str.attribute("sid", sid);
         str.rightAngleBracket();
@@ -319,7 +322,7 @@ public class RTPBridge extends IQ {
 
     /**
      * IQProvider for RTP Bridge packets.
-     * Parse receive RTPBridge stanza(/packet) to a RTPBridge instance
+     * Parse receive RTPBridge stanza to a RTPBridge instance
      *
      * @author Thiago Rocha
      */
@@ -402,7 +405,7 @@ public class RTPBridge extends IQ {
         RTPBridge rtpPacket = new RTPBridge(sessionID);
         rtpPacket.setTo(RTPBridge.NAME + "." + connection.getXMPPServiceDomain());
 
-        PacketCollector collector = connection.createPacketCollectorAndSend(rtpPacket);
+        StanzaCollector collector = connection.createStanzaCollectorAndSend(rtpPacket);
 
         RTPBridge response = collector.nextResult();
 
@@ -479,7 +482,7 @@ public class RTPBridge extends IQ {
 
         // LOGGER.debug("Relayed to: " + candidate.getIp() + ":" + candidate.getPort());
 
-        PacketCollector collector = connection.createPacketCollectorAndSend(rtpPacket);
+        StanzaCollector collector = connection.createStanzaCollectorAndSend(rtpPacket);
 
         RTPBridge response = collector.nextResult();
 
@@ -510,14 +513,14 @@ public class RTPBridge extends IQ {
 
         // LOGGER.debug("Relayed to: " + candidate.getIp() + ":" + candidate.getPort());
 
-        PacketCollector collector = xmppConnection.createPacketCollectorAndSend(rtpPacket);
+        StanzaCollector collector = xmppConnection.createStanzaCollectorAndSend(rtpPacket);
 
         RTPBridge response = collector.nextResult();
 
         // Cancel the collector.
         collector.cancel();
 
-        if(response == null) return null;
+        if (response == null) return null;
 
         if (response.getIp() == null || response.getIp().equals("")) return null;
 
@@ -528,7 +531,7 @@ public class RTPBridge extends IQ {
         catch (SocketException e) {
             LOGGER.log(Level.WARNING, "exception", e);
         }
-        while (ifaces!=null&&ifaces.hasMoreElements()) {
+        while (ifaces != null && ifaces.hasMoreElements()) {
 
             NetworkInterface iface = ifaces.nextElement();
             Enumeration<InetAddress> iaddresses = iface.getInetAddresses();

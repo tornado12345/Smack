@@ -24,6 +24,7 @@ import java.util.List;
 import org.jivesoftware.smack.packet.NamedElement;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.XmlStringBuilder;
+
 import org.jivesoftware.smackx.xdatavalidation.packet.ValidateElement;
 
 /**
@@ -140,8 +141,8 @@ public class FormField implements NamedElement {
     private boolean required = false;
     private String label;
     private Type type;
-    private final List<Option> options = new ArrayList<Option>();
-    private final List<String> values = new ArrayList<String>();
+    private final List<Option> options = new ArrayList<>();
+    private final List<CharSequence> values = new ArrayList<>();
     private ValidateElement validateElement;
 
     /**
@@ -195,7 +196,7 @@ public class FormField implements NamedElement {
      */
     public List<Option> getOptions() {
         synchronized (options) {
-            return Collections.unmodifiableList(new ArrayList<Option>(options));
+            return Collections.unmodifiableList(new ArrayList<>(options));
         }
     }
 
@@ -225,10 +226,44 @@ public class FormField implements NamedElement {
      *
      * @return a List of the default values or answered values of the question.
      */
-    public List<String> getValues() {
+    public List<CharSequence> getValues() {
         synchronized (values) {
-            return Collections.unmodifiableList(new ArrayList<String>(values));
+            return Collections.unmodifiableList(new ArrayList<>(values));
         }
+    }
+
+    /**
+     * Returns the values a String. Note that you should use {@link #getValues()} whenever possible instead of this
+     * method.
+     *
+     * @return a list of Strings representing the values
+     * @see #getValues()
+     * @since 4.3
+     */
+    public List<String> getValuesAsString() {
+        List<CharSequence> valuesAsCharSequence = getValues();
+        List<String> res = new ArrayList<>(valuesAsCharSequence.size());
+        for (CharSequence value : valuesAsCharSequence) {
+            res.add(value.toString());
+        }
+        return res;
+    }
+
+    /**
+     * Returns the first value of this form fold or {@code null}.
+     *
+     * @return the first value or {@code null}
+     * @since 4.3
+     */
+    public String getFirstValue() {
+        CharSequence firstValue;
+        synchronized (values) {
+            firstValue = values.get(0);
+        }
+        if (firstValue == null) {
+            return null;
+        }
+        return firstValue.toString();
     }
 
     /**
@@ -320,7 +355,7 @@ public class FormField implements NamedElement {
      *
      * @param value a default value or an answered value of the question.
      */
-    public void addValue(String value) {
+    public void addValue(CharSequence value) {
         synchronized (values) {
             values.add(value);
         }
@@ -332,7 +367,7 @@ public class FormField implements NamedElement {
      *
      * @param newValues default values or an answered values of the question.
      */
-    public void addValues(List<String> newValues) {
+    public void addValues(List<? extends CharSequence> newValues) {
         synchronized (values) {
             values.addAll(newValues);
         }
@@ -343,7 +378,7 @@ public class FormField implements NamedElement {
      */
     protected void resetValues() {
         synchronized (values) {
-            values.removeAll(new ArrayList<String>(values));
+            values.removeAll(new ArrayList<>(values));
         }
     }
 
@@ -364,7 +399,8 @@ public class FormField implements NamedElement {
         return ELEMENT;
     }
 
-    public XmlStringBuilder toXML() {
+    @Override
+    public XmlStringBuilder toXML(String enclosingNamespace) {
         XmlStringBuilder buf = new XmlStringBuilder(this);
         // Add attributes
         buf.optAttribute("label", getLabel());
@@ -375,12 +411,12 @@ public class FormField implements NamedElement {
         buf.optElement("desc", getDescription());
         buf.condEmptyElement(isRequired(), "required");
         // Loop through all the values and append them to the string buffer
-        for (String value : getValues()) {
+        for (CharSequence value : getValues()) {
             buf.element("value", value);
         }
         // Loop through all the values and append them to the string buffer
         for (Option option : getOptions()) {
-            buf.append(option.toXML());
+            buf.append(option.toXML(null));
         }
         buf.optElement(validateElement);
         buf.closeElement(this);
@@ -398,12 +434,12 @@ public class FormField implements NamedElement {
 
         FormField other = (FormField) obj;
 
-        return toXML().equals(other.toXML());
+        return toXML(null).equals(other.toXML(null));
     }
 
     @Override
     public int hashCode() {
-        return toXML().hashCode();
+        return toXML(null).hashCode();
     }
 
     /**
@@ -455,7 +491,8 @@ public class FormField implements NamedElement {
             return ELEMENT;
         }
 
-        public XmlStringBuilder toXML() {
+        @Override
+        public XmlStringBuilder toXML(String enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder(this);
             // Add attribute
             xml.optAttribute("label", getLabel());

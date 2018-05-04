@@ -39,10 +39,10 @@ import org.jivesoftware.smack.packet.Stanza;
  *     }
  * };
  * // Create a new stanza collector using the filter we created.
- * PacketCollector myCollector = connection.createPacketCollector(myFilter);
+ * StanzaCollector myCollector = connection.createStanzaCollector(myFilter);
  * </pre>
  *
- * @see org.jivesoftware.smack.PacketCollector
+ * @see org.jivesoftware.smack.StanzaCollector
  * @see org.jivesoftware.smack.StanzaListener
  * @author Matt Tucker
  */
@@ -51,8 +51,8 @@ public interface StanzaFilter {
     /**
      * Tests whether or not the specified stanza should pass the filter.
      *
-     * @param stanza the stanza(/packet) to test.
+     * @param stanza the stanza to test.
      * @return true if and only if <tt>stanza</tt> passes the filter.
      */
-    public boolean accept(Stanza stanza);
+    boolean accept(Stanza stanza);
 }

@@ -20,6 +20,7 @@ import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.util.Objects;
 import org.jivesoftware.smack.util.XmlStringBuilder;
+
 import org.jxmpp.jid.BareJid;
 
 public class Friend implements ExtensionElement {
@@ -44,7 +45,7 @@ public class Friend implements ExtensionElement {
     }
 
     @Override
-    public XmlStringBuilder toXML() {
+    public XmlStringBuilder toXML(String enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.attribute("jid", friend);
         xml.closeEmptyElement();

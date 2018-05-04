@@ -1,6 +1,6 @@
 /**
  *
- * Copyright © 2014 Florian Schmaus
+ * Copyright © 2014-2018 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,18 @@ package org.jivesoftware.smack.packet;
 
 /**
  * Interface to represent a XML element. This is similar to {@link ExtensionElement}, but does not
- * carry a namespace and is usually included as child element of an stanza(/packet) extension.
+ * carry a namespace and is usually included as child element of an stanza extension.
  */
 public interface Element {
 
+    // TODO: Add a toXML() non-parameter default method once Smack supports Java 8.
+
     /**
-     * Returns the XML representation of this Element.
+     * Returns the XML representation of this Element. This method takes an optional argument for the enclosing
+     * namespace which may be null or the empty String if the value is not known.
      *
-     * @return the stanza(/packet) extension as XML.
+     * @param enclosingNamespace the enclosing namespace or {@code null}.
+     * @return the stanza extension as XML.
      */
-    public CharSequence toXML();
+    CharSequence toXML(String enclosingNamespace);
 }

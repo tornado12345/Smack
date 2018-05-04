@@ -21,7 +21,7 @@ import org.jivesoftware.smack.packet.Presence.Type;
 import org.jivesoftware.smack.util.Objects;
 
 /**
- * A filter for Presence types. Returns true only if the stanza is an Presence stanza(/packet) and it matches the type provided in the
+ * A filter for Presence types. Returns true only if the stanza is an Presence stanza and it matches the type provided in the
  * constructor.
  */
 public final class PresenceTypeFilter extends FlexibleStanzaTypeFilter<Presence> {
@@ -34,6 +34,8 @@ public final class PresenceTypeFilter extends FlexibleStanzaTypeFilter<Presence>
     public static final PresenceTypeFilter UNSUBSCRIBED = new PresenceTypeFilter(Type.unsubscribed);
     public static final PresenceTypeFilter ERROR = new PresenceTypeFilter(Type.error);
     public static final PresenceTypeFilter PROBE = new PresenceTypeFilter(Type.probe);
+
+    public static final StanzaFilter OUTGOING_PRESENCE_BROADCAST = new AndFilter(AVAILABLE, EmptyToMatcher.INSTANCE);
 
     private final Presence.Type type;
 

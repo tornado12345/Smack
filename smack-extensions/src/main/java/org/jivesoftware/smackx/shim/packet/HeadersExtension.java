@@ -19,8 +19,8 @@ package org.jivesoftware.smackx.shim.packet;
 import java.util.Collections;
 import java.util.List;
 
-import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 
 /**
@@ -48,16 +48,18 @@ public class HeadersExtension implements ExtensionElement {
         return headers;
     }
 
+    @Override
     public String getElementName() {
         return ELEMENT;
     }
 
+    @Override
     public String getNamespace() {
         return NAMESPACE;
     }
 
     @Override
-    public XmlStringBuilder toXML() {
+    public XmlStringBuilder toXML(String enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.rightAngleBracket();
         xml.append(headers);

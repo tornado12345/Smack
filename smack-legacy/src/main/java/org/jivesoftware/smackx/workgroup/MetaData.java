@@ -20,26 +20,26 @@ package org.jivesoftware.smackx.workgroup;
 import java.util.List;
 import java.util.Map;
 
-import org.jivesoftware.smackx.workgroup.util.MetaDataUtils;
-
 import org.jivesoftware.smack.packet.ExtensionElement;
 
+import org.jivesoftware.smackx.workgroup.util.MetaDataUtils;
+
 /**
- * MetaData stanza(/packet) extension.
+ * MetaData stanza extension.
  */
 public class MetaData implements ExtensionElement {
 
     /**
-     * Element name of the stanza(/packet) extension.
+     * Element name of the stanza extension.
      */
     public static final String ELEMENT_NAME = "metadata";
 
     /**
-     * Namespace of the stanza(/packet) extension.
+     * Namespace of the stanza extension.
      */
     public static final String NAMESPACE = "http://jivesoftware.com/protocol/workgroup";
 
-    private Map<String, List<String>> metaData;
+    private final Map<String, List<String>> metaData;
 
     public MetaData(Map<String, List<String>> metaData) {
         this.metaData = metaData;
@@ -53,15 +53,18 @@ public class MetaData implements ExtensionElement {
         return metaData;
     }
 
+    @Override
     public String getElementName() {
         return ELEMENT_NAME;
     }
 
+    @Override
     public String getNamespace() {
         return NAMESPACE;
     }
 
-    public String toXML() {
+    @Override
+    public String toXML(String enclosingNamespace) {
         return MetaDataUtils.serializeMetaData(this.getMetaData());
     }
 }

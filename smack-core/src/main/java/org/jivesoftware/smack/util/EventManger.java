@@ -81,7 +81,7 @@ public class EventManger<K, R, E extends Exception> {
             return false;
         }
         reference.eventResult = eventResult;
-        synchronized(reference) {
+        synchronized (reference) {
             reference.notifyAll();
         }
         return true;
@@ -92,6 +92,6 @@ public class EventManger<K, R, E extends Exception> {
     }
 
     public interface Callback<E extends Exception> {
-        public void action() throws E;
+        void action() throws E;
     }
 }

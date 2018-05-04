@@ -16,12 +16,13 @@
  */
 package org.jivesoftware.smackx.amp;
 
+import org.jivesoftware.smack.ConnectionCreationListener;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.ConnectionCreationListener;
 import org.jivesoftware.smack.XMPPConnectionRegistry;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
+
 import org.jivesoftware.smackx.amp.packet.AMPExtension;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 
@@ -40,6 +41,7 @@ public class AMPManager {
     // The ServiceDiscoveryManager class should have been already initialized
     static {
         XMPPConnectionRegistry.addConnectionCreationListener(new ConnectionCreationListener() {
+            @Override
             public void connectionCreated(XMPPConnection connection) {
                 AMPManager.setServiceEnabled(connection, true);
             }
@@ -55,7 +57,7 @@ public class AMPManager {
      * @param connection the connection where the service will be enabled or disabled
      * @param enabled indicates if the service will be enabled or disabled
      */
-    public synchronized static void setServiceEnabled(XMPPConnection connection, boolean enabled) {
+    public static synchronized void setServiceEnabled(XMPPConnection connection, boolean enabled) {
         if (isServiceEnabled(connection) == enabled)
             return;
 

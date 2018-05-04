@@ -33,19 +33,19 @@ import org.jivesoftware.smackx.jingleold.nat.TransportCandidate;
 
 /**
  * Implements a jingleMediaManager using JMF based API.
- * It supports GSM and G723 codecs.
+ * It supports GSM and G723 codices.
  * <i>This API only currently works on windows and Mac.</i>
  *
  * @author Thiago Camargo
  */
 public class JmfMediaManager extends JingleMediaManager {
 
-	private static final Logger LOGGER = Logger.getLogger(JmfMediaManager.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(JmfMediaManager.class.getName());
 
-	public static final String MEDIA_NAME = "JMF";
+    public static final String MEDIA_NAME = "JMF";
 
 
-    private List<PayloadType> payloads = new ArrayList<PayloadType>();
+    private List<PayloadType> payloads = new ArrayList<>();
     private String mediaLocator = null;
 
     /**
@@ -75,6 +75,7 @@ public class JmfMediaManager extends JingleMediaManager {
      * @param local       local Candidate
      * @return JingleMediaSession
      */
+    @Override
     public JingleMediaSession createMediaSession(final PayloadType payloadType, final TransportCandidate remote, final TransportCandidate local, final JingleSession jingleSession) {
         return new AudioMediaSession(payloadType, remote, local, mediaLocator, jingleSession);
     }
@@ -93,6 +94,7 @@ public class JmfMediaManager extends JingleMediaManager {
      *
      * @return The Payload List
      */
+    @Override
     public List<PayloadType> getPayloads() {
         return payloads;
     }
@@ -150,9 +152,9 @@ public class JmfMediaManager extends JingleMediaManager {
         // should be and put it there.
         runLinuxPreInstall();
 
-        //if (jmfProperties.length() == 0) {
+        // if (jmfProperties.length() == 0) {
         new JMFInit(null, false);
-        //}
+        // }
 
     }
 
@@ -160,6 +162,7 @@ public class JmfMediaManager extends JingleMediaManager {
         // @TODO Implement Linux Pre-Install
     }
 
+    @Override
     public  String getName() {
         return MEDIA_NAME;
     }

@@ -22,18 +22,18 @@ import java.util.List;
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.util.XmlStringBuilder;
+
 import org.jivesoftware.smackx.pubsub.packet.PubSubNamespace;
 
 /**
- * Represents the top level element of a pubsub event extension.  All types of pubsub events are
+ * Represents the top level element of a PubSub event extension.  All types of PubSub events are
  * represented by this class.  The specific type can be found by {@link #getEventType()}.  The 
  * embedded event information, which is specific to the event type, can be retrieved by the {@link #getEvent()}
  * method.
  * 
  * @author Robin Collier
  */
-public class EventElement implements EmbeddedPacketExtension
-{
+public class EventElement implements EmbeddedPacketExtension {
     /**
      * The constant String "event".
      */
@@ -42,47 +42,44 @@ public class EventElement implements EmbeddedPacketExtension
     /**
      * The constant String "http://jabber.org/protocol/pubsub#event".
      */
-    public static final String NAMESPACE = PubSubNamespace.EVENT.getXmlns();
+    public static final String NAMESPACE = PubSubNamespace.event.getXmlns();
 
-	private EventElementType type;
-	private NodeExtension ext;
+    private final EventElementType type;
+    private final NodeExtension ext;
 
-	public EventElement(EventElementType eventType, NodeExtension eventExt)
-	{
-		type = eventType;
-		ext = eventExt;
-	}
+    public EventElement(EventElementType eventType, NodeExtension eventExt) {
+        type = eventType;
+        ext = eventExt;
+    }
 
-	public EventElementType getEventType()
-	{
-		return type;
-	}
-
-	public List<ExtensionElement> getExtensions()
-	{
-		return Arrays.asList(new ExtensionElement[]{getEvent()});
-	}
-
-	public NodeExtension getEvent()
-	{
-		return ext;
-	}
-
-	public String getElementName()
-	{
-		return "event";
-	}
-
-	public String getNamespace()
-	{
-		return PubSubNamespace.EVENT.getXmlns();
-	}
+    public EventElementType getEventType() {
+        return type;
+    }
 
     @Override
-    public XmlStringBuilder toXML() {
+    public List<ExtensionElement> getExtensions() {
+        return Arrays.asList(new ExtensionElement[] {getEvent()});
+    }
+
+    public NodeExtension getEvent() {
+        return ext;
+    }
+
+    @Override
+    public String getElementName() {
+        return "event";
+    }
+
+    @Override
+    public String getNamespace() {
+        return PubSubNamespace.event.getXmlns();
+    }
+
+    @Override
+    public XmlStringBuilder toXML(String enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.rightAngleBracket();
-        xml.append(ext.toXML());
+        xml.append(ext.toXML(null));
         xml.closeElement(this);
         return xml;
     }

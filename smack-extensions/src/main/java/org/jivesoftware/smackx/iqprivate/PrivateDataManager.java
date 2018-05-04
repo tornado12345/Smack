@@ -17,6 +17,11 @@
 
 package org.jivesoftware.smackx.iqprivate;
 
+import java.io.IOException;
+import java.util.Hashtable;
+import java.util.Map;
+import java.util.WeakHashMap;
+
 import org.jivesoftware.smack.Manager;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
@@ -24,20 +29,17 @@ import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.packet.XMPPError.Condition;
+import org.jivesoftware.smack.packet.StanzaError.Condition;
 import org.jivesoftware.smack.provider.IQProvider;
+
 import org.jivesoftware.smackx.iqprivate.packet.DefaultPrivateData;
 import org.jivesoftware.smackx.iqprivate.packet.PrivateData;
 import org.jivesoftware.smackx.iqprivate.packet.PrivateDataIQ;
 import org.jivesoftware.smackx.iqprivate.provider.PrivateDataProvider;
+
 import org.jxmpp.util.XmppStringUtils;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
-
-import java.io.IOException;
-import java.util.Hashtable;
-import java.util.Map;
-import java.util.WeakHashMap;
 
 /**
  * Manages private data, which is a mechanism to allow users to store arbitrary XML
@@ -75,12 +77,12 @@ public final class PrivateDataManager extends Manager {
     /**
      * Map of provider instances.
      */
-    private static Map<String, PrivateDataProvider> privateDataProviders = new Hashtable<String, PrivateDataProvider>();
+    private static final Map<String, PrivateDataProvider> privateDataProviders = new Hashtable<>();
 
     /**
      * Returns the private data provider registered to the specified XML element name and namespace.
      * For example, if a provider was registered to the element name "prefs" and the
-     * namespace "http://www.xmppclient.com/prefs", then the following stanza(/packet) would trigger
+     * namespace "http://www.xmppclient.com/prefs", then the following stanza would trigger
      * the provider:
      *
      * <pre>
@@ -113,8 +115,7 @@ public final class PrivateDataManager extends Manager {
      * @param provider the private data provider.
      */
     public static void addPrivateDataProvider(String elementName, String namespace,
-            PrivateDataProvider provider)
-    {
+            PrivateDataProvider provider) {
         String key = XmppStringUtils.generateKey(elementName, namespace);
         privateDataProviders.put(key, provider);
     }
@@ -157,12 +158,11 @@ public final class PrivateDataManager extends Manager {
      * @throws NotConnectedException 
      * @throws InterruptedException 
      */
-    public PrivateData getPrivateData(final String elementName, final String namespace) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException
-    {
+    public PrivateData getPrivateData(final String elementName, final String namespace) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         // Create an IQ packet to get the private data.
         IQ privateDataGet = new PrivateDataIQ(elementName, namespace);
 
-        PrivateDataIQ response = connection().createPacketCollectorAndSend(
+        PrivateDataIQ response = connection().createStanzaCollectorAndSend(
                         privateDataGet).nextResultOrThrow();
         return response.getPrivateData();
     }
@@ -182,7 +182,7 @@ public final class PrivateDataManager extends Manager {
         // Create an IQ packet to set the private data.
         IQ privateDataSet = new PrivateDataIQ(privateData);
 
-        connection().createPacketCollectorAndSend(privateDataSet).nextResultOrThrow();
+        connection().createStanzaCollectorAndSend(privateDataSet).nextResultOrThrow();
     }
 
     private static final PrivateData DUMMY_PRIVATE_DATA = new PrivateData() {

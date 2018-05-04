@@ -20,16 +20,18 @@ import java.io.IOException;
 
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
+
 import org.jivesoftware.smackx.jingleold.media.PayloadType;
 import org.jivesoftware.smackx.jingleold.packet.JingleContentDescription;
 import org.jivesoftware.smackx.jingleold.packet.JingleContentDescription.JinglePayloadType;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 /**
  * Parser for a Jingle description.
  *
- * @author Alvaro Saurin <alvaro.saurin@gmail.com>
+ * @author Alvaro Saurin
  */
 public abstract class JingleContentDescriptionProvider extends ExtensionElementProvider<JingleContentDescription> {
 
@@ -108,6 +110,7 @@ public abstract class JingleContentDescriptionProvider extends ExtensionElementP
         /**
          * Parse an audio payload type.
          */
+        @Override
         public JinglePayloadType parsePayload(final XmlPullParser parser) {
             JinglePayloadType pte = super.parsePayload(parser);
             PayloadType.Audio pt = new PayloadType.Audio(pte.getPayloadType());
@@ -125,8 +128,9 @@ public abstract class JingleContentDescriptionProvider extends ExtensionElementP
         /**
          * Get a new instance of this object.
          */
+        @Override
         protected JingleContentDescription getInstance() {
             return new JingleContentDescription.Audio();
-		}
-	}
+        }
+    }
 }

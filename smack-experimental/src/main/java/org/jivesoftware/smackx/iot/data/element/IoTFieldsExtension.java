@@ -23,6 +23,7 @@ import java.util.List;
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.util.XmlStringBuilder;
+
 import org.jivesoftware.smackx.iot.element.NodeInfo;
 
 public class IoTFieldsExtension implements ExtensionElement {
@@ -67,7 +68,7 @@ public class IoTFieldsExtension implements ExtensionElement {
     }
 
     @Override
-    public XmlStringBuilder toXML() {
+    public XmlStringBuilder toXML(String enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.attribute("seqnr", Integer.toString(seqNr));
         xml.attribute("done", done);

@@ -21,7 +21,9 @@ import java.util.List;
 
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.util.PacketParserUtils;
+
 import org.jivesoftware.smackx.blocking.element.BlockContactsIQ;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.jxmpp.jid.Jid;
@@ -29,10 +31,10 @@ import org.jxmpp.jid.impl.JidCreate;
 
 public class BlockContactsIQTest {
 
-    String blockContactIQExample = "<iq id='block1' type='set'>" + "<block xmlns='urn:xmpp:blocking'>"
+    private static final String blockContactIQExample = "<iq id='block1' type='set'>" + "<block xmlns='urn:xmpp:blocking'>"
             + "<item jid='romeo@montague.net'/>" + "<item jid='pepe@montague.net'/>" + "</block>" + "</iq>";
 
-    String blockContactPushIQExample = "<iq to='juliet@capulet.com/chamber' type='set' id='push1'>"
+    private static final String blockContactPushIQExample = "<iq to='juliet@capulet.com/chamber' type='set' id='push1'>"
             + "<block xmlns='urn:xmpp:blocking'>" + "<item jid='romeo@montague.net'/>"
             + "<item jid='pepe@montague.net'/>" + "</block>" + "</iq>";
 
@@ -45,12 +47,12 @@ public class BlockContactsIQTest {
         BlockContactsIQ blockContactIQ = new BlockContactsIQ(jids);
         blockContactIQ.setStanzaId("block1");
 
-        Assert.assertEquals(blockContactIQExample, blockContactIQ.toXML().toString());
+        Assert.assertEquals(blockContactIQExample, blockContactIQ.toXML(null).toString());
     }
 
     @Test
     public void checkBlockContactPushIQ() throws Exception {
-        IQ iq = (IQ) PacketParserUtils.parseStanza(blockContactPushIQExample);
+        IQ iq = PacketParserUtils.parseStanza(blockContactPushIQExample);
         BlockContactsIQ blockContactIQ = (BlockContactsIQ) iq;
         Assert.assertEquals(JidCreate.from("romeo@montague.net"), blockContactIQ.getJids().get(0));
         Assert.assertEquals(JidCreate.from("pepe@montague.net"), blockContactIQ.getJids().get(1));

@@ -28,6 +28,9 @@ import java.util.TimeZone;
 
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
+import org.jivesoftware.smack.util.ParserUtils;
+
+import org.jxmpp.jid.EntityBareJid;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -38,6 +41,7 @@ import org.xmlpull.v1.XmlPullParserException;
  */
 public class AgentStatus implements ExtensionElement {
 
+    @SuppressWarnings("DateFormatConstant")
     private static final SimpleDateFormat UTC_FORMAT = new SimpleDateFormat("yyyyMMdd'T'HH:mm:ss");
 
     static {
@@ -45,23 +49,23 @@ public class AgentStatus implements ExtensionElement {
     }
 
     /**
-     * Element name of the stanza(/packet) extension.
+     * Element name of the stanza extension.
      */
     public static final String ELEMENT_NAME = "agent-status";
 
     /**
-     * Namespace of the stanza(/packet) extension.
+     * Namespace of the stanza extension.
      */
     public static final String NAMESPACE = "http://jabber.org/protocol/workgroup";
 
-    private String workgroupJID;
-    private List<ChatInfo> currentChats = new ArrayList<ChatInfo>();
+    private EntityBareJid workgroupJID;
+    private final List<ChatInfo> currentChats = new ArrayList<>();
     private int maxChats = -1;
 
     AgentStatus() {
     }
 
-    public String getWorkgroupJID() {
+    public EntityBareJid getWorkgroupJID() {
         return workgroupJID;
     }
 
@@ -80,15 +84,18 @@ public class AgentStatus implements ExtensionElement {
         return maxChats;
     }
 
+    @Override
     public String getElementName() {
         return ELEMENT_NAME;
     }
 
+    @Override
     public String getNamespace() {
         return NAMESPACE;
     }
 
-    public String toXML() {
+    @Override
+    public String toXML(String enclosingNamespace) {
         StringBuilder buf = new StringBuilder();
 
         buf.append('<').append(ELEMENT_NAME).append(" xmlns=\"").append(NAMESPACE).append('"');
@@ -118,12 +125,12 @@ public class AgentStatus implements ExtensionElement {
      */
     public static class ChatInfo {
 
-        private String sessionID;
-        private String userID;
-        private Date date;
-        private String email;
-        private String username;
-        private String question;
+        private final String sessionID;
+        private final String userID;
+        private final Date date;
+        private final String email;
+        private final String username;
+        private final String question;
 
         public ChatInfo(String sessionID, String userID, Date date, String email, String username, String question) {
             this.sessionID = sessionID;
@@ -203,7 +210,11 @@ public class AgentStatus implements ExtensionElement {
                 buf.append(" userID=\"").append(userID).append('"');
             }
             if (date != null) {
-                buf.append(" startTime=\"").append(UTC_FORMAT.format(date)).append('"');
+                buf.append(" startTime=\"");
+                synchronized (UTC_FORMAT) {
+                    buf.append(UTC_FORMAT.format(date));
+                }
+                buf.append('"');
             }
             if (email != null) {
                 buf.append(" email=\"").append(email).append('"');
@@ -221,7 +232,7 @@ public class AgentStatus implements ExtensionElement {
     }
 
     /**
-     * Stanza(/Packet) extension provider for AgentStatus packets.
+     * Stanza extension provider for AgentStatus packets.
      */
     public static class Provider extends ExtensionElementProvider<AgentStatus> {
 
@@ -229,7 +240,7 @@ public class AgentStatus implements ExtensionElement {
         public AgentStatus parse(XmlPullParser parser, int initialDepth) throws XmlPullParserException, IOException {
             AgentStatus agentStatus = new AgentStatus();
 
-            agentStatus.workgroupJID = parser.getAttributeValue("", "jid");
+            agentStatus.workgroupJID = ParserUtils.getBareJidAttribute(parser);
 
             boolean done = false;
             while (!done) {
@@ -257,7 +268,9 @@ public class AgentStatus implements ExtensionElement {
             String userID = parser.getAttributeValue("", "userID");
             Date date = null;
             try {
-                date = UTC_FORMAT.parse(parser.getAttributeValue("", "startTime"));
+                synchronized (UTC_FORMAT) {
+                    date = UTC_FORMAT.parse(parser.getAttributeValue("", "startTime"));
+                }
             }
             catch (ParseException e) {
             }

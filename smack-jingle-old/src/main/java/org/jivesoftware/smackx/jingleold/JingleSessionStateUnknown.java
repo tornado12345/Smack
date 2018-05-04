@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.IQ;
+
 import org.jivesoftware.smackx.jingleold.media.JingleMediaManager;
 import org.jivesoftware.smackx.jingleold.media.MediaNegotiator;
 import org.jivesoftware.smackx.jingleold.media.PayloadType;
@@ -52,25 +53,28 @@ public class JingleSessionStateUnknown extends JingleSessionState {
      *  A thread-safe means of getting the one instance of this class.
      *  @return The singleton instance of this class.
      */
-    public synchronized static JingleSessionState getInstance() {
+    public static synchronized JingleSessionState getInstance() {
         if (INSTANCE == null) {
             INSTANCE = new JingleSessionStateUnknown();
         }
         return INSTANCE;
     }
 
+    @Override
     public void enter() {
         // TODO Auto-generated method stub
 
     }
 
+    @Override
     public void exit() {
         // TODO Auto-generated method stub
 
     }
 
+    @Override
     public IQ processJingle(JingleSession session, Jingle jingle, JingleActionEnum action) throws SmackException, InterruptedException {
-        IQ response = null;
+        IQ response;
 
         switch (action) {
             case SESSION_INITIATE:
@@ -99,7 +103,7 @@ public class JingleSessionStateUnknown extends JingleSessionState {
 
     private IQ receiveSessionInitiateAction(JingleSession session, Jingle inJingle) throws SmackException, InterruptedException {
 
-        IQ response = null;
+        IQ response;
         boolean shouldAck = true;
 
         // According to XEP-166 when we get a session-initiate we need to check for:

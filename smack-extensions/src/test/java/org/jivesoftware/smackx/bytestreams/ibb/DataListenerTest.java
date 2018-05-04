@@ -22,10 +22,12 @@ import static org.mockito.Mockito.verify;
 
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.packet.XMPPError;
+import org.jivesoftware.smack.packet.StanzaError;
+
 import org.jivesoftware.smackx.InitExtensions;
 import org.jivesoftware.smackx.bytestreams.ibb.packet.Data;
 import org.jivesoftware.smackx.bytestreams.ibb.packet.DataPacketExtension;
+
 import org.junit.Test;
 import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.JidTestUtil;
@@ -39,11 +41,11 @@ import org.powermock.reflect.Whitebox;
  */
 public class DataListenerTest extends InitExtensions {
 
-    static final Jid initiatorJID = JidTestUtil.DUMMY_AT_EXAMPLE_ORG_SLASH_DUMMYRESOURCE;
-    static final Jid targetJID = JidTestUtil.FULL_JID_1_RESOURCE_1;
+    private static final Jid initiatorJID = JidTestUtil.DUMMY_AT_EXAMPLE_ORG_SLASH_DUMMYRESOURCE;
+    private static final Jid targetJID = JidTestUtil.FULL_JID_1_RESOURCE_1;
 
     /**
-     * If a data stanza(/packet) of an unknown session is received it should be replied
+     * If a data stanza of an unknown session is received it should be replied
      * with an &lt;item-not-found/&gt; error.
      * 
      * @throws Exception should not happen
@@ -78,7 +80,7 @@ public class DataListenerTest extends InitExtensions {
         // assert that reply is the correct error packet
         assertEquals(initiatorJID, argument.getValue().getTo());
         assertEquals(IQ.Type.error, argument.getValue().getType());
-        assertEquals(XMPPError.Condition.item_not_found,
+        assertEquals(StanzaError.Condition.item_not_found,
                         argument.getValue().getError().getCondition());
 
     }

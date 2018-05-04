@@ -17,6 +17,7 @@
 package org.jivesoftware.smackx.mam.element;
 
 import org.jivesoftware.smack.packet.IQ;
+
 import org.jivesoftware.smackx.xdata.FormField;
 import org.jivesoftware.smackx.xdata.packet.DataForm;
 
@@ -106,6 +107,15 @@ public class MamQueryIQ extends IQ {
      */
     public String getQueryId() {
         return queryId;
+    }
+
+    /**
+     * Get the Node name.
+     * 
+     * @return the node
+     */
+    public String getNode() {
+      return node;
     }
 
     /**

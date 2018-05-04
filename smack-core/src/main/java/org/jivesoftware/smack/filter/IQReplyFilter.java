@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Stanza;
+
 import org.jxmpp.jid.DomainBareJid;
 import org.jxmpp.jid.EntityFullJid;
 import org.jxmpp.jid.Jid;
@@ -29,7 +30,7 @@ import org.jxmpp.jid.Jid;
 /**
  * Filters for packets which are a valid reply to an IQ request.
  * <p>
- * Such a stanza(/packet) must have the same stanza(/packet) id and must be an IQ stanza(/packet) of type
+ * Such a stanza must have the same stanza id and must be an IQ stanza of type
  * <code>RESULT</code> or <code>ERROR</code>. Moreover, it is necessary to check
  * the <code>from</code> address to ignore forged replies.
  * <p>
@@ -62,7 +63,7 @@ public class IQReplyFilter implements StanzaFilter {
     /**
      * Filters for packets which are a valid reply to an IQ request.
      * <p>
-     * Such a stanza(/packet) must have the same stanza(/packet) id and must be an IQ stanza(/packet) of type
+     * Such a stanza must have the same stanza id and must be an IQ stanza of type
      * <code>RESULT</code> or <code>ERROR</code>. Moreover, it is necessary to check
      * the <code>from</code> address to ignore forged replies.
      * <p>
@@ -80,6 +81,7 @@ public class IQReplyFilter implements StanzaFilter {
      * and following discussion in February and March.
      *
      * @param iqPacket An IQ request. Filter for replies to this packet.
+     * @param conn connection.
      */
     public IQReplyFilter(IQ iqPacket, XMPPConnection conn) {
         if (!iqPacket.isRequestIQ()) {

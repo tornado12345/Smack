@@ -41,7 +41,7 @@ import org.jivesoftware.smack.util.stringencoder.Base64;
  */
 public class JivePropertiesExtension implements ExtensionElement {
     /**
-     * Namespace used to store stanza(/packet) properties.
+     * Namespace used to store stanza properties.
      */
     public static final String NAMESPACE = "http://www.jivesoftware.com/xmlns/xmpp/properties";
 
@@ -52,7 +52,7 @@ public class JivePropertiesExtension implements ExtensionElement {
     private final Map<String, Object> properties;
 
     public JivePropertiesExtension() {
-        properties = new HashMap<String, Object>();
+        properties = new HashMap<>();
     }
 
     public JivePropertiesExtension(Map<String, Object> properties) {
@@ -60,7 +60,7 @@ public class JivePropertiesExtension implements ExtensionElement {
     }
 
     /**
-     * Returns the stanza(/packet) property with the specified name or <tt>null</tt> if the
+     * Returns the stanza property with the specified name or <tt>null</tt> if the
      * property doesn't exist. Property values that were originally primitives will
      * be returned as their object equivalent. For example, an int property will be
      * returned as an Integer, a double as a Double, etc.
@@ -84,7 +84,7 @@ public class JivePropertiesExtension implements ExtensionElement {
      */
     public synchronized void setProperty(String name, Object value) {
         if (!(value instanceof Serializable)) {
-            throw new IllegalArgumentException("Value must be serialiazble");
+            throw new IllegalArgumentException("Value must be serializable");
         }
         properties.put(name, value);
     }
@@ -110,7 +110,7 @@ public class JivePropertiesExtension implements ExtensionElement {
         if (properties == null) {
             return Collections.emptySet();
         }
-        return Collections.unmodifiableSet(new HashSet<String>(properties.keySet()));
+        return Collections.unmodifiableSet(new HashSet<>(properties.keySet()));
     }
 
     /**
@@ -122,7 +122,7 @@ public class JivePropertiesExtension implements ExtensionElement {
         if (properties == null) {
             return Collections.emptyMap();
         }
-        return Collections.unmodifiableMap(new HashMap<String, Object>(properties));
+        return Collections.unmodifiableMap(new HashMap<>(properties));
     }
 
     @Override
@@ -136,7 +136,7 @@ public class JivePropertiesExtension implements ExtensionElement {
     }
 
     @Override
-    public CharSequence toXML() {
+    public CharSequence toXML(String enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.rightAngleBracket();
         // Loop through all properties and write them out.

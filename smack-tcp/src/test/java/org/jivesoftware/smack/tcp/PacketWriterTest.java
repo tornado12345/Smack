@@ -16,6 +16,8 @@
  */
 package org.jivesoftware.smack.tcp;
 
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.util.concurrent.BrokenBarrierException;
@@ -24,17 +26,16 @@ import java.util.concurrent.CyclicBarrier;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection.PacketWriter;
+
 import org.junit.Test;
 import org.jxmpp.stringprep.XmppStringprepException;
 
-import static org.junit.Assert.fail;
-
 public class PacketWriterTest {
-    volatile boolean shutdown;
-    volatile boolean prematureUnblocked;
+    private volatile boolean shutdown;
+    private volatile boolean prematureUnblocked;
 
     /**
-     * Make sure that stanza(/packet) writer does block once the queue reaches
+     * Make sure that stanza writer does block once the queue reaches
      * {@link PacketWriter#QUEUE_SIZE} and that
      * {@link PacketWriter#sendStanza(org.jivesoftware.smack.tcp.packet.Packet)} does unblock after the
      * interrupt.
@@ -103,7 +104,7 @@ public class PacketWriterTest {
         }
     }
 
-    public class BlockingStringWriter extends Writer {
+    public static class BlockingStringWriter extends Writer {
         @Override
         @SuppressWarnings("WaitNotInLoop")
         public void write(char[] cbuf, int off, int len) throws IOException {

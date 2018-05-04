@@ -16,9 +16,12 @@
  */
 package org.jivesoftware.smackx.pubsub.packet;
 
-import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.IQ;
+
+import org.jivesoftware.smackx.pubsub.NodeExtension;
 import org.jivesoftware.smackx.pubsub.PubSubElementType;
+
 import org.jxmpp.jid.Jid;
 
 /**
@@ -28,35 +31,33 @@ import org.jxmpp.jid.Jid;
  * 
  * @author Robin Collier
  */
-public class PubSub extends IQ
-{
+public class PubSub extends IQ {
     public static final String ELEMENT = "pubsub";
     public static final String NAMESPACE = "http://jabber.org/protocol/pubsub";
 
-	public PubSub() {
+    public PubSub() {
         super(ELEMENT, NAMESPACE);
-	}
+    }
 
-	public PubSub(PubSubNamespace ns) {
+    public PubSub(PubSubNamespace ns) {
         super(ELEMENT, ns.getXmlns());
     }
 
     public PubSub(Jid to, Type type, PubSubNamespace ns) {
-        super(ELEMENT, (ns == null ? PubSubNamespace.BASIC : ns).getXmlns());
+        super(ELEMENT, (ns == null ? PubSubNamespace.basic : ns).getXmlns());
         setTo(to);
         setType(type);
     }
 
     @SuppressWarnings("unchecked")
-    public <PE extends ExtensionElement> PE getExtension(PubSubElementType elem)
-	{
-		return (PE) getExtension(elem.getElementName(), elem.getNamespace().getXmlns());
-	}
+    public <PE extends ExtensionElement> PE getExtension(PubSubElementType elem) {
+        return (PE) getExtension(elem.getElementName(), elem.getNamespace().getXmlns());
+    }
 
     /**
      * Returns the XML representation of a pubsub element according the specification.
      * 
-     * The XML representation will be inside of an iq stanza(/packet) like
+     * The XML representation will be inside of an iq stanza like
      * in the following example:
      * <pre>
      * &lt;iq type='set' id="MlIpV-4" to="pubsub.gato.home" from="gato3@gato.home/Smack"&gt;
@@ -78,8 +79,8 @@ public class PubSub extends IQ
         return xml;
     }
 
-    public static PubSub createPubsubPacket(Jid to, Type type, ExtensionElement extension, PubSubNamespace ns) {
-        PubSub pubSub = new PubSub(to, type, ns);
+    public static PubSub createPubsubPacket(Jid to, Type type, NodeExtension extension) {
+        PubSub pubSub = new PubSub(to, type, extension.getPubSubNamespace());
         pubSub.addExtension(extension);
         return pubSub;
     }

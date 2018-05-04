@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2014 Anno van Vliet
+ * Copyright 2014 Anno van Vliet, 2018 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,14 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 
 import org.jivesoftware.smack.test.util.TestUtils;
+
+import org.jivesoftware.smackx.xdata.FormField;
+import org.jivesoftware.smackx.xdata.packet.DataForm;
 import org.jivesoftware.smackx.xdatavalidation.packet.ValidateElement;
 import org.jivesoftware.smackx.xdatavalidation.packet.ValidateElement.BasicValidateElement;
 import org.jivesoftware.smackx.xdatavalidation.packet.ValidateElement.ListRange;
 import org.jivesoftware.smackx.xdatavalidation.packet.ValidateElement.RangeValidateElement;
+
 import org.junit.Test;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -48,8 +52,8 @@ public class DataValidationTest {
 
         ValidateElement dv = new BasicValidateElement(null);
 
-        assertNotNull( dv.toXML());
-        String output = dv.toXML().toString();
+        assertNotNull(dv.toXML(null));
+        String output = dv.toXML(null).toString();
         assertEquals(TEST_OUTPUT_MIN, output);
 
         XmlPullParser parser = getParser(TEST_INPUT_MIN);
@@ -58,10 +62,10 @@ public class DataValidationTest {
 
         assertNotNull(dv);
         assertEquals("xs:string", dv.getDatatype());
-        assertTrue( dv instanceof BasicValidateElement);
+        assertTrue(dv instanceof BasicValidateElement);
 
-        assertNotNull( dv.toXML());
-        output = dv.toXML().toString();
+        assertNotNull(dv.toXML(null));
+        output = dv.toXML(null).toString();
         assertEquals(TEST_OUTPUT_MIN, output);
     }
 
@@ -71,10 +75,10 @@ public class DataValidationTest {
         ValidateElement dv = new RangeValidateElement("xs:string", "min-val", "max-val");
 
         ListRange listRange = new ListRange(111L, 999L);
-        dv.setListRange(listRange );
+        dv.setListRange(listRange);
 
-        assertNotNull( dv.toXML());
-        String output = dv.toXML().toString();
+        assertNotNull(dv.toXML(null));
+        String output = dv.toXML(null).toString();
         assertEquals(TEST_OUTPUT_RANGE, output);
 
         XmlPullParser parser = getParser(output);
@@ -83,17 +87,17 @@ public class DataValidationTest {
 
         assertNotNull(dv);
         assertEquals("xs:string", dv.getDatatype());
-        assertTrue(dv instanceof RangeValidateElement );
+        assertTrue(dv instanceof RangeValidateElement);
         RangeValidateElement rdv = (RangeValidateElement) dv;
         assertEquals("min-val", rdv.getMin());
         assertEquals("max-val", rdv.getMax());
         assertNotNull(rdv.getListRange());
-        assertEquals(new Long(111), rdv.getListRange().getMin());
+        assertEquals(Long.valueOf(111), rdv.getListRange().getMin());
         assertEquals(999, rdv.getListRange().getMax().intValue());
 
 
-        assertNotNull( dv.toXML());
-        output = dv.toXML().toString();
+        assertNotNull(dv.toXML(null));
+        output = dv.toXML(null).toString();
         assertEquals(TEST_OUTPUT_RANGE, output);
     }
 
@@ -102,8 +106,8 @@ public class DataValidationTest {
 
         ValidateElement dv = new RangeValidateElement(null, null, null);
 
-        assertNotNull( dv.toXML());
-        String output = dv.toXML().toString();
+        assertNotNull(dv.toXML(null));
+        String output = dv.toXML(null).toString();
         assertEquals(TEST_OUTPUT_RANGE2, output);
 
         XmlPullParser parser = getParser(output);
@@ -112,20 +116,56 @@ public class DataValidationTest {
 
         assertNotNull(dv);
         assertEquals("xs:string", dv.getDatatype());
-        assertTrue(dv instanceof RangeValidateElement );
+        assertTrue(dv instanceof RangeValidateElement);
         RangeValidateElement rdv = (RangeValidateElement) dv;
         assertEquals(null, rdv.getMin());
         assertEquals(null, rdv.getMax());
 
-        assertNotNull( rdv.toXML());
-        output = rdv.toXML().toString();
+        assertNotNull(rdv.toXML(null));
+        output = rdv.toXML(null).toString();
         assertEquals(TEST_OUTPUT_RANGE2, output);
     }
 
-    @Test(expected=NumberFormatException.class)
+    @Test(expected = NumberFormatException.class)
     public void testRangeFailure() throws IOException, XmlPullParserException {
             XmlPullParser parser = getParser(TEST_OUTPUT_FAIL);
             DataValidationProvider.parse(parser);
+    }
+
+    @Test
+    public void testNamespacePrefix() throws Exception {
+        String formFieldUsingNamespacePrefix =
+                "<x xmlns='jabber:x:data'" +
+                "   xmlns:xdv='http://jabber.org/protocol/xdata-validate'" +
+                "   type='form'>" +
+                "  <title>Sample Form</title>" +
+                "  <instructions>" +
+                "    Please provide information for the following fields..." +
+                "  </instructions>" +
+                "  <field type='text-single' var='name' label='Event Name'/>" +
+                "  <field type='text-single' var='date/start' label='Starting Date'>" +
+                "    <xdv:validate datatype='xs:date'>" +
+                "      <basic/>" +
+                "    </xdv:validate>" +
+                "  </field>" +
+                "  <field type='text-single' var='date/end' label='Ending Date'>" +
+                "    <xdv:validate datatype='xs:date'>" +
+                "      <basic/>" +
+                "    </xdv:validate>" +
+                "  </field>" +
+                "</x>";
+
+        DataForm dataForm = TestUtils.parseExtensionElement(formFieldUsingNamespacePrefix);
+
+        assertEquals("Sample Form", dataForm.getTitle());
+
+        FormField nameField = dataForm.getField("name");
+        assertEquals("Event Name", nameField.getLabel());
+
+        FormField dataStartField = dataForm.getField("date/start");
+        ValidateElement dataStartValidateElement = dataStartField.getValidateElement();
+        assertEquals("xs:date", dataStartValidateElement.getDatatype());
+        assertTrue(dataStartValidateElement instanceof BasicValidateElement);
     }
 
     /**

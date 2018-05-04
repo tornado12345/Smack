@@ -19,8 +19,8 @@ package org.jivesoftware.smackx.iqregister.packet;
 
 import java.util.Map;
 
-import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.IQ;
 
 /**
  * Represents registration packets. An empty GET query will cause the server to return information
@@ -115,7 +115,7 @@ public class Registration extends IQ {
         }
 
         @Override
-        public CharSequence toXML() {
+        public CharSequence toXML(String enclosingNamespace) {
             return '<' + ELEMENT + " xmlns='" + NAMESPACE + "'/>";
         }
 

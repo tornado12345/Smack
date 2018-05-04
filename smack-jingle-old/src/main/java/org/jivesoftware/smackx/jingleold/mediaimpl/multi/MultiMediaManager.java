@@ -16,6 +16,9 @@
  */
 package org.jivesoftware.smackx.jingleold.mediaimpl.multi;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jivesoftware.smackx.jingleold.JingleSession;
 import org.jivesoftware.smackx.jingleold.media.JingleMediaManager;
 import org.jivesoftware.smackx.jingleold.media.JingleMediaSession;
@@ -23,12 +26,9 @@ import org.jivesoftware.smackx.jingleold.media.PayloadType;
 import org.jivesoftware.smackx.jingleold.nat.JingleTransportManager;
 import org.jivesoftware.smackx.jingleold.nat.TransportCandidate;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Implements a MultiMediaManager using other JingleMediaManager implementations.
- * It supports every Codecs that JingleMediaManagers added has.
+ * It supports every Codec that JingleMediaManagers added has.
  *
  * @author Thiago Camargo
  */
@@ -37,7 +37,7 @@ public class MultiMediaManager extends JingleMediaManager {
 
     public static final String MEDIA_NAME = "Multi";
 
-    private List<JingleMediaManager> managers = new ArrayList<JingleMediaManager>();
+    private static final List<JingleMediaManager> managers = new ArrayList<>();
 
     private PayloadType preferredPayloadType = null;
 
@@ -58,8 +58,9 @@ public class MultiMediaManager extends JingleMediaManager {
      *
      * @return The Payload List
      */
+    @Override
     public List<PayloadType> getPayloads() {
-        List<PayloadType> list = new ArrayList<PayloadType>();
+        List<PayloadType> list = new ArrayList<>();
         if (preferredPayloadType != null) list.add(preferredPayloadType);
         for (JingleMediaManager manager : managers) {
             for (PayloadType payloadType : manager.getPayloads()) {
@@ -78,6 +79,7 @@ public class MultiMediaManager extends JingleMediaManager {
      * @param local       local Candidate
      * @return JingleMediaSession JingleMediaSession
      */
+    @Override
     public JingleMediaSession createMediaSession(PayloadType payloadType, final TransportCandidate remote, final TransportCandidate local, final JingleSession jingleSession) {
         for (JingleMediaManager manager : managers) {
             if (manager.getPayloads().contains(payloadType)) {
@@ -87,6 +89,7 @@ public class MultiMediaManager extends JingleMediaManager {
         return null;
     }
 
+    @Override
     public PayloadType getPreferredPayloadType() {
         if (preferredPayloadType != null) return preferredPayloadType;
         return super.getPreferredPayloadType();
@@ -96,6 +99,7 @@ public class MultiMediaManager extends JingleMediaManager {
         this.preferredPayloadType = preferredPayloadType;
     }
 
+    @Override
     public  String getName() {
         return MEDIA_NAME;
     }

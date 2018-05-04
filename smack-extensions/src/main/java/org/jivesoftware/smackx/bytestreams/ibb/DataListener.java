@@ -17,16 +17,18 @@
 package org.jivesoftware.smackx.bytestreams.ibb;
 
 import org.jivesoftware.smack.SmackException.NotConnectedException;
+import org.jivesoftware.smack.SmackException.NotLoggedInException;
 import org.jivesoftware.smack.iqrequest.AbstractIqRequestHandler;
 import org.jivesoftware.smack.packet.IQ;
+
 import org.jivesoftware.smackx.bytestreams.ibb.packet.Data;
 import org.jivesoftware.smackx.bytestreams.ibb.packet.DataPacketExtension;
 
 /**
  * DataListener handles all In-Band Bytestream IQ stanzas containing a data
- * stanza(/packet) extension that don't belong to an existing session.
+ * stanza extension that don't belong to an existing session.
  * <p>
- * If a data stanza(/packet) is received it looks if a stored In-Band Bytestream session
+ * If a data stanza is received it looks if a stored In-Band Bytestream session
  * exists. If no session with the given session ID exists an
  * &lt;item-not-found/&gt; error is returned to the sender.
  * <p>
@@ -46,7 +48,7 @@ class DataListener extends AbstractIqRequestHandler {
      * 
      * @param manager the In-Band Bytestream manager
      */
-    public DataListener(InBandBytestreamManager manager) {
+    DataListener(InBandBytestreamManager manager) {
       super(DataPacketExtension.ELEMENT, DataPacketExtension.NAMESPACE, IQ.Type.set, Mode.async);
         this.manager = manager;
     }
@@ -64,7 +66,7 @@ class DataListener extends AbstractIqRequestHandler {
                 ibbSession.processIQPacket(data);
             }
         }
-        catch (NotConnectedException|InterruptedException e) {
+        catch (NotConnectedException | InterruptedException | NotLoggedInException e) {
             return null;
         }
         return null;

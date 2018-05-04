@@ -26,60 +26,56 @@ import org.jivesoftware.smackx.pubsub.packet.PubSubNamespace;
  * 
  * @author Robin Collier
  */
-public enum PubSubElementType
-{
-	CREATE("create", PubSubNamespace.BASIC),
-	DELETE("delete", PubSubNamespace.OWNER),
-	DELETE_EVENT("delete", PubSubNamespace.EVENT),
-	CONFIGURE("configure", PubSubNamespace.BASIC),
-	CONFIGURE_OWNER("configure", PubSubNamespace.OWNER),
-	CONFIGURATION("configuration", PubSubNamespace.EVENT),
-	OPTIONS("options", PubSubNamespace.BASIC),
-	DEFAULT("default", PubSubNamespace.OWNER),	
-	ITEMS("items", PubSubNamespace.BASIC),
-	ITEMS_EVENT("items", PubSubNamespace.EVENT),
-	ITEM("item", PubSubNamespace.BASIC),
-	ITEM_EVENT("item", PubSubNamespace.EVENT),
-	PUBLISH("publish", PubSubNamespace.BASIC),
-	PUBLISH_OPTIONS("publish-options", PubSubNamespace.BASIC), 
-	PURGE_OWNER("purge", PubSubNamespace.OWNER),
-	PURGE_EVENT("purge", PubSubNamespace.EVENT),
-	RETRACT("retract", PubSubNamespace.BASIC), 
-	AFFILIATIONS("affiliations", PubSubNamespace.BASIC), 
-	SUBSCRIBE("subscribe", PubSubNamespace.BASIC), 
-	SUBSCRIPTION("subscription", PubSubNamespace.BASIC),
-	SUBSCRIPTIONS("subscriptions", PubSubNamespace.BASIC), 
-	UNSUBSCRIBE("unsubscribe", PubSubNamespace.BASIC);
+public enum PubSubElementType {
+    CREATE("create", PubSubNamespace.basic),
+    DELETE("delete", PubSubNamespace.owner),
+    DELETE_EVENT("delete", PubSubNamespace.event),
+    CONFIGURE("configure", PubSubNamespace.basic),
+    CONFIGURE_OWNER("configure", PubSubNamespace.owner),
+    CONFIGURATION("configuration", PubSubNamespace.event),
+    OPTIONS("options", PubSubNamespace.basic),
+    DEFAULT("default", PubSubNamespace.owner),
+    ITEMS("items", PubSubNamespace.basic),
+    ITEMS_EVENT("items", PubSubNamespace.event),
+    ITEM("item", PubSubNamespace.basic),
+    ITEM_EVENT("item", PubSubNamespace.event),
+    PUBLISH("publish", PubSubNamespace.basic),
+    PUBLISH_OPTIONS("publish-options", PubSubNamespace.basic),
+    PURGE_OWNER("purge", PubSubNamespace.owner),
+    PURGE_EVENT("purge", PubSubNamespace.event),
+    RETRACT("retract", PubSubNamespace.basic),
+    AFFILIATIONS("affiliations", PubSubNamespace.basic),
+    AFFILIATIONS_OWNER("affiliations", PubSubNamespace.owner),
+    SUBSCRIBE("subscribe", PubSubNamespace.basic),
+    SUBSCRIPTION("subscription", PubSubNamespace.basic),
+    SUBSCRIPTIONS("subscriptions", PubSubNamespace.basic),
+    SUBSCRIPTIONS_OWNER("subscriptions", PubSubNamespace.owner),
+    UNSUBSCRIBE("unsubscribe", PubSubNamespace.basic);
 
-	private String eName;
-	private PubSubNamespace nSpace;
+    private final String eName;
+    private final PubSubNamespace nSpace;
 
-	private PubSubElementType(String elemName, PubSubNamespace ns)
-	{
-		eName = elemName;
-		nSpace = ns;
-	}
+    PubSubElementType(String elemName, PubSubNamespace ns) {
+        eName = elemName;
+        nSpace = ns;
+    }
 
-	public PubSubNamespace getNamespace()
-	{
-		return nSpace;
-	}
+    public PubSubNamespace getNamespace() {
+        return nSpace;
+    }
 
-	public String getElementName()
-	{
-		return eName;
-	}
+    public String getElementName() {
+        return eName;
+    }
 
-	public static PubSubElementType valueOfFromElemName(String elemName, String namespace)
-	{
-		int index = namespace.lastIndexOf('#');
-		String fragment = (index == -1 ? null : namespace.substring(index+1));
+    public static PubSubElementType valueOfFromElemName(String elemName, String namespace) {
+        int index = namespace.lastIndexOf('#');
+        String fragment = (index == -1 ? null : namespace.substring(index + 1));
 
-		if (fragment != null)
-		{
-			return valueOf((elemName + '_' + fragment).toUpperCase(Locale.US));
-		}
-		return valueOf(elemName.toUpperCase(Locale.US).replace('-', '_'));
-	}
+        if (fragment != null) {
+            return valueOf((elemName + '_' + fragment).toUpperCase(Locale.US));
+        }
+        return valueOf(elemName.toUpperCase(Locale.US).replace('-', '_'));
+    }
 
 }

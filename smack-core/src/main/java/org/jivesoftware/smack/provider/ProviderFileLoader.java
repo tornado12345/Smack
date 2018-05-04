@@ -24,10 +24,11 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.ExtensionElement;
-import org.xmlpull.v1.XmlPullParserFactory;
+import org.jivesoftware.smack.packet.IQ;
+
 import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 /**
  * Loads the {@link IQProvider} and {@link ExtensionElementProvider} information from a standard provider file in preparation 
@@ -83,7 +84,8 @@ public class ProviderFileLoader implements ProviderLoader {
                                     // reflection later to create instances of the class.
                                     // Add the provider to the map.
                                     if (IQProvider.class.isAssignableFrom(provider)) {
-                                        iqProviders.add(new IQProviderInfo(elementName, namespace, (IQProvider<IQ>) provider.newInstance()));
+                                        IQProvider<IQ> iqProvider = (IQProvider<IQ>) provider.getConstructor().newInstance();
+                                        iqProviders.add(new IQProviderInfo(elementName, namespace, iqProvider));
                                     }
                                     else {
                                         exceptions.add(new IllegalArgumentException(className + " is not a IQProvider"));
@@ -96,7 +98,9 @@ public class ProviderFileLoader implements ProviderLoader {
                                     // then we'll use reflection later to create instances
                                     // of the class.
                                     if (ExtensionElementProvider.class.isAssignableFrom(provider)) {
-                                        extProviders.add(new ExtensionProviderInfo(elementName, namespace, (ExtensionElementProvider<ExtensionElement>) provider.newInstance()));
+                                        ExtensionElementProvider<ExtensionElement> extensionElementProvider = (ExtensionElementProvider<ExtensionElement>) provider.getConstructor().newInstance();
+                                        extProviders.add(new ExtensionProviderInfo(elementName, namespace,
+                                                        extensionElementProvider));
                                     }
                                     else {
                                         exceptions.add(new IllegalArgumentException(className
@@ -104,9 +108,10 @@ public class ProviderFileLoader implements ProviderLoader {
                                     }
                                     break;
                                 case "streamFeatureProvider":
+                                    ExtensionElementProvider<ExtensionElement> streamFeatureProvider = (ExtensionElementProvider<ExtensionElement>) provider.getConstructor().newInstance();
                                     sfProviders.add(new StreamFeatureProviderInfo(elementName,
                                                     namespace,
-                                                    (ExtensionElementProvider<ExtensionElement>) provider.newInstance()));
+                                                    streamFeatureProvider));
                                     break;
                                 default:
                                     LOGGER.warning("Unknown provider type: " + typeName);
@@ -131,7 +136,7 @@ public class ProviderFileLoader implements ProviderLoader {
             }
             while (eventType != XmlPullParser.END_DOCUMENT);
         }
-        catch (Exception e){
+        catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Unknown error occurred while parsing provider file", e);
             exceptions.add(e);
         }

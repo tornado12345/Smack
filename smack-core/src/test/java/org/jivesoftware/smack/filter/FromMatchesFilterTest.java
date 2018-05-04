@@ -16,11 +16,12 @@
  */
 package org.jivesoftware.smack.filter;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Stanza;
+
 import org.junit.Test;
 import org.jxmpp.jid.EntityFullJid;
 import org.jxmpp.jid.Jid;
@@ -44,8 +45,7 @@ public class FromMatchesFilterTest {
     private static final Jid SERVICE_JID2 = JidTestUtil.PUBSUB_EXAMPLE_ORG;
 
     @Test
-    public void autoCompareMatchingEntityFullJid()
-    {
+    public void autoCompareMatchingEntityFullJid() {
         FromMatchesFilter filter = FromMatchesFilter.create(FULL_JID1_R1);
         Stanza packet = new Message();
 
@@ -69,8 +69,7 @@ public class FromMatchesFilterTest {
     }
 
     @Test
-    public void autoCompareMatchingBaseJid()
-    {
+    public void autoCompareMatchingBaseJid() {
         FromMatchesFilter filter = FromMatchesFilter.create(BASE_JID1);
         Stanza packet = new Message();
 
@@ -94,8 +93,7 @@ public class FromMatchesFilterTest {
 }
 
     @Test
-    public void autoCompareMatchingServiceJid()
-    {
+    public void autoCompareMatchingServiceJid() {
         FromMatchesFilter filter = FromMatchesFilter.create(SERVICE_JID1);
         Stanza packet = new Message();
 
@@ -116,8 +114,7 @@ public class FromMatchesFilterTest {
     }
 
     @Test
-    public void bareCompareMatchingEntityFullJid()
-    {
+    public void bareCompareMatchingEntityFullJid() {
         FromMatchesFilter filter = FromMatchesFilter.createBare(FULL_JID1_R1);
         Stanza packet = new Message();
 
@@ -141,8 +138,7 @@ public class FromMatchesFilterTest {
     }
 
     @Test
-    public void bareCompareMatchingBaseJid()
-    {
+    public void bareCompareMatchingBaseJid() {
         FromMatchesFilter filter = FromMatchesFilter.createBare(BASE_JID1);
         Stanza packet = new Message();
 
@@ -166,8 +162,7 @@ public class FromMatchesFilterTest {
 }
 
     @Test
-    public void bareCompareMatchingServiceJid()
-    {
+    public void bareCompareMatchingServiceJid() {
         FromMatchesFilter filter = FromMatchesFilter.createBare(SERVICE_JID1);
         Stanza packet = new Message();
 
@@ -188,8 +183,7 @@ public class FromMatchesFilterTest {
     }
 
     @Test
-    public void fullCompareMatchingEntityFullJid()
-    {
+    public void fullCompareMatchingEntityFullJid() {
         FromMatchesFilter filter = FromMatchesFilter.createFull(FULL_JID1_R1);
         Stanza packet = new Message();
 
@@ -213,8 +207,7 @@ public class FromMatchesFilterTest {
     }
 
     @Test
-    public void fullCompareMatchingBaseJid()
-    {
+    public void fullCompareMatchingBaseJid() {
         FromMatchesFilter filter = FromMatchesFilter.createFull(BASE_JID1);
         Stanza packet = new Message();
 
@@ -238,8 +231,7 @@ public class FromMatchesFilterTest {
     }
 
     @Test
-    public void fullCompareMatchingServiceJid()
-    {
+    public void fullCompareMatchingServiceJid() {
         FromMatchesFilter filter = FromMatchesFilter.createFull(SERVICE_JID1);
         Stanza packet = new Message();
 

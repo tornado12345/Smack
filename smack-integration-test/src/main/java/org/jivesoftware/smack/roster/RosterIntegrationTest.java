@@ -21,10 +21,6 @@ import static org.junit.Assert.assertTrue;
 import java.util.Collection;
 import java.util.concurrent.TimeoutException;
 
-import org.igniterealtime.smack.inttest.AbstractSmackIntegrationTest;
-import org.igniterealtime.smack.inttest.SmackIntegrationTest;
-import org.igniterealtime.smack.inttest.SmackIntegrationTestEnvironment;
-import org.igniterealtime.smack.inttest.util.SimpleResultSyncPoint;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.SmackException.NotLoggedInException;
@@ -32,6 +28,12 @@ import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.roster.packet.RosterPacket.ItemType;
+import org.jivesoftware.smack.util.StringUtils;
+
+import org.igniterealtime.smack.inttest.AbstractSmackIntegrationTest;
+import org.igniterealtime.smack.inttest.SmackIntegrationTest;
+import org.igniterealtime.smack.inttest.SmackIntegrationTestEnvironment;
+import org.igniterealtime.smack.inttest.util.SimpleResultSyncPoint;
 import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.Jid;
 
@@ -77,7 +79,17 @@ public class RosterIntegrationTest extends AbstractSmackIntegrationTest {
                     if (!jid.equals(conTwo.getUser().asBareJid())) {
                         continue;
                     }
-                    RosterEntry rosterEntry = rosterOne.getEntry(conTwo.getUser().asBareJid());
+                    BareJid bareJid = conTwo.getUser().asBareJid();
+                    RosterEntry rosterEntry = rosterOne.getEntry(bareJid);
+                    if (rosterEntry == null) {
+                        addedAndSubscribed.signalFailure("No roster entry for " + bareJid);
+                        return;
+                    }
+                    String name = rosterEntry.getName();
+                    if (StringUtils.isNullOrEmpty(name)) {
+                        addedAndSubscribed.signalFailure("Roster entry without name");
+                        return;
+                    }
                     if (!rosterEntry.getName().equals(conTwosRosterName)) {
                         addedAndSubscribed.signalFailure("Roster name does not match");
                         return;
@@ -93,7 +105,7 @@ public class RosterIntegrationTest extends AbstractSmackIntegrationTest {
         try {
             rosterOne.createEntry(conTwo.getUser().asBareJid(), conTwosRosterName, null);
 
-            assertTrue(addedAndSubscribed.waitForResult(2 * connection.getPacketReplyTimeout()));
+            assertTrue(addedAndSubscribed.waitForResult(2 * connection.getReplyTimeout()));
         }
         finally {
             rosterTwo.removeSubscribeListener(subscribeListener);

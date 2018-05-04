@@ -19,18 +19,19 @@ package org.jivesoftware.smackx.pubsub.provider;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.util.PacketParserUtils;
+
 import org.jivesoftware.smackx.pubsub.packet.PubSub;
 import org.jivesoftware.smackx.pubsub.packet.PubSubNamespace;
+
 import org.xmlpull.v1.XmlPullParser;
 
 /**
- * Parses the root pubsub stanza(/packet) extensions of the {@link IQ} stanza(/packet) and returns
+ * Parses the root PubSub stanza extensions of the {@link IQ} stanza and returns
  * a {@link PubSub} instance.
  * 
  * @author Robin Collier
  */
-public class PubSubProvider extends IQProvider<PubSub>
-{
+public class PubSubProvider extends IQProvider<PubSub> {
     @Override
     public PubSub parse(XmlPullParser parser, int initialDepth)
                     throws Exception {
@@ -38,8 +39,7 @@ public class PubSubProvider extends IQProvider<PubSub>
         PubSubNamespace pubSubNamespace = PubSubNamespace.valueOfFromXmlns(namespace);
         PubSub pubsub = new PubSub(pubSubNamespace);
 
-        outerloop: while (true) 
-        {
+        outerloop: while (true)  {
             int eventType = parser.next();
             switch (eventType) {
             case XmlPullParser.START_TAG:
@@ -53,5 +53,5 @@ public class PubSubProvider extends IQProvider<PubSub>
             }
         }
         return pubsub;
-	}
+    }
 }

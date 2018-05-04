@@ -16,11 +16,12 @@
  */
 package org.jivesoftware.smackx.xdatavalidation.packet;
 
-import org.jivesoftware.smack.packet.NamedElement;
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.NamedElement;
 import org.jivesoftware.smack.util.NumberUtil;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.XmlStringBuilder;
+
 import org.jivesoftware.smackx.xdata.FormField;
 import org.jivesoftware.smackx.xdata.packet.DataForm;
 import org.jivesoftware.smackx.xdatavalidation.ValidationConsistencyException;
@@ -82,7 +83,7 @@ public abstract class ValidateElement implements ExtensionElement {
     }
 
     @Override
-    public XmlStringBuilder toXML() {
+    public XmlStringBuilder toXML(String enclosingNamespace) {
         XmlStringBuilder buf = new XmlStringBuilder(this);
         buf.optAttribute("datatype", datatype);
         buf.rightAngleBracket();
@@ -144,6 +145,7 @@ public abstract class ValidateElement implements ExtensionElement {
             buf.emptyElement(METHOD);
         }
 
+        @Override
         public void checkConsistency(FormField formField) {
             checkListRangeConsistency(formField);
             if (formField.getType() != null) {
@@ -186,6 +188,7 @@ public abstract class ValidateElement implements ExtensionElement {
             buf.emptyElement(METHOD);
         }
 
+        @Override
         public void checkConsistency(FormField formField) {
             checkListRangeConsistency(formField);
             if (formField.getType() != null) {
@@ -253,6 +256,7 @@ public abstract class ValidateElement implements ExtensionElement {
             return max;
         }
 
+        @Override
         public void checkConsistency(FormField formField) {
             checkNonMultiConsistency(formField, METHOD);
             if (getDatatype().equals(ValidateElement.DATATYPE_XS_STRING)) {
@@ -302,6 +306,7 @@ public abstract class ValidateElement implements ExtensionElement {
             buf.element("regex", getRegex());
         }
 
+        @Override
         public void checkConsistency(FormField formField) {
             checkNonMultiConsistency(formField, METHOD);
         }
@@ -340,7 +345,8 @@ public abstract class ValidateElement implements ExtensionElement {
             this.max = max;
         }
 
-        public XmlStringBuilder toXML() {
+        @Override
+        public XmlStringBuilder toXML(String enclosingNamespace) {
             XmlStringBuilder buf = new XmlStringBuilder(this);
             buf.optLongAttribute("min", getMin());
             buf.optLongAttribute("max", getMax());
@@ -374,7 +380,7 @@ public abstract class ValidateElement implements ExtensionElement {
     }
 
     /**
-     * The <list-range/> element SHOULD be included only when the <field/> is of type "list-multi" and SHOULD be ignored
+     * The &gt;list-range/&lt; element SHOULD be included only when the &lt;field/&gt; is of type "list-multi" and SHOULD be ignored
      * otherwise.
      * 
      * @param formField

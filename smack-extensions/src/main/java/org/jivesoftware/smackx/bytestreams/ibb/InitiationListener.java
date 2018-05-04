@@ -25,6 +25,7 @@ import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.iqrequest.AbstractIqRequestHandler;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Stanza;
+
 import org.jivesoftware.smackx.bytestreams.BytestreamListener;
 import org.jivesoftware.smackx.bytestreams.ibb.packet.Open;
 import org.jivesoftware.smackx.filetransfer.StreamNegotiator;
@@ -66,6 +67,7 @@ class InitiationListener extends AbstractIqRequestHandler {
     public IQ handleIQRequest(final IQ packet) {
         initiationListenerExecutor.execute(new Runnable() {
 
+            @Override
             public void run() {
                 try {
                     processRequest(packet);

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2013-2016 Florian Schmaus
+ * Copyright 2013-2018 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,20 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.jivesoftware.smack.ConnectionConfiguration.DnssecMode;
+
+import org.minidns.dnsname.DNSName;
 
 /**
  * Implementations of this interface define a class that is capable of resolving DNS addresses.
  *
  */
 public abstract class DNSResolver {
+
+    protected static final Logger LOGGER = Logger.getLogger(DNSResolver.class.getName());
 
     private final boolean supportsDnssec;
 
@@ -38,25 +44,41 @@ public abstract class DNSResolver {
     /**
      * Gets a list of service records for the specified service.
      * @param name The symbolic name of the service.
+     * @param failedAddresses list of failed addresses.
+     * @param dnssecMode security mode.
      * @return The list of SRV records mapped to the service name.
      */
-    public final List<SRVRecord> lookupSRVRecords(String name, List<HostAddress> failedAddresses, DnssecMode dnssecMode) {
+    public final List<SRVRecord> lookupSRVRecords(DNSName name, List<HostAddress> failedAddresses, DnssecMode dnssecMode) {
         checkIfDnssecRequestedAndSupported(dnssecMode);
         return lookupSRVRecords0(name, failedAddresses, dnssecMode);
     }
 
-    protected abstract List<SRVRecord> lookupSRVRecords0(String name, List<HostAddress> failedAddresses, DnssecMode dnssecMode);
+    protected abstract List<SRVRecord> lookupSRVRecords0(DNSName name, List<HostAddress> failedAddresses, DnssecMode dnssecMode);
 
-    public final HostAddress lookupHostAddress(String name, List<HostAddress> failedAddresses, DnssecMode dnssecMode) {
+    public final HostAddress lookupHostAddress(DNSName name, int port, List<HostAddress> failedAddresses, DnssecMode dnssecMode) {
         checkIfDnssecRequestedAndSupported(dnssecMode);
         List<InetAddress> inetAddresses = lookupHostAddress0(name, failedAddresses, dnssecMode);
-        if (inetAddresses == null) {
+        if (inetAddresses == null || inetAddresses.isEmpty()) {
             return null;
         }
-        return new HostAddress(name, inetAddresses);
+        return new HostAddress(name, port, inetAddresses);
     }
 
-    protected List<InetAddress> lookupHostAddress0(String name, List<HostAddress> failedAddresses, DnssecMode dnssecMode) {
+    /**
+     * Lookup the IP addresses of a given host name. Returns <code>null</code> if there was an error, in which the error
+     * reason will be added in form of a <code>HostAddress</code> to <code>failedAddresses</code>. Returns a empty list
+     * in case the DNS name exists but has no associated A or AAAA resource records. Otherwise, if the resolution was
+     * successful <em>and</em> there is at least one A or AAAA resource record, then a non-empty list will be returned.
+     * <p>
+     * Concrete DNS resolver implementations are free to overwrite this, but have to stick to the interface contract.
+     * </p>
+     *
+     * @param name the DNS name to lookup
+     * @param failedAddresses a list with the failed addresses
+     * @param dnssecMode the selected DNSSEC mode
+     * @return A list, either empty or non-empty, or <code>null</code>
+     */
+    protected List<InetAddress> lookupHostAddress0(DNSName name, List<HostAddress> failedAddresses, DnssecMode dnssecMode) {
         // Default implementation of a DNS name lookup for A/AAAA records. It is assumed that this method does never
         // support DNSSEC. Subclasses are free to override this method.
         if (dnssecMode != DnssecMode.disabled) {
@@ -65,7 +87,7 @@ public abstract class DNSResolver {
 
         InetAddress[] inetAddressArray;
         try {
-            inetAddressArray = InetAddress.getAllByName(name);
+            inetAddressArray = InetAddress.getAllByName(name.toString());
         } catch (UnknownHostException e) {
             failedAddresses.add(new HostAddress(name, e));
             return null;
@@ -74,7 +96,23 @@ public abstract class DNSResolver {
         return Arrays.asList(inetAddressArray);
     }
 
-    private final void checkIfDnssecRequestedAndSupported(DnssecMode dnssecMode) {
+    protected final boolean shouldContinue(CharSequence name, CharSequence hostname, List<InetAddress> hostAddresses) {
+        if (hostAddresses == null) {
+            return true;
+        }
+
+        // If hostAddresses is not null but empty, then the DNS resolution was successful but the domain did not
+        // have any A or AAAA resource records.
+        if (hostAddresses.isEmpty()) {
+            LOGGER.log(Level.INFO, "The DNS name " + name + ", points to a hostname (" + hostname
+                            + ") which has neither A or AAAA resource records. This is an indication of a broken DNS setup.");
+            return true;
+        }
+
+        return false;
+    }
+
+    private void checkIfDnssecRequestedAndSupported(DnssecMode dnssecMode) {
         if (dnssecMode != DnssecMode.disabled && !supportsDnssec) {
             throw new UnsupportedOperationException("This resolver does not support DNSSEC");
         }

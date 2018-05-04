@@ -16,15 +16,17 @@
  */
 package org.jivesoftware.smackx.commands;
 
+import java.util.List;
+
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
-import org.jivesoftware.smack.packet.XMPPError;
+import org.jivesoftware.smack.packet.StanzaError;
+
 import org.jivesoftware.smackx.commands.packet.AdHocCommandData;
 import org.jivesoftware.smackx.xdata.Form;
-import org.jxmpp.jid.Jid;
 
-import java.util.List;
+import org.jxmpp.jid.Jid;
 
 /**
  * An ad-hoc command is responsible for executing the provided service and
@@ -36,6 +38,7 @@ import java.util.List;
  * <code>getForm</code> method retrieves a form with all the users.
  * <p>
  * Each command has a <tt>node</tt> that should be unique within a given JID.
+ * </p>
  * <p>
  * Commands may have zero or more stages. Each stage is usually used for
  * gathering information required for the command execution. Users are able to
@@ -47,21 +50,22 @@ import java.util.List;
  * have to provide the data forms the user must complete in each stage and the
  * allowed actions the user might perform during each stage (e.g. go to the
  * previous stage or go to the next stage).
- * <p>
+ * </p>
  * All the actions may throw an XMPPException if there is a problem executing
  * them. The <code>XMPPError</code> of that exception may have some specific
  * information about the problem. The possible extensions are:
- * 
+ * <ul>
  * <li><i>malformed-action</i>. Extension of a <i>bad-request</i> error.</li>
  * <li><i>bad-action</i>. Extension of a <i>bad-request</i> error.</li>
  * <li><i>bad-locale</i>. Extension of a <i>bad-request</i> error.</li>
  * <li><i>bad-payload</i>. Extension of a <i>bad-request</i> error.</li>
  * <li><i>bad-sessionid</i>. Extension of a <i>bad-request</i> error.</li>
  * <li><i>session-expired</i>. Extension of a <i>not-allowed</i> error.</li>
+ * </ul>
  * <p>
  * See the <code>SpecificErrorCondition</code> class for detailed description
  * of each one.
- * <p>
+ * </p>
  * Use the <code>getSpecificErrorConditionFrom</code> to obtain the specific
  * information from an <code>XMPPError</code>.
  * 
@@ -90,7 +94,7 @@ public abstract class AdHocCommand {
      * @return the specific condition of this error, or null if it doesn't have
      *         any.
      */
-    public static SpecificErrorCondition getSpecificErrorCondition(XMPPError error) {
+    public static SpecificErrorCondition getSpecificErrorCondition(StanzaError error) {
         // This method is implemented to provide an easy way of getting a packet
         // extension of the XMPPError.
         for (SpecificErrorCondition condition : SpecificErrorCondition.values()) {
@@ -209,7 +213,8 @@ public abstract class AdHocCommand {
      * Executes the command. This is invoked only on the first stage of the
      * command. It is invoked on every command. If there is a problem executing
      * the command it throws an XMPPException.
-     * 
+     *
+     * @throws NoResponseException
      * @throws XMPPErrorException if there is an error executing the command.
      * @throws NotConnectedException 
      * @throws InterruptedException 
@@ -224,6 +229,7 @@ public abstract class AdHocCommand {
      * XMPPException.
      * 
      * @param response the form answer of the previous stage.
+     * @throws NoResponseException
      * @throws XMPPErrorException if there is a problem executing the command.
      * @throws NotConnectedException 
      * @throws InterruptedException 
@@ -238,6 +244,8 @@ public abstract class AdHocCommand {
      * XMPPException.
      * 
      * @param response the form answer of the previous stage.
+     *
+     * @throws NoResponseException
      * @throws XMPPErrorException if there is a problem executing the command.
      * @throws NotConnectedException 
      * @throws InterruptedException 
@@ -249,7 +257,8 @@ public abstract class AdHocCommand {
      * information of the previous stage. The command must change it state to
      * the previous one. If there is a problem executing the command it throws
      * an XMPPException.
-     * 
+     *
+     * @throws NoResponseException
      * @throws XMPPErrorException if there is a problem executing the command.
      * @throws NotConnectedException 
      * @throws InterruptedException 
@@ -260,7 +269,8 @@ public abstract class AdHocCommand {
      * Cancels the execution of the command. This can be invoked on any stage of
      * the execution. If there is a problem executing the command it throws an
      * XMPPException.
-     * 
+     *
+     * @throws NoResponseException
      * @throws XMPPErrorException if there is a problem executing the command.
      * @throws NotConnectedException 
      * @throws InterruptedException 
@@ -324,6 +334,16 @@ public abstract class AdHocCommand {
      */
     public Status getStatus() {
         return data.getStatus();
+    }
+
+    /**
+     * Check if this command has been completed successfully.
+     * 
+     * @return <code>true</code> if this command is completed.
+     * @since 4.2
+     */
+    public boolean isCompleted() {
+        return getStatus() == Status.completed;
     }
 
     /**
@@ -407,7 +427,7 @@ public abstract class AdHocCommand {
         complete,
 
         /**
-         * The action is unknow. This is used when a recieved message has an
+         * The action is unknown. This is used when a received message has an
          * unknown action. It must not be used to send an execution request.
          */
         unknown
@@ -447,12 +467,13 @@ public abstract class AdHocCommand {
          */
         sessionExpired("session-expired");
 
-        private String value;
+        private final String value;
 
         SpecificErrorCondition(String value) {
             this.value = value;
         }
 
+        @Override
         public String toString() {
             return value;
         }

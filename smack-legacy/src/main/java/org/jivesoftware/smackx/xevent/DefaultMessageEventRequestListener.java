@@ -18,6 +18,7 @@
 package org.jivesoftware.smackx.xevent;
 
 import org.jivesoftware.smack.SmackException.NotConnectedException;
+
 import org.jxmpp.jid.Jid;
 
 /**
@@ -31,25 +32,25 @@ import org.jxmpp.jid.Jid;
  */
 public class DefaultMessageEventRequestListener implements MessageEventRequestListener {
 
+    @Override
     public void deliveredNotificationRequested(Jid from, String packetID,
-                MessageEventManager messageEventManager) throws NotConnectedException, InterruptedException
-    {
+                MessageEventManager messageEventManager) throws NotConnectedException, InterruptedException {
         // Send to the message's sender that the message has been delivered
         messageEventManager.sendDeliveredNotification(from, packetID);
     }
 
+    @Override
     public void displayedNotificationRequested(Jid from, String packetID,
-            MessageEventManager messageEventManager)
-    {
+            MessageEventManager messageEventManager) {
     }
 
+    @Override
     public void composingNotificationRequested(Jid from, String packetID,
-            MessageEventManager messageEventManager)
-    {
+            MessageEventManager messageEventManager) {
     }
 
+    @Override
     public void offlineNotificationRequested(Jid from, String packetID,
-            MessageEventManager messageEventManager)
-    {
+            MessageEventManager messageEventManager) {
     }
 }

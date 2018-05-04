@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.provider.EmbeddedExtensionProvider;
+
 import org.jivesoftware.smackx.pubsub.ItemsExtension;
 
 /**
@@ -29,13 +30,11 @@ import org.jivesoftware.smackx.pubsub.ItemsExtension;
  * 
  * @author Robin Collier
  */
-public class ItemsProvider extends EmbeddedExtensionProvider<ItemsExtension>
-{
+public class ItemsProvider extends EmbeddedExtensionProvider<ItemsExtension> {
 
-	@Override
-	protected ItemsExtension createReturnExtension(String currentElement, String currentNamespace, Map<String, String> attributeMap, List<? extends ExtensionElement> content)
-	{
+    @Override
+    protected ItemsExtension createReturnExtension(String currentElement, String currentNamespace, Map<String, String> attributeMap, List<? extends ExtensionElement> content) {
         return new ItemsExtension(ItemsExtension.ItemsElementType.items, attributeMap.get("node"), content);
-	}
+    }
 
 }

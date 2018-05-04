@@ -38,36 +38,43 @@ public class ObservableWriter extends Writer {
         this.wrappedWriter = wrappedWriter;
     }
 
+    @Override
     public void write(char[] cbuf, int off, int len) throws IOException {
         wrappedWriter.write(cbuf, off, len);
         String str = new String(cbuf, off, len);
         maybeNotifyListeners(str);
     }
 
+    @Override
     public void flush() throws IOException {
         notifyListeners();
         wrappedWriter.flush();
     }
 
+    @Override
     public void close() throws IOException {
         wrappedWriter.close();
     }
 
+    @Override
     public void write(int c) throws IOException {
         wrappedWriter.write(c);
     }
 
+    @Override
     public void write(char[] cbuf) throws IOException {
         wrappedWriter.write(cbuf);
         String str = new String(cbuf);
         maybeNotifyListeners(str);
     }
 
+    @Override
     public void write(String str) throws IOException {
         wrappedWriter.write(str);
         maybeNotifyListeners(str);
     }
 
+    @Override
     public void write(String str, int off, int len) throws IOException {
         wrappedWriter.write(str, off, len);
         str = str.substring(off, off + len);
@@ -83,19 +90,17 @@ public class ObservableWriter extends Writer {
 
     /**
      * Notify that a new string has been written.
-     * 
-     * @param str the written String to notify 
      */
     private void notifyListeners() {
-        WriterListener[] writerListeners = null;
+        WriterListener[] writerListeners;
         synchronized (listeners) {
             writerListeners = new WriterListener[listeners.size()];
             listeners.toArray(writerListeners);
         }
         String str = stringBuilder.toString();
         stringBuilder.setLength(0);
-        for (int i = 0; i < writerListeners.length; i++) {
-            writerListeners[i].write(str);
+        for (WriterListener writerListener : writerListeners) {
+            writerListener.write(str);
         }
     }
 

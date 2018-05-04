@@ -16,8 +16,8 @@
  */
 package org.jivesoftware.smackx.csi.packet;
 
-import org.jivesoftware.smack.packet.Nonza;
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.Nonza;
 
 /**
  * Client State Indication.
@@ -45,7 +45,7 @@ public class ClientStateIndication {
         }
 
         @Override
-        public String toXML() {
+        public String toXML(String enclosingNamespace) {
             return '<' + ELEMENT + " xmlns='" + NAMESPACE + "'/>";
         }
     }
@@ -68,7 +68,7 @@ public class ClientStateIndication {
         }
 
         @Override
-        public String toXML() {
+        public String toXML(String enclosingNamespace) {
             return '<' + ELEMENT + " xmlns='" + NAMESPACE + "'/>";
         }
     }
@@ -86,7 +86,7 @@ public class ClientStateIndication {
         }
 
         @Override
-        public String toXML() {
+        public String toXML(String enclosingNamespace) {
             return '<' + ELEMENT + " xmlns='" + NAMESPACE + "'/>";
         }
 

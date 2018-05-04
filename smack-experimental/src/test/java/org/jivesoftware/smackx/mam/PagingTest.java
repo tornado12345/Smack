@@ -17,12 +17,13 @@
 package org.jivesoftware.smackx.mam;
 
 import org.jivesoftware.smack.packet.IQ;
+
 import org.jivesoftware.smackx.mam.element.MamQueryIQ;
 import org.jivesoftware.smackx.rsm.packet.RSMSet;
 import org.jivesoftware.smackx.xdata.packet.DataForm;
-import org.junit.Test;
 
 import org.junit.Assert;
+import org.junit.Test;
 
 public class PagingTest extends MamTest {
 
@@ -44,7 +45,7 @@ public class PagingTest extends MamTest {
 
         Assert.assertEquals(mamQueryIQ.getDataForm(), dataForm);
         Assert.assertEquals(mamQueryIQ.getDataForm().getFields().get(0).getValues().get(0), "urn:xmpp:mam:1");
-        Assert.assertEquals(mamQueryIQ.toXML().toString(), pagingStanza);
+        Assert.assertEquals(mamQueryIQ.toXML(null).toString(), pagingStanza);
     }
 
 }

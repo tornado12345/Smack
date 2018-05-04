@@ -19,7 +19,7 @@ package org.jivesoftware.smack.packet;
 
 /**
  * Interface to represent a XML element. This is similar to {@link ExtensionElement}, but does not
- * carry a namespace and is usually included as child element of an stanza(/packet) extension.
+ * carry a namespace and is usually included as child element of an stanza extension.
  */
 public interface NamedElement extends Element {
 
@@ -28,6 +28,6 @@ public interface NamedElement extends Element {
      *
      * @return the element name.
      */
-    public String getElementName();
+    String getElementName();
 
 }

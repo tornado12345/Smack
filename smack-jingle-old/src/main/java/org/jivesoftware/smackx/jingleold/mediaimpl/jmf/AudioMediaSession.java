@@ -30,8 +30,8 @@ import org.jivesoftware.smackx.jingleold.nat.TransportCandidate;
 
 /**
  * This Class implements a complete JingleMediaSession.
- * It sould be used to transmit and receive audio captured from the Mic.
- * This Class should be automaticly controlled by JingleSession.
+ * It should be used to transmit and receive audio captured from the Mic.
+ * This Class should be automatically controlled by JingleSession.
  * But you could also use in any VOIP application.
  * For better NAT Traversal support this implementation don't support only receive or only transmit.
  * To receive you MUST transmit. So the only implemented and functionally methods are startTransmit() and stopTransmit()
@@ -40,9 +40,9 @@ import org.jivesoftware.smackx.jingleold.nat.TransportCandidate;
  */
 public class AudioMediaSession extends JingleMediaSession {
 
-	private static final Logger LOGGER = Logger.getLogger(AudioMediaSession.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(AudioMediaSession.class.getName());
 
-	private AudioChannel audioChannel;
+    private AudioChannel audioChannel;
 
     /**
      * Creates a org.jivesoftware.jingleaudio.jmf.AudioMediaSession with defined payload type, remote and local candidates.
@@ -54,13 +54,14 @@ public class AudioMediaSession extends JingleMediaSession {
      */
     public AudioMediaSession(final PayloadType payloadType, final TransportCandidate remote,
             final TransportCandidate local, String locator, JingleSession jingleSession) {
-        super(payloadType, remote, local, locator==null?"dsound://":locator,jingleSession);
+        super(payloadType, remote, local, locator == null ? "dsound://" : locator,jingleSession);
         initialize();
     }
 
     /**
      * Initialize the Audio Channel to make it able to send and receive audio.
      */
+    @Override
     public void initialize() {
 
         String ip;
@@ -89,32 +90,68 @@ public class AudioMediaSession extends JingleMediaSession {
 
     /**
      * Starts transmission and for NAT Traversal reasons start receiving also.
+     *
+     * @deprecated use {@link #startTransmit()} instead.
      */
+    @Deprecated
     public void startTrasmit() {
+        startTransmit();
+    }
+
+    /**
+     * Starts transmission and for NAT Traversal reasons start receiving also.
+     */
+    @Override
+    public void startTransmit() {
         audioChannel.start();
     }
 
     /**
-     * Set transmit activity. If the active is true, the instance should trasmit.
+     * Set transmit activity. If the active is true, the instance should transmit.
+     * If it is set to false, the instance should pause transmit.
+     *
+     * @param active active state
+     * @deprecated use {@link #setTransmit(boolean)} instead.
+     */
+    @Deprecated
+    public void setTrasmit(boolean active) {
+        setTransmit(active);
+    }
+
+    /**
+     * Set transmit activity. If the active is true, the instance should transmit.
      * If it is set to false, the instance should pause transmit.
      *
      * @param active active state
      */
-    public void setTrasmit(boolean active) {
+    @Override
+    public void setTransmit(boolean active) {
         audioChannel.setTrasmit(active);
     }
 
     /**
      * For NAT Reasons this method does nothing. Use startTransmit() to start transmit and receive jmf
      */
+    @Override
     public void startReceive() {
         // Do nothing
     }
 
     /**
      * Stops transmission and for NAT Traversal reasons stop receiving also.
+     *
+     * @deprecated use {@link #stopTransmit()} instead.
      */
+    @Deprecated
     public void stopTrasmit() {
+        stopTransmit();
+    }
+
+    /**
+     * Stops transmission and for NAT Traversal reasons stop receiving also.
+     */
+    @Override
+    public void stopTransmit() {
         if (audioChannel != null)
             audioChannel.stop();
     }
@@ -122,6 +159,7 @@ public class AudioMediaSession extends JingleMediaSession {
     /**
      * For NAT Reasons this method does nothing. Use startTransmit() to start transmit and receive jmf
      */
+    @Override
     public void stopReceive() {
         // Do nothing
     }

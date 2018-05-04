@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2003-2007 Jive Software, 2016 Florian Schmaus.
+ * Copyright 2003-2007 Jive Software, 2016-2018 Florian Schmaus.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,19 +40,6 @@ public class StringUtils {
     public static final String GT_ENCODE = "&gt;";
 
     public static final char[] HEX_CHARS = "0123456789abcdef".toCharArray();
-
-    /**
-     * Escape <code>input</code> for XML.
-     *
-     * @param input the input to escape.
-     * @return the XML escaped variant of <code>input</code>.
-     * @deprecated use {@link #escapeForXml(CharSequence)} instead.
-     */
-    // Remove in 4.3.
-    @Deprecated
-    public static CharSequence escapeForXML(CharSequence input) {
-        return escapeForXml(input);
-    }
 
     /**
      * Escape <code>input</code> for XML.
@@ -121,7 +108,7 @@ public class StringUtils {
             return null;
         }
         final int len = input.length();
-        final StringBuilder out = new StringBuilder((int)(len*1.3));
+        final StringBuilder out = new StringBuilder((int) (len * 1.3));
         CharSequence toAppend;
         char ch;
         int last = 0;
@@ -153,7 +140,7 @@ public class StringUtils {
                 break;
             case forAttribute:
                 // No need to escape '>' for attributes.
-                switch(ch) {
+                switch (ch) {
                 case '<':
                     toAppend = LT_ENCODE;
                     break;
@@ -172,7 +159,7 @@ public class StringUtils {
                 break;
             case forAttributeApos:
                 // No need to escape '>' and '"' for attributes using '\'' as quote.
-                switch(ch) {
+                switch (ch) {
                 case '<':
                     toAppend = LT_ENCODE;
                     break;
@@ -188,7 +175,7 @@ public class StringUtils {
                 break;
             case forText:
                 // No need to escape '"', '\'', and '>' for text.
-                switch(ch) {
+                switch (ch) {
                 case '<':
                     toAppend = LT_ENCODE;
                     break;
@@ -237,7 +224,7 @@ public class StringUtils {
      * @deprecated use {@link org.jivesoftware.smack.util.SHA1#hex(String)} instead.
      */
     @Deprecated
-    public synchronized static String hash(String data) {
+    public static synchronized String hash(String data) {
         return org.jivesoftware.smack.util.SHA1.hex(data);
     }
 
@@ -249,7 +236,7 @@ public class StringUtils {
      */
     public static String encodeHex(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];
-        for ( int j = 0; j < bytes.length; j++ ) {
+        for (int j = 0; j < bytes.length; j++) {
             int v = bytes[j] & 0xFF;
             hexChars[j * 2] = HEX_CHARS[v >>> 4];
             hexChars[j * 2 + 1] = HEX_CHARS[v & 0x0F];
@@ -257,7 +244,7 @@ public class StringUtils {
         return new String(hexChars);
     }
 
-    public static byte[] toBytes(String string) {
+    public static byte[] toUtf8Bytes(String string) {
         try {
             return string.getBytes(StringUtils.UTF8);
         }
@@ -271,7 +258,12 @@ public class StringUtils {
      * The Random class is not considered to be cryptographically secure, so
      * only use these random Strings for low to medium security applications.
      */
-    private static final Random randGen = new Random();
+    private static final ThreadLocal<Random> randGen = new ThreadLocal<Random>() {
+        @Override
+        protected Random initialValue() {
+            return new Random();
+        }
+    };
 
     /**
      * Array of numbers and letters of mixed case. Numbers appear in the list
@@ -280,7 +272,7 @@ public class StringUtils {
      * array index.
      */
     private static final char[] numbersAndLetters = ("0123456789abcdefghijklmnopqrstuvwxyz" +
-                    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ").toCharArray();
+                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ").toCharArray();
 
     /**
      * Returns a random String of numbers and letters (lower and upper case)
@@ -296,26 +288,27 @@ public class StringUtils {
      * @return a random String of numbers and letters of the specified length.
      */
     public static String insecureRandomString(int length) {
-        if (length < 1) {
-            return null;
-        }
-        // Create a char buffer to put random letters and numbers in.
-        char [] randBuffer = new char[length];
-        for (int i=0; i<randBuffer.length; i++) {
-            randBuffer[i] = numbersAndLetters[randGen.nextInt(numbersAndLetters.length)];
-        }
-        return new String(randBuffer);
+        return randomString(length, randGen.get());
     }
 
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final ThreadLocal<SecureRandom> SECURE_RANDOM = new ThreadLocal<SecureRandom>() {
+        @Override
+        protected SecureRandom initialValue() {
+            return new SecureRandom();
+        }
+    };
 
     public static String randomString(final int length) {
+        return randomString(length, SECURE_RANDOM.get());
+    }
+
+    private static String randomString(final int length, Random random) {
         if (length < 1) {
             return null;
         }
 
         byte[] randomBytes = new byte[length];
-        SECURE_RANDOM.nextBytes(randomBytes);
+        random.nextBytes(randomBytes);
         char[] randomChars = new char[length];
         for (int i = 0; i < length; i++) {
             randomChars[i] = getPrintableChar(randomBytes[i]);
@@ -324,7 +317,7 @@ public class StringUtils {
     }
 
     private static char getPrintableChar(byte indexByte) {
-        assert(numbersAndLetters.length < Byte.MAX_VALUE * 2);
+        assert (numbersAndLetters.length < Byte.MAX_VALUE * 2);
 
         // Convert indexByte as it where an unsigned byte by promoting it to int
         // and masking it with 0xff. Yields results from 0 - 254.
@@ -355,6 +348,36 @@ public class StringUtils {
      */
     public static boolean isNullOrEmpty(CharSequence cs) {
         return cs == null || isEmpty(cs);
+    }
+
+    /**
+     * Returns true if all given CharSequences are not empty.
+     *
+     * @param css the CharSequences to test.
+     * @return true if all given CharSequences are not empty.
+     */
+    public static boolean isNotEmpty(CharSequence... css) {
+        for (CharSequence cs : css) {
+            if (StringUtils.isNullOrEmpty(cs)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Returns true if all given CharSequences are either null or empty.
+     *
+     * @param css the CharSequences to test.
+     * @return true if all given CharSequences are null or empty.
+     */
+    public static boolean isNullOrEmpty(CharSequence... css) {
+        for (CharSequence cs : css) {
+            if (StringUtils.isNotEmpty(cs)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -408,10 +431,10 @@ public class StringUtils {
     }
 
     public static boolean nullSafeCharSequenceEquals(CharSequence csOne, CharSequence csTwo) {
-        return nullSafeCharSequenceComperator(csOne, csTwo) == 0;
+        return nullSafeCharSequenceComparator(csOne, csTwo) == 0;
     }
 
-    public static int nullSafeCharSequenceComperator(CharSequence csOne, CharSequence csTwo) {
+    public static int nullSafeCharSequenceComparator(CharSequence csOne, CharSequence csTwo) {
         if (csOne == null ^ csTwo == null) {
             return (csOne == null) ? -1 : 1;
         }

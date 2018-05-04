@@ -19,19 +19,20 @@ package org.jivesoftware.smackx.push_notifications;
 import java.util.HashMap;
 
 import org.jivesoftware.smackx.push_notifications.element.EnablePushNotificationsIQ;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.jxmpp.jid.impl.JidCreate;
 
 public class EnablePushNotificationsIQTest {
 
-    String exampleEnableIQ = "<iq id='x42' type='set'>"
+    private static final String exampleEnableIQ = "<iq id='x42' type='set'>"
             + "<enable xmlns='urn:xmpp:push:0' jid='push-5.client.example' node='yxs32uqsflafdk3iuqo'>" + "</enable>"
             + "</iq>";
 
-    String exampleEnableIQWithPublishOptions = "<iq id='x42' type='set'>"
+    private static final String exampleEnableIQWithPublishOptions = "<iq id='x42' type='set'>"
             + "<enable xmlns='urn:xmpp:push:0' jid='push-5.client.example' node='yxs32uqsflafdk3iuqo'>"
-            + "<x xmlns='jabber:x:data' type='form'>"
+            + "<x xmlns='jabber:x:data' type='submit'>"
             + "<field var='FORM_TYPE'><value>http://jabber.org/protocol/pubsub#publish-options</value></field>"
             + "<field var='secret'><value>eruio234vzxc2kla-91</value></field>" + "</x>" + "</enable>" + "</iq>";
 
@@ -40,7 +41,7 @@ public class EnablePushNotificationsIQTest {
         EnablePushNotificationsIQ enablePushNotificationsIQ = new EnablePushNotificationsIQ(
                 JidCreate.from("push-5.client.example"), "yxs32uqsflafdk3iuqo");
         enablePushNotificationsIQ.setStanzaId("x42");
-        Assert.assertEquals(exampleEnableIQ, enablePushNotificationsIQ.toXML().toString());
+        Assert.assertEquals(exampleEnableIQ, enablePushNotificationsIQ.toXML(null).toString());
     }
 
     @Test
@@ -52,7 +53,7 @@ public class EnablePushNotificationsIQTest {
                 JidCreate.from("push-5.client.example"), "yxs32uqsflafdk3iuqo", publishOptions);
         enablePushNotificationsIQ.setStanzaId("x42");
 
-        Assert.assertEquals(exampleEnableIQWithPublishOptions, enablePushNotificationsIQ.toXML().toString());
+        Assert.assertEquals(exampleEnableIQWithPublishOptions, enablePushNotificationsIQ.toXML(null).toString());
     }
 
 }

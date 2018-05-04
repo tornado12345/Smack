@@ -16,6 +16,9 @@
  */
 package org.jivesoftware.smack.util.stringencoder.java7;
 
+import java.io.UnsupportedEncodingException;
+
+import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.stringencoder.StringEncoder;
 
 
@@ -32,9 +35,9 @@ import org.jivesoftware.smack.util.stringencoder.StringEncoder;
  */
 public final class Java7Base64UrlSafeEncoder implements StringEncoder {
 
-    private static Java7Base64UrlSafeEncoder instance = new Java7Base64UrlSafeEncoder();
+    private static final Java7Base64UrlSafeEncoder instance = new Java7Base64UrlSafeEncoder();
 
-    private static int BASE64_ENCODER_FLAGS =  Base64.URL_SAFE | Base64.DONT_BREAK_LINES;
+    private static final int BASE64_ENCODER_FLAGS =  Base64.URL_SAFE | Base64.DONT_BREAK_LINES;
 
     private Java7Base64UrlSafeEncoder() {
         // Use getInstance()
@@ -44,12 +47,26 @@ public final class Java7Base64UrlSafeEncoder implements StringEncoder {
         return instance;
     }
 
+    @Override
     public String encode(String s) {
-        return Base64.encodeBytes(s.getBytes(), BASE64_ENCODER_FLAGS);
+        byte[] bytes;
+        try {
+            bytes = s.getBytes(StringUtils.UTF8);
+        }
+        catch (UnsupportedEncodingException e) {
+            throw new AssertionError(e);
+        }
+        return Base64.encodeBytes(bytes, BASE64_ENCODER_FLAGS);
     }
 
+    @Override
     public String decode(String s) {
-        return new String(Base64.decode(s, BASE64_ENCODER_FLAGS));
+        try {
+            return new String(Base64.decode(s, BASE64_ENCODER_FLAGS), StringUtils.UTF8);
+        }
+        catch (UnsupportedEncodingException e) {
+            throw new AssertionError(e);
+        }
     }
 
 }

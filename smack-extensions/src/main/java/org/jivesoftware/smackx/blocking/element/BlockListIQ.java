@@ -16,11 +16,14 @@
  */
 package org.jivesoftware.smackx.blocking.element;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import org.jivesoftware.smack.packet.IQ;
+
 import org.jivesoftware.smackx.blocking.BlockingCommandManager;
+
 import org.jxmpp.jid.Jid;
 
 /**
@@ -52,9 +55,10 @@ public class BlockListIQ extends IQ {
     public BlockListIQ(List<Jid> jids) {
         super(ELEMENT, NAMESPACE);
         if (jids == null) {
-            jids = Collections.emptyList();
+            this.jids = Collections.emptyList();
+        } else {
+            this.jids = Collections.unmodifiableList(jids);
         }
-        this.jids = jids;
     }
 
     /**
@@ -65,12 +69,21 @@ public class BlockListIQ extends IQ {
     }
 
     /**
-     * Get the JIDs.
+     * Get the JIDs as unmodifiable list.
      * 
-     * @return the JIDs
+     * @return the blocked JIDs
      */
-    public List<Jid> getJids() {
+    public List<Jid> getBlockedJids() {
         return jids;
+    }
+
+    /**
+     * Get a copy of the blocked list JIDs. This copy is modifiable.
+     *
+     * @return the blocked JIDs
+     */
+    public List<Jid> getBlockedJidsCopy() {
+        return new ArrayList<>(getBlockedJids());
     }
 
     @Override

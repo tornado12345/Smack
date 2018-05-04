@@ -21,6 +21,7 @@ import java.io.IOException;
 import org.jivesoftware.smack.packet.SimpleIQ;
 import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.util.StringUtils;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -48,22 +49,22 @@ public class SearchSettings extends SimpleIQ {
         this.kbLocation = kbLocation;
     }
 
-    public boolean hasKB(){
+    public boolean hasKB() {
         return StringUtils.isNotEmpty(getKbLocation());
     }
 
-    public boolean hasForums(){
+    public boolean hasForums() {
         return StringUtils.isNotEmpty(getForumsLocation());
     }
 
 
     /**
-     * Element name of the stanza(/packet) extension.
+     * Element name of the stanza extension.
      */
     public static final String ELEMENT_NAME = "search-settings";
 
     /**
-     * Namespace of the stanza(/packet) extension.
+     * Namespace of the stanza extension.
      */
     public static final String NAMESPACE = "http://jivesoftware.com/protocol/workgroup";
 
@@ -72,7 +73,7 @@ public class SearchSettings extends SimpleIQ {
     }
 
     /**
-     * Stanza(/Packet) extension provider for AgentStatusRequest packets.
+     * Stanza extension provider for AgentStatusRequest packets.
      */
     public static class InternalProvider extends IQProvider<SearchSettings> {
 

@@ -17,28 +17,28 @@
 package org.jivesoftware.smackx.pubsub;
 
 /**
- * This enumeration defines the possible event types that are supported within pubsub
+ * This enumeration defines the possible event types that are supported within PubSub
  * event messages.
  * 
  * @author Robin Collier
  */
-public enum EventElementType
-{
-	/** A node has been associated or dissassociated with a collection node. */
-	collection,
+public enum EventElementType {
 
-	/** A node has had its configuration changed. */
-	configuration,
+    /** A node has been associated or disassociated with a collection node. */
+    collection,
 
-	/** A node has been deleted. */
-	delete,
+    /** A node has had its configuration changed. */
+    configuration,
 
-	/** Items have been published to a node. */
-	items,
+    /** A node has been deleted. */
+    delete,
 
-	/** All items have been purged from a node. */
-	purge,
+    /** Items have been published to a node. */
+    items,
 
-	/** A node has been subscribed to. */
-	subscription
+    /** All items have been purged from a node. */
+    purge,
+
+    /** A node has been subscribed to. */
+    subscription
 }

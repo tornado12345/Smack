@@ -16,20 +16,22 @@
  */
 package org.jivesoftware.smackx.amp;
 
-import org.jivesoftware.smack.packet.ExtensionElement;
-import org.jivesoftware.smackx.amp.packet.AMPExtension;
-import org.jivesoftware.smackx.amp.provider.AMPExtensionProvider;
-import org.junit.Before;
-import org.junit.Test;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserFactory;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.jivesoftware.smack.packet.ExtensionElement;
+
+import org.jivesoftware.smackx.amp.packet.AMPExtension;
+import org.jivesoftware.smackx.amp.provider.AMPExtensionProvider;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 public class AMPExtensionTest {
 
@@ -57,7 +59,7 @@ public class AMPExtensionTest {
         ext.addRule(new AMPExtension.Rule(AMPExtension.Action.notify, new AMPMatchResourceCondition(AMPMatchResourceCondition.Value.exact)));
         ext.addRule(new AMPExtension.Rule(AMPExtension.Action.notify, new AMPMatchResourceCondition(AMPMatchResourceCondition.Value.other)));
 
-        assertEquals(correctStanza, ext.toXML());
+        assertEquals(correctStanza, ext.toXML(null));
     }
 
     @Test

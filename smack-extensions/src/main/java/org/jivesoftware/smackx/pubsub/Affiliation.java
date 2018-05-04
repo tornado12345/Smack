@@ -18,9 +18,12 @@ package org.jivesoftware.smackx.pubsub;
 
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.util.Objects;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.XmlStringBuilder;
+
 import org.jivesoftware.smackx.pubsub.packet.PubSubNamespace;
+
 import org.jxmpp.jid.BareJid;
 
 /**
@@ -33,35 +36,60 @@ import org.jxmpp.jid.BareJid;
  * 
  * @author Robin Collier
  */
-public class Affiliation implements ExtensionElement
-{
+public class Affiliation implements ExtensionElement {
     public static final String ELEMENT = "affiliation";
+
+    public enum AffiliationNamespace {
+        basic(PubSubElementType.AFFILIATIONS),
+        owner(PubSubElementType.AFFILIATIONS_OWNER),
+        ;
+        public final PubSubElementType type;
+
+        AffiliationNamespace(PubSubElementType type) {
+            this.type = type;
+        }
+
+        public static AffiliationNamespace fromXmlns(String xmlns) {
+            for (AffiliationNamespace affiliationsNamespace : AffiliationNamespace.values()) {
+                if (affiliationsNamespace.type.getNamespace().getXmlns().equals(xmlns)) {
+                    return affiliationsNamespace;
+                }
+            }
+            throw new IllegalArgumentException("Invalid affiliations namespace: " + xmlns);
+        }
+    }
 
     private final BareJid jid;
     private final String node;
     private final Type affiliation;
-    private final PubSubNamespace namespace;
+    private final AffiliationNamespace namespace;
 
-	public enum Type
-	{
-		member, none, outcast, owner, publisher
-	}
+    public enum Type {
+        member, none, outcast, owner, publisher
+    }
 
-	/**
-	 * Constructs an affiliation.
-	 * 
-	 * @param node The node the user is affiliated with.
-	 * @param affiliation the optional affiliation.
-	 */
+    /**
+     * Constructs an affiliation.
+     * 
+     * @param node The node the user is affiliated with.
+     * @param affiliation the optional affiliation.
+     */
     public Affiliation(String node, Type affiliation) {
+        this(node, affiliation, affiliation == null ? AffiliationNamespace.basic : AffiliationNamespace.owner);
+    }
+
+    /**
+     * Constructs an affiliation.
+     * 
+     * @param node The node the user is affiliated with.
+     * @param affiliation the optional affiliation.
+     * @param namespace the affiliation's namespace.
+     */
+    public Affiliation(String node, Type affiliation, AffiliationNamespace namespace) {
         this.node = StringUtils.requireNotNullOrEmpty(node, "node must not be null or empty");
         this.affiliation = affiliation;
         this.jid = null;
-        if (affiliation != null) {
-            namespace = PubSubNamespace.BASIC;
-        } else {
-            namespace = PubSubNamespace.OWNER;
-        }
+        this.namespace = Objects.requireNonNull(namespace);
     }
 
     /**
@@ -71,15 +99,15 @@ public class Affiliation implements ExtensionElement
      * @param affiliation
      */
     public Affiliation(BareJid jid, Type affiliation) {
-        this(jid, affiliation, PubSubNamespace.OWNER);
+        this(jid, affiliation, AffiliationNamespace.owner);
     }
 
-    public Affiliation(BareJid jid, Type affiliation, PubSubNamespace namespace) {
+    public Affiliation(BareJid jid, Type affiliation, AffiliationNamespace namespace) {
         this.jid = jid;
         this.affiliation = affiliation;
         this.node = null;
-        // This is usually the pubsub#owner namesapce, but see xep60 example 208 where just 'pubsub' is used
-        // ("notification of affilliation change")
+        // This is usually the pubsub#owner namespace, but see xep60 example 208 where just 'pubsub' is used
+        // ("notification of affiliation change")
         this.namespace = namespace;
     }
 
@@ -122,12 +150,13 @@ public class Affiliation implements ExtensionElement
         return ELEMENT;
     }
 
+    @Override
     public String getNamespace() {
-        return namespace.getXmlns();
+        return getPubSubNamespace().getXmlns();
     }
 
     public PubSubNamespace getPubSubNamespace() {
-        return namespace;
+        return namespace.type.getNamespace();
     }
 
     /**
@@ -138,14 +167,14 @@ public class Affiliation implements ExtensionElement
      */
     public boolean isAffiliationModification() {
         if (jid != null && affiliation != null) {
-            assert(node == null && namespace == PubSubNamespace.OWNER);
+            assert (node == null && namespace == AffiliationNamespace.owner);
             return true;
         }
         return false;
     }
 
     @Override
-    public XmlStringBuilder toXML() {
+    public XmlStringBuilder toXML(String enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.optAttribute("node", node);
         xml.optAttribute("jid", jid);
