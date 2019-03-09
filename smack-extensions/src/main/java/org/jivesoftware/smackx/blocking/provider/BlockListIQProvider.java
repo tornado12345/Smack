@@ -16,10 +16,12 @@
  */
 package org.jivesoftware.smackx.blocking.provider;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.jivesoftware.smack.packet.IQ.Type;
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.util.ParserUtils;
 
@@ -27,10 +29,11 @@ import org.jivesoftware.smackx.blocking.element.BlockListIQ;
 
 import org.jxmpp.jid.Jid;
 import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
 
 /**
  * Block list IQ provider class.
- * 
+ *
  * @author Fernando Ramirez
  * @see <a href="http://xmpp.org/extensions/xep-0191.html">XEP-0191: Blocking
  *      Command</a>
@@ -38,7 +41,7 @@ import org.xmlpull.v1.XmlPullParser;
 public class BlockListIQProvider extends IQProvider<BlockListIQ> {
 
     @Override
-    public BlockListIQ parse(XmlPullParser parser, int initialDepth) throws Exception {
+    public BlockListIQ parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment) throws XmlPullParserException, IOException {
         List<Jid> jids = null;
 
         outerloop: while (true) {

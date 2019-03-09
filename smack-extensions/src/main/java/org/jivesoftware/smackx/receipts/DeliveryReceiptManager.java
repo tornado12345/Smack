@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2013-2014 Georg Lukas, 2015 Florian Schmaus
+ * Copyright 2013-2014 Georg Lukas, 2015-2019 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,8 +74,16 @@ import org.jxmpp.jid.Jid;
  */
 public final class DeliveryReceiptManager extends Manager {
 
-    private static final StanzaFilter MESSAGES_WITH_DELIVERY_RECEIPT_REQUEST = new AndFilter(StanzaTypeFilter.MESSAGE,
-                    new StanzaExtensionFilter(new DeliveryReceiptRequest()));
+    /**
+     * Filters all non-error messages with receipt requests.
+     * See <a href="https://xmpp.org/extensions/xep-0184.html#when">XEP-0184 § 5.</a> "A sender could request receipts
+     * on any non-error content message (chat, groupchat, headline, or normal)…"
+     */
+    private static final StanzaFilter NON_ERROR_GROUPCHAT_MESSAGES_WITH_DELIVERY_RECEIPT_REQUEST = new AndFilter(
+            StanzaTypeFilter.MESSAGE,
+            new StanzaExtensionFilter(new DeliveryReceiptRequest()),
+            new NotFilter(MessageTypeFilter.ERROR));
+
     private static final StanzaFilter MESSAGES_WITH_DELIVERY_RECEIPT = new AndFilter(StanzaTypeFilter.MESSAGE,
                     new StanzaExtensionFilter(DeliveryReceipt.ELEMENT, DeliveryReceipt.NAMESPACE));
 
@@ -120,7 +128,7 @@ public final class DeliveryReceiptManager extends Manager {
 
     /**
      * Set the default automatic receipt mode for new connections.
-     * 
+     *
      * @param autoReceiptMode the default automatic receipt mode.
      */
     public static void setDefaultAutoReceiptMode(AutoReceiptMode autoReceiptMode) {
@@ -175,7 +183,7 @@ public final class DeliveryReceiptManager extends Manager {
                 }
                 connection.sendStanza(ack);
             }
-        }, MESSAGES_WITH_DELIVERY_RECEIPT_REQUEST);
+        }, NON_ERROR_GROUPCHAT_MESSAGES_WITH_DELIVERY_RECEIPT_REQUEST);
     }
 
     /**
@@ -198,12 +206,12 @@ public final class DeliveryReceiptManager extends Manager {
 
     /**
      * Returns true if Delivery Receipts are supported by a given JID.
-     * 
+     *
      * @param jid
      * @return true if supported
      * @throws SmackException if there was no response from the server.
-     * @throws XMPPException 
-     * @throws InterruptedException 
+     * @throws XMPPException
+     * @throws InterruptedException
      */
     public boolean isSupported(Jid jid) throws SmackException, XMPPException, InterruptedException {
         return ServiceDiscoveryManager.getInstanceFor(connection()).supportsFeature(jid,
@@ -223,7 +231,7 @@ public final class DeliveryReceiptManager extends Manager {
 
     /**
      * Get the currently active auto receipt mode.
-     * 
+     *
      * @return the currently active auto receipt mode.
      */
     public AutoReceiptMode getAutoReceiptMode() {
@@ -232,7 +240,7 @@ public final class DeliveryReceiptManager extends Manager {
 
     /**
      * Get informed about incoming delivery receipts with a {@link ReceiptReceivedListener}.
-     * 
+     *
      * @param listener the listener to be informed about new receipts
      */
     public void addReceiptReceivedListener(ReceiptReceivedListener listener) {
@@ -241,7 +249,7 @@ public final class DeliveryReceiptManager extends Manager {
 
     /**
      * Stop getting informed about incoming delivery receipts.
-     * 
+     *
      * @param listener the listener to be removed
      */
     public void removeReceiptReceivedListener(ReceiptReceivedListener listener) {
@@ -274,7 +282,7 @@ public final class DeliveryReceiptManager extends Manager {
      * Enables automatic requests of delivery receipts for outgoing messages of
      * {@link org.jivesoftware.smack.packet.Message.Type#normal}, {@link org.jivesoftware.smack.packet.Message.Type#chat} or {@link org.jivesoftware.smack.packet.Message.Type#headline}, and
      * with a {@link org.jivesoftware.smack.packet.Message.Body} extension.
-     * 
+     *
      * @since 4.1
      * @see #dontAutoAddDeliveryReceiptRequests()
      */
@@ -285,7 +293,7 @@ public final class DeliveryReceiptManager extends Manager {
 
     /**
      * Disables automatically requests of delivery receipts for outgoing messages.
-     * 
+     *
      * @since 4.1
      * @see #autoAddDeliveryReceiptRequests()
      */

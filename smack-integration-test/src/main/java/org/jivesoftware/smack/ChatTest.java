@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2015 Florian Schmaus
+ * Copyright 2015-2019 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import org.junit.BeforeClass;
 
 /**
  * Tests for Chat Manager and for Chat Manager Listener.
- * 
+ *
  * @author Stawicki Adam
  */
 public class ChatTest extends AbstractSmackIntegrationTest {
@@ -48,7 +48,7 @@ public class ChatTest extends AbstractSmackIntegrationTest {
     private boolean invoked;
 
     @SuppressWarnings("deprecation")
-    public ChatTest(SmackIntegrationTestEnvironment environment) {
+    public ChatTest(SmackIntegrationTestEnvironment<?> environment) {
         super(environment);
         chatManagerOne = org.jivesoftware.smack.chat.ChatManager.getInstanceFor(conOne);
     }
@@ -87,28 +87,28 @@ public class ChatTest extends AbstractSmackIntegrationTest {
         assertEquals("Subjects are different", msg.getSubject(), msg2.getSubject());
         assertEquals("Bodies are different", msg.getBody(), msg2.getBody());
         assertEquals(
-               "favoriteColors are different", 
+               "favoriteColors are different",
                getProperty(msg, "favoriteColor"),
                getProperty(msg2, "favoriteColor"));
         assertEquals(
-               "ages are different", 
-               getProperty(msg, "age"), 
+               "ages are different",
+               getProperty(msg, "age"),
                getProperty(msg2, "age"));
         assertEquals(
-               "distances are different", 
-               getProperty(msg, "distance"), 
+               "distances are different",
+               getProperty(msg, "distance"),
                getProperty(msg2, "distance"));
         assertEquals(
-               "weights are different", 
-               getProperty(msg, "weight"), 
+               "weights are different",
+               getProperty(msg, "weight"),
                getProperty(msg2, "weight"));
         assertEquals(
-               "males are different", 
-               getProperty(msg, "male"), 
+               "males are different",
+               getProperty(msg, "male"),
                getProperty(msg2, "male"));
         assertEquals(
-               "birthdates are different", 
-               getProperty(msg, "birthdate"), 
+               "birthdates are different",
+               getProperty(msg, "birthdate"),
                getProperty(msg2, "birthdate"));
     }
 

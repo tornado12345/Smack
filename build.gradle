@@ -10,12 +10,12 @@ buildscript {
         classpath 'org.kordamp:markdown-gradle-plugin:1.0.0'
 		classpath 'org.kordamp.gradle:clirr-gradle-plugin:0.2.2'
 		classpath "org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.3.1"
-		classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.0.13'
     }
 }
 
 plugins {
-    id 'ru.vyarus.animalsniffer' version '1.4.3'
+    id 'ru.vyarus.animalsniffer' version '1.4.6'
+	id 'net.ltgt.errorprone' version '0.6'
 }
 
 apply plugin: 'org.kordamp.gradle.markdown'
@@ -79,6 +79,7 @@ allprojects {
 			':smack-experimental',
 			':smack-omemo',
 			':smack-omemo-signal',
+			':smack-openpgp',
 		].collect{ project(it) }
 		androidBootClasspathProjects = [
 			':smack-android',
@@ -96,16 +97,29 @@ allprojects {
 			':smack-omemo-signal',
 			':smack-omemo-signal-integration-test',
 		].collect{ project(it) }
-		androidBootClasspath = getAndroidRuntimeJar()
-		androidJavadocOffline = getAndroidJavadocOffline()
-		junitVersion = '4.11'
+		// Lazily evaluate the Android bootClasspath and offline
+		// Javadoc using a closure, so that targets which do not
+		// require it are still able to succeed without an Android
+		// SDK.
+		androidBootClasspath = { getAndroidRuntimeJar() }
+		androidJavadocOffline = { getAndroidJavadocOffline() }
+		junitVersion = '5.2.0'
 	}
 	group = 'org.igniterealtime.smack'
-	sourceCompatibility = 1.7
+	sourceCompatibility = JavaVersion.VERSION_1_8
 	targetCompatibility = sourceCompatibility
 	version = shortVersion
 	if (isSnapshot) {
 		version += '-SNAPSHOT'
+	}
+
+	test {
+		// Enable full stacktraces of failed tests. Especially handy
+		// for environments like Travis.
+		testLogging {
+			events "failed"
+			exceptionFormat "full"
+		}
 	}
 
 	ext.sharedManifest = manifest {
@@ -155,9 +169,8 @@ allprojects {
 			// e.g. JAVA7_HOME. See SMACK-651.
 			'-Xlint:-options',
 			'-Werror',
-			// Needed because since adding gradle-errorprone-plugin
-			// See https://github.com/tbroyer/gradle-errorprone-plugin/issues/15
-			'-Xlint:-path',
+		]
+		options.errorprone.errorproneArgs = [
 			// Disable errorprone checks
 			'-Xep:TypeParameterUnusedInFormals:OFF',
 			// Disable errorpone StringSplitter check, as it
@@ -169,17 +182,26 @@ allprojects {
 			// TODO: change sinttest so that it has it's own
 			// BeforeClass and re-enable this check.
 			'-Xep:JUnit4ClassAnnotationNonStatic:OFF',
+			// Disabled but should be re-enabled at some point
+			//'-Xep:InconsistentCapitalization:OFF',
+		]
+	}
+
+	tasks.withType(ScalaCompile) {
+		scalaCompileOptions.additionalParameters = [
+			'-Xfatal-warnings',
+			'-feature',
 		]
 	}
 
 	jacoco {
-		toolVersion = "0.8.1"
+		toolVersion = "0.8.3"
 	}
 
 	jacocoTestReport {
 		dependsOn test
-		sourceDirectories = project.files(sourceSets.main.allSource.srcDirs)
-		classDirectories =  project.files(sourceSets.main.output)
+		getSourceDirectories().setFrom(project.files(sourceSets.main.allSource.srcDirs))
+		getClassDirectories().setFrom(project.files(sourceSets.main.output))
 		reports {
 			xml.enabled true
 		}
@@ -192,6 +214,16 @@ allprojects {
 			// work, we extra add '-quiet', which is added anyway by
 			// gradle.
 			options.addStringOption('Xdoclint:all', '-quiet')
+
+			// TODO: Add
+
+			// Treat warnings as errors.
+			// See also https://bugs.openjdk.java.net/browse/JDK-8200363
+			// options.addStringOption('Xwerror', '-quiet')
+
+			// after all javadoc warnings have been resolved and
+			// remove Xwerror from the subprojects build.gradle files
+			// (e.g. smack-android-extensions).
 		}
 	}
 	tasks.withType(Javadoc) {
@@ -200,7 +232,8 @@ allprojects {
 	}
 
 	dependencies {
-		errorprone 'com.google.errorprone:error_prone_core:2.2.0'
+		errorprone 'com.google.errorprone:error_prone_core:2.3.2'
+		errorproneJavac('com.google.errorprone:javac:9+181-r4173-1')
 	}
 
 	// Make all project's 'test' target depend on javadoc, so that
@@ -225,7 +258,14 @@ gradle.taskGraph.whenReady { taskGraph ->
 	}
 }
 
-task javadocAll(type: Javadoc) {
+task copyAllJavadocDocFiles(type: Copy) {
+	from javadocAllProjects.collect { project ->
+		"${project.projectDir}/src/javadoc" }
+	into javadocAllDir
+	include '**/doc-files/*.*'
+}
+
+task javadocAll(type: Javadoc, dependsOn: copyAllJavadocDocFiles) {
 	source javadocAllProjects.collect {project ->
 		project.sourceSets.main.allJava }
 	destinationDir = javadocAllDir
@@ -233,13 +273,16 @@ task javadocAll(type: Javadoc) {
 	classpath = files(subprojects.collect {project ->
 		project.sourceSets.main.compileClasspath})
 	classpath += files(androidBootClasspath)
-	options.linkSource = true
-	options.use = true
-	options.links = [
+	options {
+		linkSource = true
+		use = true
+		links = [
 		"https://docs.oracle.com/javase/${sourceCompatibility.getMajorVersion()}/docs/api/",
 		"https://jxmpp.org/releases/$jxmppVersion/javadoc/",
 		"https://minidns.org/releases/$miniDnsVersion/javadoc/",
 		] as String[]
+		overview = "$projectDir/resources/javadoc-overview.html"
+	}
 }
 
 import org.apache.tools.ant.filters.ReplaceTokens
@@ -303,14 +346,13 @@ ${oneLineDesc}."""
 evaluationDependsOnChildren()
 subprojects {
 	apply plugin: 'maven'
-	apply plugin: 'osgi'
 	apply plugin: 'signing'
 	apply plugin: 'checkstyle'
 	apply plugin: 'org.kordamp.gradle.clirr'
 
 	checkstyle {
 		configFile = new File(rootConfigDir, 'checkstyle.xml')
-		toolVersion = '8.8'
+		toolVersion = '8.10'
 	}
 	task sourcesJar(type: Jar, dependsOn: classes) {
 		classifier = 'sources'
@@ -426,12 +468,39 @@ subprojects {
 		enabled false
 		semver false
 	}
+
+	// Work around https://github.com/gradle/gradle/issues/4046
+	javadoc.dependsOn('copyJavadocDocFiles')
+	task copyJavadocDocFiles(type: Copy) {
+		from('src/javadoc')
+		into 'build/docs/javadoc'
+		include '**/doc-files/*.*'
+	}
+
+	// If this subproject has a Makefile then make copyJavadocDocFiles
+	// and the root project's javadocAll task dependend on
+	// generateFiles.
+	if (file("$projectDir/Makefile").exists()) {
+		copyJavadocDocFiles.dependsOn('generateFiles')
+		rootProject.copyAllJavadocDocFiles.dependsOn("${project.name}:generateFiles")
+		task generateFiles(type: Exec) {
+			workingDir projectDir
+			commandLine 'make'
+		}
+
+		clean.dependsOn('cleanGeneratedFiles')
+		rootProject.clean.dependsOn("${project.name}:cleanGeneratedFiles")
+		task cleanGeneratedFiles(type: Exec) {
+			workingDir projectDir
+			commandLine 'make', 'clean'
+		}
+	}
 }
 
-configure (androidProjects) {
+configure (androidProjects + androidBootClasspathProjects) {
 	apply plugin: 'ru.vyarus.animalsniffer'
 	dependencies {
-		signature "net.sf.androidscents.signature:android-api-level-${smackMinAndroidSdk}:2.3.1_r2@signature"
+		signature "net.sf.androidscents.signature:android-api-level-${smackMinAndroidSdk}:4.4.2_r4@signature"
 	}
 	animalsniffer {
 		sourceSets = [sourceSets.main]
@@ -455,11 +524,6 @@ configure(
 	  ':smack-omemo-signal',
 	  ':smack-omemo-signal-integration-test',
 	].collect{ project(it) }) {
-	uploadArchives {
-		// Only enable uploadArchives for the smack-omemo* projects
-		// for snapshots. Not yet for releases.
-		enabled = isSnapshot
-	}
 }
 
 subprojects*.jar {
@@ -527,9 +591,9 @@ coveralls {
 
 task jacocoRootReport(type: org.gradle.testing.jacoco.tasks.JacocoReport) {
 	dependsOn = projectsWithUnitTests.jacocoTestReport
-	sourceDirectories = files(projectsWithUnitTests.sourceSets.main.allSource.srcDirs)
-	classDirectories = files(projectsWithUnitTests.sourceSets.main.output)
-	executionData = files(projectsWithUnitTests.jacocoTestReport.executionData)
+	getSourceDirectories().setFrom(files(projectsWithUnitTests.sourceSets.main.allSource.srcDirs))
+	getClassDirectories().setFrom(files(projectsWithUnitTests.sourceSets.main.output))
+	getExecutionData().setFrom(files(projectsWithUnitTests.jacocoTestReport.executionData))
 	reports {
 		xml.enabled true
 		xml.destination file("${buildDir}/reports/jacoco/test/jacocoTestReport.xml")
@@ -548,10 +612,12 @@ task clirrRootReport(type: org.kordamp.gradle.clirr.ClirrReportTask) {
 }
 
 task integrationTest {
+	description 'Verify correct functionality of Smack by running some integration tests.'
 	dependsOn project(':smack-integration-test').tasks.run
 }
 
 task omemoSignalIntTest {
+	description 'Run integration tests of the smack-omemo module in combination with smack-omemo-signal.'
 	dependsOn project(':smack-omemo-signal-integration-test').tasks.run
 }
 
@@ -580,12 +646,21 @@ def getGitCommit() {
 }
 
 def getAndroidRuntimeJar() {
+	// We set a different Android API level compared to
+	// smackMinAndroidSdk here. The runtime jar retrieved via this
+	// method is, compared to earlier Smack versions, not used to
+	// check for Android API compatibility. Instead it is used to for
+	// the eclipse classpath, for javadoc and when compiling the pure
+	// Android subprojects of Smack. Currently we require level 16
+	// here, because of the @TargetApi annotation found in
+	// AndroidUsingLinkProperties of minidns-android21.
+	def androidApiLevel = 16
 	def androidHome = getAndroidHome()
-	def androidJar = new File("$androidHome/platforms/android-$smackMinAndroidSdk/android.jar")
+	def androidJar = new File("$androidHome/platforms/android-${androidApiLevel}/android.jar")
 	if (androidJar.isFile()) {
 		return androidJar
 	} else {
-		throw new Exception("Can't find android.jar for $smackMinAndroidSdk API. Please install corresponding SDK platform package")
+		throw new Exception("Can't find android.jar for $androidApiLevel API. Please install corresponding SDK platform package")
 	}
 }
 

@@ -1,10 +1,10 @@
-// Note that this is also declared in the main build.gradle for
-// subprojects, but since evaluationDependsOnChildren is enabled we
-// need to declare it here too
-apply plugin: 'osgi'
-
 description = """\
 Smack core components."""
+
+ext {
+	xmlUnitVersion = "2.6.0"
+	powerMockVersion = "1.7.3"
+}
 
 dependencies {
 	compile 'xpp3:xpp3:1.1.4c'
@@ -12,13 +12,14 @@ dependencies {
 	compile "org.jxmpp:jxmpp-jid:$jxmppVersion"
 	compile "org.minidns:minidns-core:$miniDnsVersion"
 	testCompile "org.jxmpp:jxmpp-jid:$jxmppVersion:tests"
-	testCompile "junit:junit:$junitVersion"
-	testCompile 'xmlunit:xmlunit:1.5'
-	testCompile "org.powermock:powermock-module-junit4:1.6.4"
-	testCompile "org.powermock:powermock-module-junit4-rule:1.6.4"
-	testCompile "org.powermock:powermock-api-mockito:1.6.4"
-	testCompile "org.powermock:powermock-classloading-xstream:1.6.4"
-	testCompile 'com.jamesmurty.utils:java-xmlbuilder:0.6'
+	testCompile "org.junit.jupiter:junit-jupiter-api:$junitVersion"
+	testCompile "org.junit.vintage:junit-vintage-engine:$junitVersion"
+	testCompile "org.xmlunit:xmlunit-core:$xmlUnitVersion"
+	testCompile "org.xmlunit:xmlunit-legacy:$xmlUnitVersion"
+	testCompile "org.powermock:powermock-module-junit4:$powerMockVersion"
+	testCompile "org.powermock:powermock-module-junit4-rule:$powerMockVersion"
+	testCompile "org.powermock:powermock-api-mockito2:$powerMockVersion"
+	testCompile 'com.jamesmurty.utils:java-xmlbuilder:1.2'
 	testCompile 'net.iharder:base64:2.3.8'
 }
 
@@ -41,9 +42,3 @@ task createVersionResource(type: CreateFileTask) {
 }
 
 compileJava.dependsOn(createVersionResource)
-
-jar {
-  manifest {
-    instruction 'DynamicImport-Package', '*'
-  }
-}

@@ -36,7 +36,7 @@ public abstract class MUCLightElements {
 
     /**
      * Affiliations change extension element class.
-     * 
+     *
      * @author Fernando Ramirez
      *
      */
@@ -68,7 +68,7 @@ public abstract class MUCLightElements {
 
         /**
          * Get the affiliations.
-         * 
+         *
          * @return the affiliations
          */
         public HashMap<Jid, MUCLightAffiliation> getAffiliations() {
@@ -77,7 +77,7 @@ public abstract class MUCLightElements {
 
         /**
          * Get the previous version.
-         * 
+         *
          * @return the previous version
          */
         public String getPrevVersion() {
@@ -86,7 +86,7 @@ public abstract class MUCLightElements {
 
         /**
          * Get the version.
-         * 
+         *
          * @return the version
          */
         public String getVersion() {
@@ -94,7 +94,7 @@ public abstract class MUCLightElements {
         }
 
         @Override
-        public CharSequence toXML(String enclosingNamespace) {
+        public CharSequence toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder(this);
             xml.rightAngleBracket();
 
@@ -119,7 +119,7 @@ public abstract class MUCLightElements {
 
     /**
      * Configurations change extension element class.
-     * 
+     *
      * @author Fernando Ramirez
      *
      */
@@ -136,7 +136,7 @@ public abstract class MUCLightElements {
 
         /**
          * Configurations change extension constructor.
-         * 
+         *
          * @param prevVersion
          * @param version
          * @param roomName
@@ -164,7 +164,7 @@ public abstract class MUCLightElements {
 
         /**
          * Get the previous version.
-         * 
+         *
          * @return the previous version
          */
         public String getPrevVersion() {
@@ -173,7 +173,7 @@ public abstract class MUCLightElements {
 
         /**
          * Get the version.
-         * 
+         *
          * @return the version
          */
         public String getVersion() {
@@ -182,7 +182,7 @@ public abstract class MUCLightElements {
 
         /**
          * Get the room name.
-         * 
+         *
          * @return the room name
          */
         public String getRoomName() {
@@ -191,7 +191,7 @@ public abstract class MUCLightElements {
 
         /**
          * Get the room subject.
-         * 
+         *
          * @return the room subject
          */
         public String getSubject() {
@@ -200,7 +200,7 @@ public abstract class MUCLightElements {
 
         /**
          * Get the room custom configurations.
-         * 
+         *
          * @return the room custom configurations
          */
         public HashMap<String, String> getCustomConfigs() {
@@ -208,7 +208,7 @@ public abstract class MUCLightElements {
         }
 
         @Override
-        public CharSequence toXML(String enclosingNamespace) {
+        public CharSequence toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder(this);
             xml.rightAngleBracket();
 
@@ -237,7 +237,7 @@ public abstract class MUCLightElements {
 
     /**
      * Configuration element class.
-     * 
+     *
      * @author Fernando Ramirez
      *
      */
@@ -247,7 +247,7 @@ public abstract class MUCLightElements {
 
         /**
          * Configuration element constructor.
-         * 
+         *
          * @param configuration
          */
         public ConfigurationElement(MUCLightRoomConfiguration configuration) {
@@ -255,7 +255,7 @@ public abstract class MUCLightElements {
         }
 
         @Override
-        public CharSequence toXML(String enclosingNamespace) {
+        public CharSequence toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder();
             xml.openElement("configuration");
 
@@ -278,7 +278,7 @@ public abstract class MUCLightElements {
 
     /**
      * Occupants element class.
-     * 
+     *
      * @author Fernando Ramirez
      *
      */
@@ -288,7 +288,7 @@ public abstract class MUCLightElements {
 
         /**
          * Occupants element constructor.
-         * 
+         *
          * @param occupants
          */
         public OccupantsElement(HashMap<Jid, MUCLightAffiliation> occupants) {
@@ -296,7 +296,7 @@ public abstract class MUCLightElements {
         }
 
         @Override
-        public CharSequence toXML(String enclosingNamespace) {
+        public CharSequence toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder();
             xml.openElement("occupants");
 
@@ -314,7 +314,7 @@ public abstract class MUCLightElements {
 
     /**
      * User with affiliation element class.
-     * 
+     *
      * @author Fernando Ramirez
      *
      */
@@ -325,7 +325,7 @@ public abstract class MUCLightElements {
 
         /**
          * User with affiliations element constructor.
-         * 
+         *
          * @param user
          * @param affiliation
          */
@@ -335,7 +335,7 @@ public abstract class MUCLightElements {
         }
 
         @Override
-        public CharSequence toXML(String enclosingNamespace) {
+        public CharSequence toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder();
             xml.halfOpenElement("user");
             xml.attribute("affiliation", affiliation);
@@ -349,7 +349,7 @@ public abstract class MUCLightElements {
 
     /**
      * Blocking element class.
-     * 
+     *
      * @author Fernando Ramirez
      *
      */
@@ -361,7 +361,7 @@ public abstract class MUCLightElements {
 
         /**
          * Blocking element constructor.
-         * 
+         *
          * @param jid
          * @param allow
          * @param isRoom
@@ -373,7 +373,7 @@ public abstract class MUCLightElements {
         }
 
         @Override
-        public CharSequence toXML(String enclosingNamespace) {
+        public CharSequence toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder();
 
             String tag = isRoom ? "room" : "user";

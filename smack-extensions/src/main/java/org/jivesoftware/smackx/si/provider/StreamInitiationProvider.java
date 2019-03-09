@@ -16,11 +16,14 @@
  */
 package org.jivesoftware.smackx.si.provider;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.jivesoftware.smack.packet.XmlEnvironment;
+import org.jivesoftware.smack.parsing.SmackParsingException;
 import org.jivesoftware.smack.provider.IQProvider;
 
 import org.jivesoftware.smackx.si.packet.StreamInitiation;
@@ -30,19 +33,19 @@ import org.jivesoftware.smackx.xdata.provider.DataFormProvider;
 
 import org.jxmpp.util.XmppDateTime;
 import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
 
 /**
  * The StreamInitiationProvider parses StreamInitiation packets.
- * 
+ *
  * @author Alexander Wenckus
- * 
+ *
  */
 public class StreamInitiationProvider extends IQProvider<StreamInitiation> {
     private static final Logger LOGGER = Logger.getLogger(StreamInitiationProvider.class.getName());
 
     @Override
-    public StreamInitiation parse(XmlPullParser parser, int initialDepth)
-                    throws Exception {
+    public StreamInitiation parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment) throws XmlPullParserException, IOException, SmackParsingException {
         boolean done = false;
 
         // si

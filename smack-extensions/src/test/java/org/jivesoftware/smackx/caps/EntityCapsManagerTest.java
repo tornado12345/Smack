@@ -47,7 +47,7 @@ public class EntityCapsManagerTest extends InitExtensions {
     /**
      * <a href="http://xmpp.org/extensions/xep-0115.html#ver-gen-complex">XEP-
      * 0115 Complex Generation Example</a>.
-     * @throws XmppStringprepException 
+     * @throws XmppStringprepException
      */
     @Test
     public void testComplexGenerationExample() throws XmppStringprepException {
@@ -75,7 +75,7 @@ public class EntityCapsManagerTest extends InitExtensions {
         assertTrue(di.containsDuplicateIdentities());
     }
 
-    private static void testSimpleDirectoryCache(StringEncoder stringEncoder) throws IOException {
+    private static void testSimpleDirectoryCache(StringEncoder<String> stringEncoder) throws IOException {
 
         EntityCapsPersistentCache cache = new SimpleDirectoryPersistentCache(createTempDirectory());
         EntityCapsManager.setPersistentCache(cache);
@@ -92,7 +92,7 @@ public class EntityCapsManagerTest extends InitExtensions {
 
         DiscoverInfo restored_di = EntityCapsManager.getDiscoveryInfoByNodeVer(nodeVer);
         assertNotNull(restored_di);
-        assertEquals(di.toXML(null).toString(), restored_di.toXML(null).toString());
+        assertEquals(di.toXML().toString(), restored_di.toXML().toString());
     }
 
     private static DiscoverInfo createComplexSamplePacket() throws XmppStringprepException {

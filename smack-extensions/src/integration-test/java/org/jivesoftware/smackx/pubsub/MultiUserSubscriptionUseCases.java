@@ -24,7 +24,7 @@ import org.jivesoftware.smack.packet.XMPPError;
 import org.jivesoftware.smackx.pubsub.test.PubSubTestCase;
 
 /**
- * 
+ *
  * @author Robin Collier
  *
  */
@@ -73,8 +73,8 @@ public class MultiUserSubscriptionUseCases extends PubSubTestCase
 		}
 		catch (XMPPException exc)
 		{
-			assertEquals("bad-request", exc.getXMPPError().getCondition());
-			assertEquals(XMPPError.Type.MODIFY, exc.getXMPPError().getType());
+			assertEquals("bad-request", exc.getStanzaError().getCondition());
+			assertEquals(XMPPError.Type.MODIFY, exc.getStanzaError().getType());
 		}
 		List<Item> items = user2Node.getItems(sub1.getId());
 		assertTrue(items.size() == 5);

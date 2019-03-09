@@ -27,7 +27,7 @@ public abstract class AbstractTextElement implements ExtensionElement {
     private final String lang;
 
     protected AbstractTextElement(String text, String lang) {
-        this.text = StringUtils.requireNotNullOrEmpty(text, "Text must not be null or empty");
+        this.text = StringUtils.requireNotNullNorEmpty(text, "Text must not be null nor empty");
         this.lang = lang;
     }
 
@@ -37,7 +37,7 @@ public abstract class AbstractTextElement implements ExtensionElement {
     }
 
     @Override
-    public XmlStringBuilder toXML(String enclosingNamespace) {
+    public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.optXmlLangAttribute(lang);
         xml.rightAngleBracket();

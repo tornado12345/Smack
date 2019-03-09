@@ -152,7 +152,7 @@ public class RoomInfo {
         if (!identities.isEmpty()) {
             this.name = identities.get(0).getName();
         } else {
-            LOGGER.warning("DiscoverInfo does not contain any Identity: " + info.toXML(null));
+            LOGGER.warning("DiscoverInfo does not contain any Identity: " + info.toXML());
             this.name = "";
         }
         String subject = "";
@@ -207,7 +207,8 @@ public class RoomInfo {
 
             FormField subjectmodField = form.getField("muc#roominfo_subjectmod");
             if (subjectmodField != null && !subjectmodField.getValues().isEmpty()) {
-                subjectmod = Boolean.valueOf(subjectmodField.getFirstValue());
+                String firstValue = subjectmodField.getFirstValue();
+                subjectmod = ("true".equals(firstValue) || "1".equals(firstValue));
             }
 
             FormField urlField = form.getField("muc#roominfo_logs");
@@ -252,7 +253,7 @@ public class RoomInfo {
      * The name returnd here was provided as value of the name attribute
      * of the returned identity within the disco#info result.
      * </p>
-     * 
+     *
      * @return the name of the room.
      */
     public String getName() {
@@ -265,7 +266,7 @@ public class RoomInfo {
      * The description returned by this method was provided as value of the form
      * field of the extended disco info result. It may be <code>null</code>.
      * </p>
-     * 
+     *
      * @return the discovered description of the room or null
      */
     public String getDescription() {

@@ -26,7 +26,7 @@ import org.jivesoftware.smack.util.StringUtils;
 /**
  * Base32 string encoding is useful for when filenames case-insensitive filesystems are encoded.
  * Base32 representation takes roughly 20% more space then Base64.
- * 
+ *
  * @author Florian Schmaus
  * Based on code by Brian Wellington (bwelling@xbill.org)
  * @see <a href="http://en.wikipedia.org/wiki/Base32">Base32 Wikipedia entry</a>
@@ -34,7 +34,7 @@ import org.jivesoftware.smack.util.StringUtils;
  */
 public class Base32 {
 
-    private static final StringEncoder base32Stringencoder = new StringEncoder() {
+    private static final StringEncoder<String> base32Stringencoder = new StringEncoder<String>() {
 
         @Override
         public String encode(String string) {
@@ -49,7 +49,7 @@ public class Base32 {
     };
     private static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ2345678";
 
-    public static StringEncoder getStringEncoder() {
+    public static StringEncoder<String> getStringEncoder() {
         return base32Stringencoder;
     }
 

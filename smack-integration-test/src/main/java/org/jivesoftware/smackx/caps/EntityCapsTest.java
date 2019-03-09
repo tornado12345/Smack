@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2013-2016 Florian Schmaus
+ * Copyright 2013-2019 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jivesoftware.smack.SmackException.NoResponseException;
@@ -56,9 +57,7 @@ public class EntityCapsTest extends AbstractSmackIntegrationTest {
     private final ServiceDiscoveryManager sdmOne;
     private final ServiceDiscoveryManager sdmTwo;
 
-    private boolean discoInfoSend = false;
-
-    public EntityCapsTest(SmackIntegrationTestEnvironment environment) {
+    public EntityCapsTest(SmackIntegrationTestEnvironment<?> environment) {
         super(environment);
         ecmTwo = EntityCapsManager.getInstanceFor(environment.conTwo);
         sdmOne = ServiceDiscoveryManager.getInstanceFor(environment.conOne);
@@ -124,21 +123,22 @@ public class EntityCapsTest extends AbstractSmackIntegrationTest {
 
     /**
      * Test if entity caps actually prevent a disco info request and reply.
-     * 
+     *
      * @throws XMPPException
-     * @throws InterruptedException 
-     * @throws NotConnectedException 
-     * @throws NoResponseException 
-     * 
+     * @throws InterruptedException
+     * @throws NotConnectedException
+     * @throws NoResponseException
+     *
      */
     @SmackIntegrationTest
     public void testPreventDiscoInfo() throws Exception {
         final String dummyFeature = getNewDummyFeature();
+        final AtomicBoolean discoInfoSend = new AtomicBoolean();
         conOne.addStanzaSendingListener(new StanzaListener() {
 
             @Override
             public void processStanza(Stanza stanza) {
-                discoInfoSend = true;
+                discoInfoSend.set(true);
             }
 
         }, new AndFilter(new StanzaTypeFilter(DiscoverInfo.class), IQTypeFilter.GET));
@@ -168,14 +168,14 @@ public class EntityCapsTest extends AbstractSmackIntegrationTest {
         // discover that
         DiscoverInfo info = sdmOne.discoverInfo(conTwo.getUser());
         // that discovery should cause a disco#info
-        assertTrue(discoInfoSend);
-        assertTrue(info.containsFeature(dummyFeature));
-        discoInfoSend = false;
+        assertTrue(discoInfoSend.get());
+        assertTrue("The info response '" + info + "' does not contain the expected feature '" + dummyFeature + '\'', info.containsFeature(dummyFeature));
+        discoInfoSend.set(false);
 
         // discover that
         info = sdmOne.discoverInfo(conTwo.getUser());
         // that discovery shouldn't cause a disco#info
-        assertFalse(discoInfoSend);
+        assertFalse(discoInfoSend.get());
         assertTrue(info.containsFeature(dummyFeature));
     }
 
@@ -217,7 +217,7 @@ public class EntityCapsTest extends AbstractSmackIntegrationTest {
         DiscoverInfo entityInfo = EntityCapsManager.CAPS_CACHE.lookup(u1ver);
         assertNotNull(entityInfo);
 
-        assertEquals(info.toXML(null), entityInfo.toXML(null));
+        assertEquals(info.toXML().toString(), entityInfo.toXML().toString());
     }
 
     private static void dropWholeEntityCapsCache() {

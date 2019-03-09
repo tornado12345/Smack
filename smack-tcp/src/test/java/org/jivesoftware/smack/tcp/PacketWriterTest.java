@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2014 Florian Schmaus
+ * Copyright 2014-2019 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,21 +39,19 @@ public class PacketWriterTest {
      * {@link PacketWriter#QUEUE_SIZE} and that
      * {@link PacketWriter#sendStanza(org.jivesoftware.smack.tcp.packet.Packet)} does unblock after the
      * interrupt.
-     * 
+     *
      * @throws InterruptedException
      * @throws BrokenBarrierException
-     * @throws NotConnectedException 
-     * @throws XmppStringprepException 
+     * @throws NotConnectedException
+     * @throws XmppStringprepException
      */
     @SuppressWarnings("javadoc")
     @Test
     public void shouldBlockAndUnblockTest() throws InterruptedException, BrokenBarrierException, NotConnectedException, XmppStringprepException {
         XMPPTCPConnection connection = new XMPPTCPConnection("user", "pass", "example.org");
-        final PacketWriter pw = connection.new PacketWriter();
-        connection.packetWriter = pw;
-        connection.packetReader = connection.new PacketReader();
+        final PacketWriter pw = connection.packetWriter;
         connection.setWriter(new BlockingStringWriter());
-        pw.init();
+        connection.packetWriter.init();
 
         for (int i = 0; i < XMPPTCPConnection.PacketWriter.QUEUE_SIZE; i++) {
             pw.sendStreamElement(new Message());

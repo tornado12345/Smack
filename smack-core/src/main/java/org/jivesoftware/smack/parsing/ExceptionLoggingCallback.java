@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2013-2015 Florian Schmaus.
+ * Copyright 2013-2019 Florian Schmaus.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,15 +24,15 @@ import org.jivesoftware.smack.UnparseableStanza;
 
 /**
  * Simple parsing exception callback that only logs the encountered parsing exception to java util logging.
- * 
+ *
  * @author Florian Schmaus
- * 
+ *
  */
 public class ExceptionLoggingCallback implements ParsingExceptionCallback {
     private static final Logger LOGGER = Logger.getLogger(ExceptionLoggingCallback.class.getName());
 
     @Override
-    public void handleUnparsableStanza(UnparseableStanza unparsed) throws Exception {
+    public void handleUnparsableStanza(UnparseableStanza unparsed) {
         LOGGER.log(Level.SEVERE, "Smack message parsing exception. Content: '" + unparsed.getContent() + "'", unparsed.getParsingException());
     }
 }

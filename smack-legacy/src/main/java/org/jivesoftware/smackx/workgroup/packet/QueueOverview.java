@@ -22,8 +22,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.XmlEnvironment;
+import org.jivesoftware.smack.parsing.SmackParsingException;
+import org.jivesoftware.smack.parsing.SmackParsingException.SmackTextParseException;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 
 import org.jivesoftware.smackx.workgroup.agent.WorkgroupQueue;
@@ -101,7 +103,7 @@ public class QueueOverview implements ExtensionElement {
     }
 
     @Override
-    public String toXML (String enclosingNamespace) {
+    public String toXML(XmlEnvironment enclosingEnvironment) {
         StringBuilder buf = new StringBuilder();
         buf.append('<').append(ELEMENT_NAME).append(" xmlns=\"").append(NAMESPACE).append("\">");
 
@@ -126,15 +128,15 @@ public class QueueOverview implements ExtensionElement {
 
         @Override
         public QueueOverview parse(XmlPullParser parser,
-                        int initialDepth) throws XmlPullParserException,
-                        IOException, SmackException {
+                        int initialDepth, XmlEnvironment xmlEnvironment) throws XmlPullParserException,
+                        IOException, SmackTextParseException {
             int eventType = parser.getEventType();
-            QueueOverview queueOverview = new QueueOverview();            
+            QueueOverview queueOverview = new QueueOverview();
             SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
 
             eventType = parser.next();
-            while ((eventType != XmlPullParser.END_TAG)
-                         || (!ELEMENT_NAME.equals(parser.getName()))) {
+            while (eventType != XmlPullParser.END_TAG
+                         || !ELEMENT_NAME.equals(parser.getName())) {
                 if ("count".equals(parser.getName())) {
                     queueOverview.setUserCount(Integer.parseInt(parser.nextText()));
                 }
@@ -143,9 +145,9 @@ public class QueueOverview implements ExtensionElement {
                 }
                 else if ("oldest".equals(parser.getName())) {
                     try {
-                        queueOverview.setOldestEntry((dateFormat.parse(parser.nextText())));
+                        queueOverview.setOldestEntry(dateFormat.parse(parser.nextText()));
                     } catch (ParseException e) {
-                        throw new SmackException(e);
+                        throw new SmackParsingException.SmackTextParseException(e);
                     }
                 }
                 else if ("status".equals(parser.getName())) {

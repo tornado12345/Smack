@@ -38,7 +38,7 @@ public final class StoreHint extends MessageProcessingHint {
     }
 
     @Override
-    public String toXML(String enclosingNamespace) {
+    public String toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
         return '<' + ELEMENT + " xmlns='" + NAMESPACE + "'/>";
     }
 
@@ -56,6 +56,6 @@ public final class StoreHint extends MessageProcessingHint {
     }
 
     public static void set(Message message) {
-        message.addExtension(INSTANCE);
+        message.overrideExtension(INSTANCE);
     }
 }

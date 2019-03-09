@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.IQProvider;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -126,7 +127,7 @@ public class ChatSettings extends IQ {
     public static class InternalProvider extends IQProvider<ChatSettings> {
 
         @Override
-        public ChatSettings parse(XmlPullParser parser, int initialDepth) throws XmlPullParserException, IOException {
+        public ChatSettings parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment) throws XmlPullParserException, IOException {
             if (parser.getEventType() != XmlPullParser.START_TAG) {
                 throw new IllegalStateException("Parser not in proper position, or bad XML.");
             }
@@ -136,7 +137,7 @@ public class ChatSettings extends IQ {
             boolean done = false;
             while (!done) {
                 int eventType = parser.next();
-                if ((eventType == XmlPullParser.START_TAG) && ("chat-setting".equals(parser.getName()))) {
+                if (eventType == XmlPullParser.START_TAG && "chat-setting".equals(parser.getName())) {
                     chatSettings.addSetting(parseChatSetting(parser));
 
                 }
@@ -156,13 +157,13 @@ public class ChatSettings extends IQ {
 
             while (!done) {
                 int eventType = parser.next();
-                if ((eventType == XmlPullParser.START_TAG) && ("key".equals(parser.getName()))) {
+                if (eventType == XmlPullParser.START_TAG && "key".equals(parser.getName())) {
                     key = parser.nextText();
                 }
-                else if ((eventType == XmlPullParser.START_TAG) && ("value".equals(parser.getName()))) {
+                else if (eventType == XmlPullParser.START_TAG && "value".equals(parser.getName())) {
                     value = parser.nextText();
                 }
-                else if ((eventType == XmlPullParser.START_TAG) && ("type".equals(parser.getName()))) {
+                else if (eventType == XmlPullParser.START_TAG && "type".equals(parser.getName())) {
                     type = Integer.parseInt(parser.nextText());
                 }
                 else if (eventType == XmlPullParser.END_TAG && "chat-setting".equals(parser.getName())) {

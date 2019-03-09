@@ -37,7 +37,7 @@ import org.jxmpp.jid.Jid;
 /**
  * Negotiates a SOCKS5 Bytestream to be used for file transfers. The implementation is based on the
  * {@link Socks5BytestreamManager} and the {@link Socks5BytestreamRequest}.
- * 
+ *
  * @author Henning Staib
  * @see <a href="http://xmpp.org/extensions/xep-0065.html">XEP-0065: SOCKS5 Bytestreams</a>
  */
@@ -56,10 +56,10 @@ public class Socks5TransferNegotiator extends StreamNegotiator {
             return this.manager.establishSession(target, streamID).getOutputStream();
         }
         catch (IOException e) {
-            throw new SmackException("error establishing SOCKS5 Bytestream", e);
+            throw new SmackException.SmackWrappedException("error establishing SOCKS5 Bytestream", e);
         }
         catch (InterruptedException e) {
-            throw new SmackException("error establishing SOCKS5 Bytestream", e);
+            throw new SmackException.SmackWrappedException("error establishing SOCKS5 Bytestream", e);
         }
     }
 
@@ -109,7 +109,7 @@ public class Socks5TransferNegotiator extends StreamNegotiator {
             return stream;
         }
         catch (IOException e) {
-            throw new SmackException("Error establishing input stream", e);
+            throw new SmackException.SmackWrappedException("Error establishing input stream", e);
         }
     }
 

@@ -18,6 +18,7 @@
 package org.jivesoftware.smack;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.KeyStore;
 import java.util.Arrays;
 import java.util.Collection;
@@ -44,7 +45,8 @@ import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.impl.JidCreate;
 import org.jxmpp.jid.parts.Resourcepart;
 import org.jxmpp.stringprep.XmppStringprepException;
-import org.minidns.dnsname.DNSName;
+import org.minidns.dnsname.DnsName;
+import org.minidns.util.InetAddressUtil;
 
 /**
  * Configuration to use while establishing the connection to the server.
@@ -67,7 +69,7 @@ public abstract class ConnectionConfiguration {
     protected final DomainBareJid xmppServiceDomain;
 
     protected final InetAddress hostAddress;
-    protected final DNSName host;
+    protected final DnsName host;
     protected final int port;
 
     private final String keystorePath;
@@ -107,12 +109,12 @@ public abstract class ConnectionConfiguration {
     private final X509TrustManager customX509TrustManager;
 
     /**
-     * 
+     *
      */
     private final String[] enabledSSLProtocols;
 
     /**
-     * 
+     *
      */
     private final String[] enabledSSLCiphers;
 
@@ -124,6 +126,8 @@ public abstract class ConnectionConfiguration {
     protected final boolean allowNullOrEmptyUsername;
 
     private final Set<String> enabledSaslMechanisms;
+
+    private final boolean compressionEnabled;
 
     protected ConnectionConfiguration(Builder<?,?> builder) {
         authzid = builder.authzid;
@@ -162,6 +166,8 @@ public abstract class ConnectionConfiguration {
         allowNullOrEmptyUsername = builder.allowEmptyOrNullUsername;
         enabledSaslMechanisms = builder.enabledSaslMechanisms;
 
+        compressionEnabled = builder.compressionEnabled;
+
         // If the enabledSaslmechanisms are set, then they must not be empty
         assert (enabledSaslMechanisms != null ? !enabledSaslMechanisms.isEmpty() : true);
 
@@ -169,6 +175,14 @@ public abstract class ConnectionConfiguration {
             throw new IllegalStateException("You can not use a custom SSL context with DNSSEC enabled");
         }
 
+    }
+
+    DnsName getHost() {
+        return host;
+    }
+
+    InetAddress getHostAddress() {
+        return hostAddress;
     }
 
     /**
@@ -210,7 +224,7 @@ public abstract class ConnectionConfiguration {
     }
 
     /**
-     * Retuns the path to the keystore file. The key store file contains the 
+     * Retuns the path to the keystore file. The key store file contains the
      * certificates that may be used to authenticate the client to the server,
      * in the event the server requests or requires it.
      *
@@ -271,7 +285,7 @@ public abstract class ConnectionConfiguration {
      * Returns the configured HostnameVerifier of this ConnectionConfiguration or the Smack default
      * HostnameVerifier configured with
      * {@link SmackConfiguration#setDefaultHostnameVerifier(HostnameVerifier)}.
-     * 
+     *
      * @return a configured HostnameVerifier or <code>null</code>
      */
     public HostnameVerifier getHostnameVerifier() {
@@ -305,7 +319,7 @@ public abstract class ConnectionConfiguration {
     /**
      * Returns the socket factory used to create new xmppConnection sockets.
      * This is useful when connecting through SOCKS5 proxies.
-     * 
+     *
      * @return socketFactory used to create new sockets.
      */
     public SocketFactory getSocketFactory() {
@@ -413,7 +427,7 @@ public abstract class ConnectionConfiguration {
 
     /**
      * Returns the optional XMPP address to be requested as the SASL authorization identity.
-     * 
+     *
      * @return the authorization identifier.
      * @see <a href="http://tools.ietf.org/html/rfc6120#section-6.3.8">RFC 6120 § 6.3.8. Authorization Identity</a>
      * @since 4.2
@@ -440,8 +454,7 @@ public abstract class ConnectionConfiguration {
      * @return true if the connection is going to use stream compression.
      */
     public boolean isCompressionEnabled() {
-        // Compression for non-TCP connections is always disabled
-        return false;
+        return compressionEnabled;
     }
 
     /**
@@ -507,12 +520,13 @@ public abstract class ConnectionConfiguration {
         private SocketFactory socketFactory;
         private DomainBareJid xmppServiceDomain;
         private InetAddress hostAddress;
-        private DNSName host;
+        private DnsName host;
         private int port = 5222;
         private boolean allowEmptyOrNullUsername = false;
         private boolean saslMechanismsSealed;
         private Set<String> enabledSaslMechanisms;
         private X509TrustManager customX509TrustManager;
+        private boolean compressionEnabled = false;
 
         protected Builder() {
             if (SmackConfiguration.DEBUG) {
@@ -625,7 +639,7 @@ public abstract class ConnectionConfiguration {
          * @return a reference to this builder.
          */
         public B setHost(String host) {
-            DNSName hostDnsName = DNSName.from(host);
+            DnsName hostDnsName = DnsName.from(host);
             return setHost(hostDnsName);
         }
 
@@ -637,8 +651,35 @@ public abstract class ConnectionConfiguration {
          * @param host the DNS name of the host providing the XMPP service.
          * @return a reference to this builder.
          */
-        public B setHost(DNSName host) {
+        public B setHost(DnsName host) {
             this.host = host;
+            return getThis();
+        }
+
+        /**
+         * Set the host to connect to by either its fully qualified domain name (FQDN) or its IP.
+         *
+         * @param fqdnOrIp a CharSequence either representing the FQDN or the IP of the host.
+         * @return a reference to this builder.
+         * @see #setHost(DnsName)
+         * @see #setHostAddress(InetAddress)
+         * @since 4.3.2
+         */
+        public B setHostAddressByNameOrIp(CharSequence fqdnOrIp) {
+            String fqdnOrIpString = fqdnOrIp.toString();
+            if (InetAddressUtil.isIpAddress(fqdnOrIp)) {
+                InetAddress hostInetAddress;
+                try {
+                    hostInetAddress = InetAddress.getByName(fqdnOrIpString);
+                }
+                catch (UnknownHostException e) {
+                    // Should never happen.
+                    throw new AssertionError(e);
+                }
+                setHostAddress(hostInetAddress);
+            } else {
+                setHost(fqdnOrIpString);
+            }
             return getThis();
         }
 
@@ -689,7 +730,7 @@ public abstract class ConnectionConfiguration {
         }
 
         /**
-         * Sets the path to the keystore file. The key store file contains the 
+         * Sets the path to the keystore file. The key store file contains the
          * certificates that may be used to authenticate the client to the server,
          * in the event the server requests or requires it.
          *
@@ -752,8 +793,8 @@ public abstract class ConnectionConfiguration {
 
         /**
          * Set the enabled SSL/TLS ciphers.
-         * 
-         * @param enabledSSLCiphers the enabled SSL/TLS ciphers 
+         *
+         * @param enabledSSLCiphers the enabled SSL/TLS ciphers
          * @return a reference to this builder.
          */
         public B setEnabledSSLCiphers(String[] enabledSSLCiphers) {
@@ -764,7 +805,7 @@ public abstract class ConnectionConfiguration {
         /**
          * Set the HostnameVerifier used to verify the hostname of SSLSockets used by XMPP connections
          * created with this ConnectionConfiguration.
-         * 
+         *
          * @param verifier
          * @return a reference to this builder.
          */
@@ -795,7 +836,7 @@ public abstract class ConnectionConfiguration {
 
         /**
          * Set the Smack debugger factory used to construct Smack debuggers.
-         * 
+         *
          * @param debuggerFactory the Smack debugger factory.
          * @return a reference to this builder.
          */
@@ -832,7 +873,7 @@ public abstract class ConnectionConfiguration {
          *
          * Some SASL mechanisms (e.g. SASL External) may also signal the username (as "authorization identity"), in
          * which case Smack should not throw an IllegalArgumentException when the username is not set.
-         * 
+         *
          * @return a reference to this builder.
          */
         public B allowEmptyOrNullUsernames() {
@@ -843,7 +884,7 @@ public abstract class ConnectionConfiguration {
         /**
          * Perform anonymous authentication using SASL ANONYMOUS. Your XMPP service must support this authentication
          * mechanism. This method also calls {@link #addEnabledSaslMechanism(String)} with "ANONYMOUS" as argument.
-         * 
+         *
          * @return a reference to this builder.
          */
         public B performSaslAnonymousAuthentication() {
@@ -894,15 +935,15 @@ public abstract class ConnectionConfiguration {
          * @return a reference to this builder.
          */
         public B addEnabledSaslMechanism(String saslMechanism) {
-            return addEnabledSaslMechanism(Arrays.asList(StringUtils.requireNotNullOrEmpty(saslMechanism,
-                            "saslMechanism must not be null or empty")));
+            return addEnabledSaslMechanism(Arrays.asList(StringUtils.requireNotNullNorEmpty(saslMechanism,
+                            "saslMechanism must not be null nor empty")));
         }
 
         /**
          * Enable the given SASL mechanisms. If you never add a mechanism to the set of enabled ones, <b>all mechanisms
          * known to Smack</b> will be enabled. Only explicitly enable particular SASL mechanisms if you want to limit
          * the used mechanisms to the enabled ones.
-         * 
+         *
          * @param saslMechanisms a collection of names of mechanisms to enable.
          * @return a reference to this builder.
          */
@@ -935,7 +976,7 @@ public abstract class ConnectionConfiguration {
          * service domain, which should typically match.
          * Calling this will also SASL CRAM, since this mechanism does not support authzid.
          * </p>
-         * 
+         *
          * @param authzid The BareJid to be requested as the authorization identifier.
          * @return a reference to this builder.
          * @see <a href="http://tools.ietf.org/html/rfc6120#section-6.3.8">RFC 6120 § 6.3.8. Authorization Identity</a>
@@ -945,6 +986,21 @@ public abstract class ConnectionConfiguration {
             this.authzid = authzid;
             return getThis();
         }
+
+        /**
+         * Sets if the connection is going to use compression (default false).
+         *
+         * Compression is only activated if the server offers compression. With compression network
+         * traffic can be reduced up to 90%. By default compression is disabled.
+         *
+         * @param compressionEnabled if the connection is going to use compression on the HTTP level.
+         * @return a reference to this object.
+         */
+        public B setCompressionEnabled(boolean compressionEnabled) {
+            this.compressionEnabled = compressionEnabled;
+            return getThis();
+        }
+
 
         public abstract C build();
 

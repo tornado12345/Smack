@@ -47,8 +47,8 @@ public class StreamManagement {
         }
 
         @Override
-        public CharSequence toXML(String enclosingNamespace) {
-            XmlStringBuilder xml = new XmlStringBuilder(this);
+        public CharSequence toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
+            XmlStringBuilder xml = new XmlStringBuilder(this, enclosingNamespace);
             xml.closeEmptyElement();
             return xml;
         }
@@ -113,8 +113,8 @@ public class StreamManagement {
         }
 
         @Override
-        public CharSequence toXML(String enclosingNamespace) {
-            XmlStringBuilder xml = new XmlStringBuilder(this);
+        public CharSequence toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
+            XmlStringBuilder xml = new XmlStringBuilder(this, enclosingNamespace);
             maybeAddResumeAttributeTo(xml);
             maybeAddMaxAttributeTo(xml);
             xml.closeEmptyElement();
@@ -174,8 +174,8 @@ public class StreamManagement {
         }
 
         @Override
-        public CharSequence toXML(String enclosingNamespace) {
-            XmlStringBuilder xml = new XmlStringBuilder(this);
+        public CharSequence toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
+            XmlStringBuilder xml = new XmlStringBuilder(this, enclosingNamespace);
             xml.optAttribute("id", id);
             maybeAddResumeAttributeTo(xml);
             xml.optAttribute("location", location);
@@ -211,7 +211,7 @@ public class StreamManagement {
             }
         }
 
-        public StanzaError.Condition getXMPPErrorCondition() {
+        public StanzaError.Condition getStanzaErrorCondition() {
             return condition;
         }
 
@@ -220,15 +220,15 @@ public class StreamManagement {
         }
 
         @Override
-        public CharSequence toXML(String enclosingNamespace) {
-            XmlStringBuilder xml = new XmlStringBuilder(this);
+        public CharSequence toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
+            XmlStringBuilder xml = new XmlStringBuilder(this, enclosingNamespace);
             if (condition == null && textElements.isEmpty()) {
                 xml.closeEmptyElement();
             } else {
                 if (condition != null) {
                     xml.rightAngleBracket();
                     xml.append(condition.toString());
-                    xml.xmlnsAttribute(StanzaError.NAMESPACE);
+                    xml.xmlnsAttribute(StanzaError.ERROR_CONDITION_AND_TEXT_NAMESPACE);
                     xml.closeEmptyElement();
                 }
                 xml.append(textElements);
@@ -273,8 +273,8 @@ public class StreamManagement {
         }
 
         @Override
-        public final XmlStringBuilder toXML(String enclosingNamespace) {
-            XmlStringBuilder xml = new XmlStringBuilder(this);
+        public final XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
+            XmlStringBuilder xml = new XmlStringBuilder(this, enclosingNamespace);
             xml.attribute("h", Long.toString(handledCount));
             xml.attribute("previd", previd);
             xml.closeEmptyElement();
@@ -322,8 +322,8 @@ public class StreamManagement {
         }
 
         @Override
-        public CharSequence toXML(String enclosingNamespace) {
-            XmlStringBuilder xml = new XmlStringBuilder(this);
+        public CharSequence toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
+            XmlStringBuilder xml = new XmlStringBuilder(this, enclosingNamespace);
             xml.attribute("h", Long.toString(handledCount));
             xml.closeEmptyElement();
             return xml;
@@ -348,7 +348,7 @@ public class StreamManagement {
         }
 
         @Override
-        public CharSequence toXML(String enclosingNamespace) {
+        public CharSequence toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
             return '<' + ELEMENT + " xmlns='" + NAMESPACE + "'/>";
         }
 

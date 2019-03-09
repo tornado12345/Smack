@@ -27,22 +27,25 @@ import static org.jivesoftware.smackx.omemo.element.OmemoBundleElement.SIGNED_PR
 import static org.xmlpull.v1.XmlPullParser.END_TAG;
 import static org.xmlpull.v1.XmlPullParser.START_TAG;
 
+import java.io.IOException;
 import java.util.HashMap;
 
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 
-import org.jivesoftware.smackx.omemo.element.OmemoBundleVAxolotlElement;
+import org.jivesoftware.smackx.omemo.element.OmemoBundleElement_VAxolotl;
 
 import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
 
 /**
  * Smack ExtensionProvider that parses OMEMO bundle element into OmemoBundleElement objects.
  *
  * @author Paul Schaub
  */
-public class OmemoBundleVAxolotlProvider extends ExtensionElementProvider<OmemoBundleVAxolotlElement> {
+public class OmemoBundleVAxolotlProvider extends ExtensionElementProvider<OmemoBundleElement_VAxolotl> {
     @Override
-    public OmemoBundleVAxolotlElement parse(XmlPullParser parser, int initialDepth) throws Exception {
+    public OmemoBundleElement_VAxolotl parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment) throws XmlPullParserException, IOException {
         boolean stop = false;
         boolean inPreKeys = false;
 
@@ -96,6 +99,6 @@ public class OmemoBundleVAxolotlProvider extends ExtensionElementProvider<OmemoB
                     break;
             }
         }
-        return new OmemoBundleVAxolotlElement(signedPreKeyId, signedPreKey, signedPreKeySignature, identityKey, preKeys);
+        return new OmemoBundleElement_VAxolotl(signedPreKeyId, signedPreKey, signedPreKeySignature, identityKey, preKeys);
     }
 }

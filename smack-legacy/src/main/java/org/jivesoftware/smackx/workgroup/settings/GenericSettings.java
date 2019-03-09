@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.util.StringUtils;
 
@@ -80,7 +81,7 @@ public class GenericSettings extends IQ {
     public static class InternalProvider extends IQProvider<GenericSettings> {
 
         @Override
-        public GenericSettings parse(XmlPullParser parser, int initialDepth) throws XmlPullParserException, IOException {
+        public GenericSettings parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment) throws XmlPullParserException, IOException {
             GenericSettings setting = new GenericSettings();
 
             boolean done = false;
@@ -88,7 +89,7 @@ public class GenericSettings extends IQ {
 
             while (!done) {
                 int eventType = parser.next();
-                if ((eventType == XmlPullParser.START_TAG) && ("entry".equals(parser.getName()))) {
+                if (eventType == XmlPullParser.START_TAG && "entry".equals(parser.getName())) {
                     eventType = parser.next();
                     String name = parser.nextText();
                     eventType = parser.next();

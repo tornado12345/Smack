@@ -19,8 +19,10 @@ package org.jivesoftware.smack.parsing;
 import static org.jivesoftware.smack.test.util.CharSequenceEquals.equalsCharSequence;
 import static org.junit.Assert.assertThat;
 
-import org.jivesoftware.smack.SmackException;
+import java.io.IOException;
+
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.jivesoftware.smack.provider.ProviderManager;
 import org.jivesoftware.smack.test.util.TestUtils;
@@ -53,7 +55,7 @@ public class ParsingExceptionTest {
 
     @Test
     public void consumeUnparsedInput() throws Exception {
-        final String MESSAGE_EXCEPTION_ELEMENT = 
+        final String MESSAGE_EXCEPTION_ELEMENT =
                         "<" + ThrowException.ELEMENT + " xmlns='" + ThrowException.NAMESPACE + "'>" +
                             "<nothingInHere>" +
                             "</nothingInHere>" +
@@ -78,8 +80,8 @@ public class ParsingExceptionTest {
         public static final String NAMESPACE = "http://smack.jivesoftware.org/exception";
 
         @Override
-        public ExtensionElement parse(XmlPullParser parser, int initialDepth) throws SmackException {
-            throw new SmackException("Test Exception");
+        public ExtensionElement parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment) throws IOException {
+            throw new IOException("Test Exception");
         }
 
     }

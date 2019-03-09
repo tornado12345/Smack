@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2016 Florian Schmaus
+ * Copyright 2016-2019 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,14 @@ import java.security.cert.CertificateEncodingException;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 
-import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smack.SmackException.SmackSaslException;
 import org.jivesoftware.smack.util.TLSUtils;
 
 /**
  * SCRAM-X-PLUS implementation. Due limitations of the Java API, this mechanism only supports the 'tls-server-end-point'
  * channel binding type. But on the other hand, the other relevant channel binding type 'tls-unique' has some flaws (see
  * 3SHAKE, RFC 7627).
- * 
+ *
  * @author Florian Schmaus
  */
 public abstract class ScramPlusMechanism extends ScramMechanism {
@@ -48,13 +48,13 @@ public abstract class ScramPlusMechanism extends ScramMechanism {
     }
 
     @Override
-    protected byte[] getChannelBindingData() throws SmackException {
+    protected byte[] getChannelBindingData() throws SmackSaslException {
         byte[] cbData;
         try {
             cbData = TLSUtils.getChannelBindingTlsServerEndPoint(sslSession);
         }
         catch (SSLPeerUnverifiedException | CertificateEncodingException | NoSuchAlgorithmException e) {
-            throw new SmackException(e);
+            throw new SmackSaslException(e);
         }
         return cbData;
     }

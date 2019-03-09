@@ -23,13 +23,13 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 import org.jivesoftware.smack.Manager;
-import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.StanzaError.Condition;
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.IQProvider;
 
 import org.jivesoftware.smackx.iqprivate.packet.DefaultPrivateData;
@@ -153,10 +153,10 @@ public final class PrivateDataManager extends Manager {
      * @param elementName the element name.
      * @param namespace the namespace.
      * @return the private data.
-     * @throws XMPPErrorException 
-     * @throws NoResponseException 
-     * @throws NotConnectedException 
-     * @throws InterruptedException 
+     * @throws XMPPErrorException
+     * @throws NoResponseException
+     * @throws NotConnectedException
+     * @throws InterruptedException
      */
     public PrivateData getPrivateData(final String elementName, final String namespace) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         // Create an IQ packet to get the private data.
@@ -173,10 +173,10 @@ public final class PrivateDataManager extends Manager {
      * element name and namespace, then the new private data will overwrite the old value.
      *
      * @param privateData the private data.
-     * @throws XMPPErrorException 
-     * @throws NoResponseException 
-     * @throws NotConnectedException 
-     * @throws InterruptedException 
+     * @throws XMPPErrorException
+     * @throws NoResponseException
+     * @throws NotConnectedException
+     * @throws InterruptedException
      */
     public void setPrivateData(final PrivateData privateData) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         // Create an IQ packet to set the private data.
@@ -221,7 +221,7 @@ public final class PrivateDataManager extends Manager {
             return true;
         }
         catch (XMPPErrorException e) {
-            if (e.getXMPPError().getCondition() == Condition.service_unavailable) {
+            if (e.getStanzaError().getCondition() == Condition.service_unavailable) {
                 return false;
             }
             else {
@@ -236,8 +236,8 @@ public final class PrivateDataManager extends Manager {
     public static class PrivateDataIQProvider extends IQProvider<PrivateDataIQ> {
 
         @Override
-        public PrivateDataIQ parse(XmlPullParser parser, int initialDepth)
-                        throws XmlPullParserException, IOException, SmackException {
+        public PrivateDataIQ parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment)
+                        throws XmlPullParserException, IOException {
             PrivateData privateData = null;
             boolean done = false;
             while (!done) {

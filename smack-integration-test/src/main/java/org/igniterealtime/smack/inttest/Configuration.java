@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2015-2017 Florian Schmaus
+ * Copyright 2015-2018 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,14 +32,18 @@ import java.util.logging.Logger;
 import javax.net.ssl.SSLContext;
 
 import org.jivesoftware.smack.ConnectionConfiguration.SecurityMode;
+import org.jivesoftware.smack.debugger.ConsoleDebugger;
 import org.jivesoftware.smack.util.Objects;
 import org.jivesoftware.smack.util.StringUtils;
+
+import org.jivesoftware.smackx.debugger.EnhancedDebugger;
 
 import eu.geekplace.javapinning.java7.Java7Pinning;
 import org.jxmpp.jid.DomainBareJid;
 import org.jxmpp.jid.impl.JidCreate;
 import org.jxmpp.stringprep.XmppStringprepException;
 
+// TODO: Rename to SinttestConfiguration.
 public final class Configuration {
 
     private static final Logger LOGGER = Logger.getLogger(Configuration.class.getName());
@@ -92,6 +96,8 @@ public final class Configuration {
 
     public final Set<String> testPackages;
 
+    public final ConnectionConfigurationBuilderApplier configurationApplier;
+
     private Configuration(DomainBareJid service, String serviceTlsPin, SecurityMode securityMode, int replyTimeout,
                     Debugger debugger, String accountOneUsername, String accountOnePassword, String accountTwoUsername,
                     String accountTwoPassword, String accountThreeUsername, String accountThreePassword, Set<String> enabledTests, Set<String> disabledTests,
@@ -126,6 +132,13 @@ public final class Configuration {
         this.adminAccountUsername = adminAccountUsername;
         this.adminAccountPassword = adminAccountPassword;
 
+        boolean accountOnePasswordSet = StringUtils.isNotEmpty(accountOnePassword);
+        if (accountOnePasswordSet != StringUtils.isNotEmpty(accountTwoPassword) ||
+                accountOnePasswordSet != StringUtils.isNotEmpty(accountThreePassword)) {
+            // Ensure the invariant that either all main accounts have a password set, or none.
+            throw new IllegalArgumentException();
+        }
+
         this.accountOneUsername = accountOneUsername;
         this.accountOnePassword = accountOnePassword;
         this.accountTwoUsername = accountTwoUsername;
@@ -135,6 +148,26 @@ public final class Configuration {
         this.enabledTests = enabledTests;
         this.disabledTests = disabledTests;
         this.testPackages = testPackages;
+
+        this.configurationApplier =  (builder) -> {
+            if (tlsContext != null) {
+                builder.setCustomSSLContext(tlsContext);
+            }
+            builder.setSecurityMode(securityMode);
+            builder.setXmppDomain(service);
+
+            switch (debugger) {
+            case enhanced:
+                builder.setDebuggerFactory(EnhancedDebugger.Factory.INSTANCE);
+                break;
+            case console:
+                builder.setDebuggerFactory(ConsoleDebugger.Factory.INSTANCE);
+                break;
+            case none:
+                // Nothing to do :).
+                break;
+            }
+        };
     }
 
     public boolean isAccountRegistrationPossible() {
@@ -218,19 +251,19 @@ public final class Configuration {
         }
 
         public Builder setAdminAccountUsernameAndPassword(String adminAccountUsername, String adminAccountPassword) {
-            this.adminAccountUsername = StringUtils.requireNotNullOrEmpty(adminAccountUsername, "adminAccountUsername must not be null or empty");
-            this.adminAccountPassword = StringUtils.requireNotNullOrEmpty(adminAccountPassword, "adminAccountPassword must no be null or empty");
+            this.adminAccountUsername = StringUtils.requireNotNullNorEmpty(adminAccountUsername, "adminAccountUsername must not be null nor empty");
+            this.adminAccountPassword = StringUtils.requireNotNullNorEmpty(adminAccountPassword, "adminAccountPassword must no be null nor empty");
             return this;
         }
 
         public Builder setUsernamesAndPassword(String accountOneUsername, String accountOnePassword,
                         String accountTwoUsername, String accountTwoPassword, String accountThreeUsername, String accountThreePassword) {
-            this.accountOneUsername = StringUtils.requireNotNullOrEmpty(accountOneUsername, "accountOneUsername must not be null or empty");
-            this.accountOnePassword = StringUtils.requireNotNullOrEmpty(accountOnePassword, "accountOnePassword must not be null or empty");
-            this.accountTwoUsername = StringUtils.requireNotNullOrEmpty(accountTwoUsername, "accountTwoUsername must not be null or empty");
-            this.accountTwoPassword = StringUtils.requireNotNullOrEmpty(accountTwoPassword, "accountTwoPasswordmust not be null or empty");
-            this.accountThreeUsername = StringUtils.requireNotNullOrEmpty(accountThreeUsername, "accountThreeUsername must not be null or empty");
-            this.accountThreePassword = StringUtils.requireNotNullOrEmpty(accountThreePassword, "accountThreePassword must not be null or empty");
+            this.accountOneUsername = StringUtils.requireNotNullNorEmpty(accountOneUsername, "accountOneUsername must not be null nor empty");
+            this.accountOnePassword = StringUtils.requireNotNullNorEmpty(accountOnePassword, "accountOnePassword must not be null nor empty");
+            this.accountTwoUsername = StringUtils.requireNotNullNorEmpty(accountTwoUsername, "accountTwoUsername must not be null nor empty");
+            this.accountTwoPassword = StringUtils.requireNotNullNorEmpty(accountTwoPassword, "accountTwoPasswordmust not be null nor empty");
+            this.accountThreeUsername = StringUtils.requireNotNullNorEmpty(accountThreeUsername, "accountThreeUsername must not be null nor empty");
+            this.accountThreePassword = StringUtils.requireNotNullNorEmpty(accountThreePassword, "accountThreePassword must not be null nor empty");
             return this;
         }
 

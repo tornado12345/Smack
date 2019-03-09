@@ -17,16 +17,17 @@
 package org.jivesoftware.smackx.attention.packet;
 
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 
 import org.xmlpull.v1.XmlPullParser;
 
 /**
  * A PacketExtension that implements XEP-0224: Attention
- * 
+ *
  * This extension is expected to be added to message stanzas of type 'headline.'
  * Please refer to the XEP for more implementation guidelines.
- * 
+ *
  * @author Guus der Kinderen, guus.der.kinderen@gmail.com
  * @see <a
  *      href="http://xmpp.org/extensions/xep-0224.html">XEP-0224:&nbsp;Attention</a>
@@ -45,7 +46,7 @@ public class AttentionExtension implements ExtensionElement {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.jivesoftware.smack.packet.PacketExtension#getElementName()
      */
     @Override
@@ -55,7 +56,7 @@ public class AttentionExtension implements ExtensionElement {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.jivesoftware.smack.packet.PacketExtension#getNamespace()
      */
     @Override
@@ -65,11 +66,11 @@ public class AttentionExtension implements ExtensionElement {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.jivesoftware.smack.packet.PacketExtension#toXML()
      */
     @Override
-    public String toXML(String enclosingNamespace) {
+    public String toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
         final StringBuilder sb = new StringBuilder();
         sb.append('<').append(getElementName()).append(" xmlns=\"").append(
                 getNamespace()).append("\"/>");
@@ -81,13 +82,13 @@ public class AttentionExtension implements ExtensionElement {
      * Attention elements have no state/information other than the element name
      * and namespace, this implementation simply returns new instances of
      * {@link AttentionExtension}.
-     * 
+     *
      * @author Guus der Kinderen, guus.der.kinderen@gmail.com
 s     */
     public static class Provider extends ExtensionElementProvider<AttentionExtension> {
 
         @Override
-        public AttentionExtension parse(XmlPullParser parser, int initialDepth) {
+        public AttentionExtension parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment) {
             return new AttentionExtension();
         }
     }

@@ -17,7 +17,7 @@
 
 package org.jivesoftware.smack.packet;
 
-import static org.jivesoftware.smack.util.StringUtils.requireNotNullOrEmpty;
+import static org.jivesoftware.smack.util.StringUtils.requireNotNullNorEmpty;
 
 import java.util.Collection;
 import java.util.List;
@@ -122,7 +122,7 @@ public abstract class Stanza implements TopLevelStreamElement {
      */
     public void setStanzaId(String id) {
         if (id != null) {
-            requireNotNullOrEmpty(id, "id must either be null or not the empty String");
+            requireNotNullNorEmpty(id, "id must either be null or not the empty String");
         }
         this.id = id;
     }
@@ -151,7 +151,7 @@ public abstract class Stanza implements TopLevelStreamElement {
 
     /**
      * Set the stanza id if none is set.
-     * 
+     *
      * @return the stanza id.
      * @since 4.2
      */
@@ -324,8 +324,8 @@ public abstract class Stanza implements TopLevelStreamElement {
      * @since 4.1
      */
     public List<ExtensionElement> getExtensions(String elementName, String namespace) {
-        requireNotNullOrEmpty(elementName, "elementName must not be null or empty");
-        requireNotNullOrEmpty(namespace, "namespace must not be null or empty");
+        requireNotNullNorEmpty(elementName, "elementName must not be null nor empty");
+        requireNotNullNorEmpty(namespace, "namespace must not be null nor empty");
         String key = XmppStringUtils.generateKey(elementName, namespace);
         return packetExtensions.getAll(key);
     }
@@ -394,7 +394,10 @@ public abstract class Stanza implements TopLevelStreamElement {
     public ExtensionElement overrideExtension(ExtensionElement extension) {
         if (extension == null) return null;
         synchronized (packetExtensions) {
-            ExtensionElement removedExtension = removeExtension(extension);
+            // Note that we need to use removeExtension(String, String) here. If would use
+            // removeExtension(ExtensionElement) then we would remove based on the equality of ExtensionElement, which
+            // is not what we want in this case.
+            ExtensionElement removedExtension = removeExtension(extension.getElementName(), extension.getNamespace());
             addExtension(extension);
             return removedExtension;
         }
@@ -402,7 +405,7 @@ public abstract class Stanza implements TopLevelStreamElement {
 
     /**
      * Adds a collection of stanza extensions to the packet. Does nothing if extensions is null.
-     * 
+     *
      * @param extensions a collection of stanza extensions
      */
     public void addExtensions(Collection<ExtensionElement> extensions) {
@@ -434,7 +437,7 @@ public abstract class Stanza implements TopLevelStreamElement {
 
     /**
      * Check if a stanza extension with the given namespace exists.
-     * 
+     *
      * @param namespace
      * @return true if a stanza extension exists, false otherwise.
      */
@@ -470,7 +473,15 @@ public abstract class Stanza implements TopLevelStreamElement {
      * @return the removed stanza extension or null.
      */
     public ExtensionElement removeExtension(ExtensionElement extension)  {
-        return removeExtension(extension.getElementName(), extension.getNamespace());
+        String key = XmppStringUtils.generateKey(extension.getElementName(), extension.getNamespace());
+        synchronized (packetExtensions) {
+            List<ExtensionElement> list = packetExtensions.getAll(key);
+            boolean removed = list.remove(extension);
+            if (removed) {
+                return extension;
+            }
+        }
+        return null;
     }
 
     /**
@@ -480,24 +491,8 @@ public abstract class Stanza implements TopLevelStreamElement {
     public abstract String toString();
 
     /**
-     * Returns the extension sub-packets (including properties data) as an XML
-     * String, or the Empty String if there are no stanza extensions.
-     *
-     * @return the extension sub-packets as XML or the Empty String if there
-     * are no stanza extensions.
-     */
-    protected final XmlStringBuilder getExtensionsXML() {
-        XmlStringBuilder xml = new XmlStringBuilder();
-        // Add in all standard extension sub-packets.
-        for (ExtensionElement extension : getExtensions()) {
-            xml.append(extension.toXML(null));
-        }
-        return xml;
-    }
-
-    /**
      * Returns the default language used for all messages containing localized content.
-     * 
+     *
      * @return the default language
      */
     public static String getDefaultLanguage() {
@@ -507,13 +502,31 @@ public abstract class Stanza implements TopLevelStreamElement {
     /**
      * Add to, from, id and 'xml:lang' attributes
      *
-     * @param xml
+     * @param xml the {@link XmlStringBuilder}.
+     * @param enclosingXmlEnvironment the enclosing XML namespace.
+     * @return the XML environment for this stanza.
      */
-    protected void addCommonAttributes(XmlStringBuilder xml) {
+    protected XmlEnvironment addCommonAttributes(XmlStringBuilder xml, XmlEnvironment enclosingXmlEnvironment) {
+        String language = getLanguage();
+        String namespace = StreamOpen.CLIENT_NAMESPACE;
+        if (enclosingXmlEnvironment != null) {
+            String effectiveEnclosingNamespace = enclosingXmlEnvironment.getEffectiveNamespaceOrUse(namespace);
+            switch (effectiveEnclosingNamespace) {
+            case StreamOpen.CLIENT_NAMESPACE:
+            case StreamOpen.SERVER_NAMESPACE:
+                break;
+            default:
+                namespace = effectiveEnclosingNamespace;
+            }
+        }
+
+        xml.xmlnsAttribute(namespace);
         xml.optAttribute("to", getTo());
         xml.optAttribute("from", getFrom());
         xml.optAttribute("id", getStanzaId());
-        xml.xmllangAttribute(getLanguage());
+        xml.xmllangAttribute(language);
+
+        return new XmlEnvironment(namespace, language);
     }
 
     protected void logCommonAttributes(StringBuilder sb) {
@@ -533,10 +546,10 @@ public abstract class Stanza implements TopLevelStreamElement {
      *
      * @param xml the XmlStringBuilder to append the error to.
      */
-    protected void appendErrorIfExists(XmlStringBuilder xml) {
+    protected void appendErrorIfExists(XmlStringBuilder xml, XmlEnvironment enclosingXmlEnvironment) {
         StanzaError error = getError();
         if (error != null) {
-            xml.append(error.toXML());
+            xml.append(error.toXML(enclosingXmlEnvironment));
         }
     }
 }

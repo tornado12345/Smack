@@ -20,6 +20,7 @@ package org.jivesoftware.smackx.offline.packet;
 import java.io.IOException;
 
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -82,7 +83,7 @@ public class OfflineMessageInfo implements ExtensionElement {
     }
 
     @Override
-    public String toXML(String enclosingNamespace) {
+    public String toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
         StringBuilder buf = new StringBuilder();
         buf.append('<').append(getElementName()).append(" xmlns=\"").append(getNamespace()).append(
             "\">");
@@ -99,12 +100,12 @@ public class OfflineMessageInfo implements ExtensionElement {
          *
          * @param parser the XML parser, positioned at the starting element of the extension.
          * @return a PacketExtension.
-         * @throws IOException 
-         * @throws XmlPullParserException 
+         * @throws IOException
+         * @throws XmlPullParserException
          */
         @Override
         public OfflineMessageInfo parse(XmlPullParser parser,
-                        int initialDepth) throws XmlPullParserException,
+                        int initialDepth, XmlEnvironment xmlEnvironment) throws XmlPullParserException,
                         IOException {
             OfflineMessageInfo info = new OfflineMessageInfo();
             boolean done = false;

@@ -66,7 +66,6 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
     private String thread = null;
 
     private final Set<Subject> subjects = new HashSet<Subject>();
-    private final Set<Body> bodies = new HashSet<Body>();
 
     /**
      * Creates a new, "normal" message.
@@ -142,7 +141,6 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
         this.type = other.type;
         this.thread = other.thread;
         this.subjects.addAll(other.subjects);
-        this.bodies.addAll(other.bodies);
     }
 
     /**
@@ -197,7 +195,7 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
     private Subject getMessageSubject(String language) {
         language = determineLanguage(language);
         for (Subject subject : subjects) {
-            if (language.equals(subject.language)) {
+            if (Objects.equals(language, subject.language)) {
                 return subject;
             }
         }
@@ -222,7 +220,7 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
      */
     public void setSubject(String subject) {
         if (subject == null) {
-            removeSubject(""); // use empty string because #removeSubject(null) is ambiguous 
+            removeSubject(""); // use empty string because #removeSubject(null) is ambiguous
             return;
         }
         addSubject(null, subject);
@@ -296,7 +294,7 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
      * @return the body of the message.
      */
     public String getBody() {
-        return getBody(null);
+        return getBody(language);
     }
 
     /**
@@ -315,8 +313,8 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
 
     private Body getMessageBody(String language) {
         language = determineLanguage(language);
-        for (Body body : bodies) {
-            if (language.equals(body.language)) {
+        for (Body body : getBodies()) {
+            if (Objects.equals(language, body.language) || (language != null && language.equals(this.language) && body.language == null)) {
                 return body;
             }
         }
@@ -331,7 +329,13 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
      * @since 3.0.2
      */
     public Set<Body> getBodies() {
-        return Collections.unmodifiableSet(bodies);
+        List<ExtensionElement> bodiesList = getExtensions(Body.ELEMENT, Body.NAMESPACE);
+        Set<Body> resultSet = new HashSet<>(bodiesList.size());
+        for (ExtensionElement extensionElement : bodiesList) {
+            Body body = (Body) extensionElement;
+            resultSet.add(body);
+        }
+        return resultSet;
     }
 
     /**
@@ -375,8 +379,11 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
      */
     public Body addBody(String language, String body) {
         language = determineLanguage(language);
+
+        removeBody(language);
+
         Body messageBody = new Body(language, body);
-        bodies.add(messageBody);
+        addExtension(messageBody);
         return messageBody;
     }
 
@@ -388,9 +395,11 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
      */
     public boolean removeBody(String language) {
         language = determineLanguage(language);
-        for (Body body : bodies) {
-            if (language.equals(body.language)) {
-                return bodies.remove(body);
+        for (Body body : getBodies()) {
+            String bodyLanguage = body.getLanguage();
+            if (Objects.equals(bodyLanguage, language)) {
+                removeExtension(body);
+                return true;
             }
         }
         return false;
@@ -404,7 +413,8 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
      * @since 3.0.2
      */
     public boolean removeBody(Body body) {
-        return bodies.remove(body);
+        ExtensionElement removedElement = removeExtension(body);
+        return removedElement != null;
     }
 
     /**
@@ -416,7 +426,7 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
     public List<String> getBodyLanguages() {
         Body defaultBody = getMessageBody(null);
         List<String> languages = new ArrayList<String>();
-        for (Body body : bodies) {
+        for (Body body : getBodies()) {
             if (!body.equals(defaultBody)) {
                 languages.add(body.language);
             }
@@ -453,13 +463,7 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
         if (language == null && this.language != null) {
             return this.language;
         }
-        else if (language == null) {
-            return getDefaultLanguage();
-        }
-        else {
-            return language;
-        }
-
+        return language;
     }
 
     @Override
@@ -475,10 +479,10 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
     }
 
     @Override
-    public XmlStringBuilder toXML(String enclosingNamespace) {
-        XmlStringBuilder buf = new XmlStringBuilder();
+    public XmlStringBuilder toXML(XmlEnvironment enclosingXmlEnvironment) {
+        XmlStringBuilder buf = new XmlStringBuilder(enclosingXmlEnvironment);
         buf.halfOpenElement(ELEMENT);
-        addCommonAttributes(buf);
+        enclosingXmlEnvironment = addCommonAttributes(buf, enclosingXmlEnvironment);
         buf.optAttribute("type", type);
         buf.rightAngleBracket();
 
@@ -492,27 +496,17 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
             // Skip the default language
             if (subject.equals(defaultSubject))
                 continue;
-            buf.append(subject.toXML(null));
-        }
-        // Add the body in the default language
-        Body defaultBody = getMessageBody(null);
-        if (defaultBody != null) {
-            buf.element("body", defaultBody.message);
-        }
-        // Add the bodies in other languages
-        for (Body body : getBodies()) {
-            // Skip the default language
-            if (body.equals(defaultBody))
-                continue;
-            buf.append(body.toXML(enclosingNamespace));
+            buf.append(subject.toXML());
         }
         buf.optElement("thread", thread);
         // Append the error subpacket if the message type is an error.
         if (type == Type.error) {
-            appendErrorIfExists(buf);
+            appendErrorIfExists(buf, enclosingXmlEnvironment);
         }
-        // Add packet extensions, if any are defined.
-        buf.append(getExtensionsXML());
+
+        // Add extension elements, if any are defined.
+        buf.append(getExtensions(), enclosingXmlEnvironment);
+
         buf.closeElement(ELEMENT);
         return buf;
     }
@@ -542,9 +536,6 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
         private final String language;
 
         private Subject(String language, String subject) {
-            if (language == null) {
-                throw new NullPointerException("Language cannot be null.");
-            }
             if (subject == null) {
                 throw new NullPointerException("Subject cannot be null.");
             }
@@ -575,7 +566,9 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
         public int hashCode() {
             final int prime = 31;
             int result = 1;
-            result = prime * result + this.language.hashCode();
+            if (language != null) {
+                result = prime * result + this.language.hashCode();
+            }
             result = prime * result + this.subject.hashCode();
             return result;
         }
@@ -607,9 +600,9 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
         }
 
         @Override
-        public XmlStringBuilder toXML(String enclosingNamespace) {
+        public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder();
-            xml.halfOpenElement(getElementName()).xmllangAttribute(getLanguage()).rightAngleBracket();
+            xml.halfOpenElement(getElementName()).optXmlLangAttribute(getLanguage()).rightAngleBracket();
             xml.escape(subject);
             xml.closeElement(getElementName());
             return xml;
@@ -650,9 +643,6 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
         }
 
         public Body(String language, String message, BodyElementNamespace namespace) {
-            if (language == null) {
-                throw new NullPointerException("Language cannot be null.");
-            }
             if (message == null) {
                 throw new NullPointerException("Message cannot be null.");
             }
@@ -662,9 +652,10 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
         }
 
         /**
-         * Returns the language of this message body.
+         * Returns the language of this message body or {@code null} if the body extension element does not explicitly
+         * set a language, but instead inherits it from the outer element (usually a {@link Message} stanza).
          *
-         * @return the language of this message body.
+         * @return the language of this message body or {@code null}.
          */
         public String getLanguage() {
             return language;
@@ -683,7 +674,9 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
         public int hashCode() {
             final int prime = 31;
             int result = 1;
-            result = prime * result + this.language.hashCode();
+            if (language != null) {
+                result = prime * result + this.language.hashCode();
+            }
             result = prime * result + this.message.hashCode();
             return result;
         }
@@ -701,7 +694,7 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
             }
             Body other = (Body) obj;
             // simplified comparison because language and message are always set
-            return this.language.equals(other.language) && this.message.equals(other.message);
+            return Objects.equals(this.language, other.language) && this.message.equals(other.message);
         }
 
         @Override
@@ -715,9 +708,9 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
         }
 
         @Override
-        public XmlStringBuilder toXML(String enclosingNamespace) {
-            XmlStringBuilder xml = new XmlStringBuilder(this, enclosingNamespace);
-            xml.xmllangAttribute(getLanguage()).rightAngleBracket();
+        public XmlStringBuilder toXML(XmlEnvironment enclosingXmlEnvironment) {
+            XmlStringBuilder xml = new XmlStringBuilder(this, enclosingXmlEnvironment);
+            xml.optXmlLangAttribute(getLanguage()).rightAngleBracket();
             xml.escape(message);
             xml.closeElement(getElementName());
             return xml;
@@ -758,7 +751,7 @@ public final class Message extends Stanza implements TypedCloneable<Message> {
         /**
          * Converts a String into the corresponding types. Valid String values that can be converted
          * to types are: "normal", "chat", "groupchat", "headline" and "error".
-         * 
+         *
          * @param string the String value to covert.
          * @return the corresponding Type.
          * @throws IllegalArgumentException when not able to parse the string parameter

@@ -38,6 +38,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smack.util.CloseableUtil;
 import org.jivesoftware.smack.util.StringUtils;
 
 /**
@@ -66,7 +67,7 @@ import org.jivesoftware.smack.util.StringUtils;
  * with other address types</li>
  * </ul>
  * (see <a href="http://tools.ietf.org/html/rfc1928">RFC 1928</a>)
- * 
+ *
  * @author Henning Staib
  */
 public final class Socks5Proxy {
@@ -131,7 +132,7 @@ public final class Socks5Proxy {
 
    /**
     * Returns true if the local Socks5 proxy should be started. Default is true.
-    * 
+    *
     * @return if the local Socks5 proxy should be started
     */
    public static boolean isLocalSocks5ProxyEnabled() {
@@ -140,7 +141,7 @@ public final class Socks5Proxy {
 
    /**
     * Sets if the local Socks5 proxy should be started. Default is true.
-    * 
+    *
     * @param localSocks5ProxyEnabled if the local Socks5 proxy should be started
     */
    public static void setLocalSocks5ProxyEnabled(boolean localSocks5ProxyEnabled) {
@@ -149,7 +150,7 @@ public final class Socks5Proxy {
 
    /**
     * Return the port of the local Socks5 proxy. Default is 7777.
-    * 
+    *
     * @return the port of the local Socks5 proxy
     */
    public static int getLocalSocks5ProxyPort() {
@@ -159,7 +160,7 @@ public final class Socks5Proxy {
    /**
     * Sets the port of the local Socks5 proxy. Default is 7777. If you set the port to a negative
     * value Smack tries the absolute value and all following until it finds an open port.
-    * 
+    *
     * @param localSocks5ProxyPort the port of the local Socks5 proxy to set
     */
    public static void setLocalSocks5ProxyPort(int localSocks5ProxyPort) {
@@ -171,7 +172,7 @@ public final class Socks5Proxy {
 
     /**
      * Returns the local SOCKS5 proxy server.
-     * 
+     *
      * @return the local SOCKS5 proxy server
      */
     public static synchronized Socks5Proxy getSocks5Proxy() {
@@ -210,6 +211,8 @@ public final class Socks5Proxy {
 
             if (this.serverSocket != null) {
                 this.serverThread = new Thread(this.serverProcess);
+                this.serverThread.setName("Smack Local SOCKS5 Proxy");
+                this.serverThread.setDaemon(true);
                 this.serverThread.start();
             }
         }
@@ -260,7 +263,7 @@ public final class Socks5Proxy {
      * Note that the list of addresses initially contains the address returned by
      * <code>InetAddress.getLocalHost().getHostAddress()</code>. You can replace the list of
      * addresses by invoking {@link #replaceLocalAddresses(Collection)}.
-     * 
+     *
      * @param address the local network address to add
      */
     public void addLocalAddress(String address) {
@@ -275,7 +278,7 @@ public final class Socks5Proxy {
     /**
      * Removes the given address from the list of local network addresses. This address will then no
      * longer be used of outgoing SOCKS5 Bytestream requests.
-     * 
+     *
      * @param address the local network address to remove
      * @return true if the address was removed.
      */
@@ -288,7 +291,7 @@ public final class Socks5Proxy {
     /**
      * Returns an set of the local network addresses that will be used for streamhost
      * candidates of outgoing SOCKS5 Bytestream requests.
-     * 
+     *
      * @return set of the local network addresses
      */
     public List<String> getLocalAddresses() {
@@ -304,7 +307,7 @@ public final class Socks5Proxy {
      * want to define their order. This may be necessary if your application is running on a machine
      * with multiple network interfaces or if you want to provide your public address in case you
      * are behind a NAT router.
-     * 
+     *
      * @param addresses the new list of local network addresses
      */
     public void replaceLocalAddresses(Collection<String> addresses) {
@@ -319,7 +322,7 @@ public final class Socks5Proxy {
 
     /**
      * Returns the port of the local SOCKS5 proxy server. If it is not running -1 will be returned.
-     * 
+     *
      * @return the port of the local SOCKS5 proxy server or -1 if proxy is not running
      */
     public int getPort() {
@@ -333,7 +336,7 @@ public final class Socks5Proxy {
      * Returns the socket for the given digest. A socket will be returned if the given digest has
      * been in the list of allowed transfers (see {@link #addTransfer(String)}) while the peer
      * connected to the SOCKS5 proxy.
-     * 
+     *
      * @param digest identifying the connection
      * @return socket or null if there is no socket for the given digest
      */
@@ -345,7 +348,7 @@ public final class Socks5Proxy {
      * Add the given digest to the list of allowed transfers. Only connections for allowed transfers
      * are stored and can be retrieved by invoking {@link #getSocket(String)}. All connections to
      * the local SOCKS5 proxy that don't contain an allowed digest are discarded.
-     * 
+     *
      * @param digest to be added to the list of allowed transfers
      */
     public void addTransfer(String digest) {
@@ -358,7 +361,7 @@ public final class Socks5Proxy {
      * <p>
      * The digest should be removed after establishing the SOCKS5 Bytestream is finished, an error
      * occurred while establishing the connection or if the connection is not allowed anymore.
-     * 
+     *
      * @param digest to be removed from the list of allowed transfers
      */
     protected void removeTransfer(String digest) {
@@ -369,7 +372,7 @@ public final class Socks5Proxy {
     /**
      * Returns <code>true</code> if the local SOCKS5 proxy server is running, otherwise
      * <code>false</code>.
-     * 
+     *
      * @return <code>true</code> if the local SOCKS5 proxy server is running, otherwise
      *         <code>false</code>
      */
@@ -408,14 +411,7 @@ public final class Socks5Proxy {
                      */
                 }
                 catch (Exception e) {
-                    try {
-                        if (socket != null) {
-                            socket.close();
-                        }
-                    }
-                    catch (IOException e1) {
-                        /* do nothing */
-                    }
+                    CloseableUtil.maybeClose(socket, LOGGER);
                 }
             }
 
@@ -423,7 +419,7 @@ public final class Socks5Proxy {
 
         /**
          * Negotiates a SOCKS5 connection and stores it on success.
-         * 
+         *
          * @param socket connection to the client
          * @throws SmackException if client requests a connection in an unsupported way
          * @throws IOException if a network error occurred
@@ -435,7 +431,7 @@ public final class Socks5Proxy {
             // first byte is version should be 5
             int b = in.read();
             if (b != 5) {
-                throw new SmackException("Only SOCKS5 supported");
+                throw new SmackException.SmackMessageException("Only SOCKS5 supported");
             }
 
             // second byte number of authentication methods supported
@@ -461,7 +457,7 @@ public final class Socks5Proxy {
                 authMethodSelectionResponse[1] = (byte) 0xFF; // no acceptable methods
                 out.write(authMethodSelectionResponse);
                 out.flush();
-                throw new SmackException("Authentication method not supported");
+                throw new SmackException.SmackMessageException("Authentication method not supported");
             }
 
             authMethodSelectionResponse[1] = (byte) 0x00; // no-authentication method
@@ -480,7 +476,7 @@ public final class Socks5Proxy {
                 out.write(connectionRequest);
                 out.flush();
 
-                throw new SmackException("Connection is not allowed");
+                throw new SmackException.SmackMessageException("Connection is not allowed");
             }
 
             connectionRequest[1] = (byte) 0x00; // set return status to 0 (success)

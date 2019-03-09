@@ -16,6 +16,9 @@
  */
 package org.jivesoftware.smackx.bob.provider;
 
+import java.io.IOException;
+
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.util.ParserUtils;
 
@@ -24,10 +27,11 @@ import org.jivesoftware.smackx.bob.BoBHash;
 import org.jivesoftware.smackx.bob.element.BoBIQ;
 
 import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
 
 /**
  * Bits of Binary IQ provider class.
- * 
+ *
  * @author Florian Schmaus
  * @see <a href="http://xmpp.org/extensions/xep-0231.html">XEP-0231: Bits of
  *      Binary</a>
@@ -35,7 +39,7 @@ import org.xmlpull.v1.XmlPullParser;
 public class BoBIQProvider extends IQProvider<BoBIQ> {
 
     @Override
-    public BoBIQ parse(XmlPullParser parser, int initialDepth) throws Exception {
+    public BoBIQ parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment) throws XmlPullParserException, IOException {
         String cid = parser.getAttributeValue("", "cid");
         BoBHash bobHash = BoBHash.fromCid(cid);
 

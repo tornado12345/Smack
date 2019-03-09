@@ -27,6 +27,7 @@ import org.jivesoftware.smack.StanzaCollector;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.SimpleIQ;
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.provider.ProviderManager;
 
@@ -116,8 +117,8 @@ public class STUN extends SimpleIQ {
     public static class Provider extends IQProvider<STUN> {
 
         @Override
-        public STUN parse(XmlPullParser parser, int initialDepth)
-                        throws SmackException, XmlPullParserException,
+        public STUN parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment)
+                        throws XmlPullParserException,
                         IOException {
 
             boolean done = false;
@@ -126,7 +127,7 @@ public class STUN extends SimpleIQ {
             String elementName;
 
             if (!parser.getNamespace().equals(NAMESPACE))
-                throw new SmackException("Not a STUN packet");
+                throw new IOException("Not a STUN packet");
 
             STUN iq = new STUN();
 
@@ -174,8 +175,8 @@ public class STUN extends SimpleIQ {
      *
      * @param connection
      * @return the STUN server address
-     * @throws NotConnectedException 
-     * @throws InterruptedException 
+     * @throws NotConnectedException
+     * @throws InterruptedException
      */
     @SuppressWarnings("deprecation")
     public static STUN getSTUNServer(XMPPConnection connection) throws NotConnectedException, InterruptedException {
@@ -202,9 +203,9 @@ public class STUN extends SimpleIQ {
      *
      * @param connection the connection
      * @return true if the server support STUN
-     * @throws SmackException 
-     * @throws XMPPException 
-     * @throws InterruptedException 
+     * @throws SmackException
+     * @throws XMPPException
+     * @throws InterruptedException
      */
     public static boolean serviceAvailable(XMPPConnection connection) throws XMPPException, SmackException, InterruptedException {
 

@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.IQProvider;
 
 import org.jxmpp.jid.EntityBareJid;
@@ -93,7 +94,7 @@ public class AgentChatHistory extends IQ {
     public static class InternalProvider extends IQProvider<AgentChatHistory> {
 
         @Override
-        public AgentChatHistory parse(XmlPullParser parser, int initialDepth) throws XmlPullParserException, IOException {
+        public AgentChatHistory parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment) throws XmlPullParserException, IOException {
             if (parser.getEventType() != XmlPullParser.START_TAG) {
                 throw new IllegalStateException("Parser not in proper position, or bad XML.");
             }
@@ -103,7 +104,7 @@ public class AgentChatHistory extends IQ {
             boolean done = false;
             while (!done) {
                 int eventType = parser.next();
-                if ((eventType == XmlPullParser.START_TAG) && ("chat-session".equals(parser.getName()))) {
+                if (eventType == XmlPullParser.START_TAG && "chat-session".equals(parser.getName())) {
                     agentChatHistory.addChatSession(parseChatSetting(parser));
 
                 }
@@ -126,24 +127,24 @@ public class AgentChatHistory extends IQ {
 
             while (!done) {
                 int eventType = parser.next();
-                if ((eventType == XmlPullParser.START_TAG) && ("date".equals(parser.getName()))) {
+                if (eventType == XmlPullParser.START_TAG && "date".equals(parser.getName())) {
                     String dateStr = parser.nextText();
                     long l = Long.valueOf(dateStr).longValue();
                     date = new Date(l);
                 }
-                else if ((eventType == XmlPullParser.START_TAG) && ("duration".equals(parser.getName()))) {
+                else if (eventType == XmlPullParser.START_TAG && "duration".equals(parser.getName())) {
                     duration = Long.valueOf(parser.nextText()).longValue();
                 }
-                else if ((eventType == XmlPullParser.START_TAG) && ("visitorsName".equals(parser.getName()))) {
+                else if (eventType == XmlPullParser.START_TAG && "visitorsName".equals(parser.getName())) {
                     visitorsName = parser.nextText();
                 }
-                else if ((eventType == XmlPullParser.START_TAG) && ("visitorsEmail".equals(parser.getName()))) {
+                else if (eventType == XmlPullParser.START_TAG && "visitorsEmail".equals(parser.getName())) {
                     visitorsEmail = parser.nextText();
                 }
-                else if ((eventType == XmlPullParser.START_TAG) && ("sessionID".equals(parser.getName()))) {
+                else if (eventType == XmlPullParser.START_TAG && "sessionID".equals(parser.getName())) {
                     sessionID = parser.nextText();
                 }
-                else if ((eventType == XmlPullParser.START_TAG) && ("question".equals(parser.getName()))) {
+                else if (eventType == XmlPullParser.START_TAG && "question".equals(parser.getName())) {
                     question = parser.nextText();
                 }
                 else if (eventType == XmlPullParser.END_TAG && "chat-session".equals(parser.getName())) {

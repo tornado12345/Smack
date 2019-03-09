@@ -27,10 +27,10 @@ import org.jivesoftware.smackx.pubsub.packet.PubSubNamespace;
 
 /**
  * Represents the top level element of a PubSub event extension.  All types of PubSub events are
- * represented by this class.  The specific type can be found by {@link #getEventType()}.  The 
+ * represented by this class.  The specific type can be found by {@link #getEventType()}.  The
  * embedded event information, which is specific to the event type, can be retrieved by the {@link #getEvent()}
  * method.
- * 
+ *
  * @author Robin Collier
  */
 public class EventElement implements EmbeddedPacketExtension {
@@ -76,10 +76,10 @@ public class EventElement implements EmbeddedPacketExtension {
     }
 
     @Override
-    public XmlStringBuilder toXML(String enclosingNamespace) {
+    public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.rightAngleBracket();
-        xml.append(ext.toXML(null));
+        xml.append(ext.toXML());
         xml.closeElement(this);
         return xml;
     }

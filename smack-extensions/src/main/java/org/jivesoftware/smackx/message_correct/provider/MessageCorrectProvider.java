@@ -16,27 +16,23 @@
  */
 package org.jivesoftware.smackx.message_correct.provider;
 
-import java.io.IOException;
-
-import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 
 import org.jivesoftware.smackx.message_correct.element.MessageCorrectExtension;
 
 import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
 
 /**
  * A ExtensionElementProvider for the MessageCorrectExtension. As
  * MessageCorrection elements have only the ID of the message to replace.
- * 
+ *
  * @author Fernando Ramirez, f.e.ramirez94@gmail.com
  */
 public class MessageCorrectProvider extends ExtensionElementProvider<MessageCorrectExtension> {
 
     @Override
-    public MessageCorrectExtension parse(XmlPullParser parser, int initialDepth)
-            throws XmlPullParserException, IOException, SmackException {
+    public MessageCorrectExtension parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment) {
         String idMessageToReplace = parser.getAttributeValue("", MessageCorrectExtension.ID_TAG);
         return new MessageCorrectExtension(idMessageToReplace);
     }

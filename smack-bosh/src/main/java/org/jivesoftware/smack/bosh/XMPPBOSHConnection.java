@@ -39,9 +39,9 @@ import org.jivesoftware.smack.packet.Nonza;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.packet.StanzaError;
-import org.jivesoftware.smack.packet.StreamOpen;
 import org.jivesoftware.smack.sasl.packet.SaslStreamElements.SASLFailure;
 import org.jivesoftware.smack.sasl.packet.SaslStreamElements.Success;
+import org.jivesoftware.smack.util.CloseableUtil;
 import org.jivesoftware.smack.util.PacketParserUtils;
 
 import org.igniterealtime.jbosh.AbstractBody;
@@ -64,7 +64,7 @@ import org.xmlpull.v1.XmlPullParserFactory;
 /**
  * Creates a connection to an XMPP server via HTTP binding.
  * This is specified in the XEP-0206: XMPP Over BOSH.
- * 
+ *
  * @see XMPPConnection
  * @author Guenther Niess
  */
@@ -109,7 +109,7 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
 
     /**
      * Create a HTTP Binding connection to an XMPP server.
-     * 
+     *
      * @param username the username to use.
      * @param password the password to use.
      * @param https true if you want to use SSL
@@ -131,7 +131,7 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
 
     /**
      * Create a HTTP Binding connection to an XMPP server.
-     * 
+     *
      * @param config The configuration which is used for this connection.
      */
     public XMPPBOSHConnection(BOSHConfiguration config) {
@@ -157,6 +157,8 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
             if (config.isProxyEnabled()) {
                 cfgBuilder.setProxy(config.getProxyAddress(), config.getProxyPort());
             }
+            cfgBuilder.setCompressionEnabled(config.isCompressionEnabled());
+
             client = BOSHClient.create(cfgBuilder.build());
 
             client.addBOSHClientConnListener(new BOSHConnectionListener());
@@ -191,9 +193,9 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
         // If there is no feedback, throw an remote server timeout error
         if (!connected && !done) {
             done = true;
-            String errorMessage = "Timeout reached for the connection to " 
+            String errorMessage = "Timeout reached for the connection to "
                     + getHost() + ":" + getPort() + ".";
-            throw new SmackException(errorMessage);
+            throw new SmackException.SmackMessageException(errorMessage);
         }
     }
 
@@ -235,7 +237,7 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
 
     private void sendElement(Element element) {
         try {
-            send(ComposableBody.builder().setPayloadXML(element.toXML(StreamOpen.CLIENT_NAMESPACE).toString()).build());
+            send(ComposableBody.builder().setPayloadXML(element.toXML(BOSH_URI).toString()).build());
             if (element instanceof Stanza) {
                 firePacketSendingListeners((Stanza) element);
             }
@@ -246,7 +248,7 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
     }
 
     /**
-     * Closes the connection by setting presence to unavailable and closing the 
+     * Closes the connection by setting presence to unavailable and closing the
      * HTTP client. The shutdown logic will be used during a planned disconnection or when
      * dealing with an unexpected disconnection. Unlike {@link #disconnect()} the connection's
      * BOSH stanza reader will not be removed; thus connection's state is kept.
@@ -254,6 +256,16 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
      */
     @Override
     protected void shutdown() {
+
+        if (client != null) {
+            try {
+                client.disconnect();
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "shutdown", e);
+            }
+            client = null;
+        }
+
         setWasAuthenticated();
         sessionID = null;
         done = true;
@@ -262,34 +274,19 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
         isFirstInitialization = false;
 
         // Close down the readers and writers.
-        if (readerPipe != null) {
-            try {
-                readerPipe.close();
-            }
-            catch (Throwable ignore) { /* ignore */ }
-            reader = null;
-        }
-        if (reader != null) {
-            try {
-                reader.close();
-            }
-            catch (Throwable ignore) { /* ignore */ }
-            reader = null;
-        }
-        if (writer != null) {
-            try {
-                writer.close();
-            }
-            catch (Throwable ignore) { /* ignore */ }
-            writer = null;
-        }
+        CloseableUtil.maybeClose(readerPipe, LOGGER);
+        CloseableUtil.maybeClose(reader, LOGGER);
+        CloseableUtil.maybeClose(writer, LOGGER);
 
+        readerPipe = null;
+        reader = null;
+        writer = null;
         readerConsumer = null;
     }
 
     /**
      * Send a HTTP request to the connection manager with the provided body element.
-     * 
+     *
      * @param body the body which will be sent.
      * @throws BOSHException
      */
@@ -391,21 +388,9 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
     }
 
     /**
-     * Sends out a notification that there was an error with the connection
-     * and closes the connection.
-     *
-     * @param e the exception that causes the connection close event.
-     */
-    protected void notifyConnectionError(Exception e) {
-        // Closes the connection temporary. A reconnection is possible
-        shutdown();
-        callConnectionClosedOnErrorListener(e);
-    }
-
-    /**
      * A listener class which listen for a successfully established connection
      * and connection errors and notifies the BOSHConnection.
-     * 
+     *
      * @author Guenther Niess
      */
     private class BOSHConnectionListener implements BOSHClientConnListener {

@@ -16,7 +16,12 @@
  */
 package org.jivesoftware.smackx.forward.packet;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 
@@ -24,7 +29,7 @@ import org.jivesoftware.smackx.delay.packet.DelayInformation;
 
 /**
  * Stanza extension for XEP-0297: Stanza Forwarding.
- * 
+ *
  * @author Georg Lukas
  * @see <a href="http://xmpp.org/extensions/xep-0297.html">XEP-0297: Stanza Forwarding</a>
  */
@@ -66,11 +71,11 @@ public class Forwarded implements ExtensionElement {
     }
 
     @Override
-    public XmlStringBuilder toXML(String enclosingNamespace) {
+    public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.rightAngleBracket();
         xml.optElement(getDelayInformation());
-        xml.append(forwardedPacket.toXML(null));
+        xml.append(forwardedPacket.toXML(NAMESPACE));
         xml.closeElement(this);
         return xml;
     }
@@ -111,5 +116,22 @@ public class Forwarded implements ExtensionElement {
      */
     public static Forwarded from(Stanza packet) {
         return packet.getExtension(ELEMENT, NAMESPACE);
+    }
+
+    /**
+     * Extract messages in a collection of forwarded elements. Note that it is required that the {@link Forwarded} in
+     * the given collection only contain {@link Message} stanzas.
+     *
+     * @param forwardedCollection the collection to extract from.
+     * @return a list a the extracted messages.
+     * @since 4.3.0
+     */
+    public static List<Message> extractMessagesFrom(Collection<Forwarded> forwardedCollection) {
+        List<Message> res = new ArrayList<>(forwardedCollection.size());
+        for (Forwarded forwarded : forwardedCollection) {
+            Message message =  (Message) forwarded.forwardedPacket;
+            res.add(message);
+        }
+        return res;
     }
 }

@@ -19,8 +19,8 @@ package org.jivesoftware.smackx.pubsub;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 
 /**
- * A stanza extension representing the <b>options</b> element. 
- * 
+ * A stanza extension representing the <b>options</b> element.
+ *
  * @author Robin Collier
  */
 public class OptionsExtension extends NodeExtension {
@@ -50,7 +50,7 @@ public class OptionsExtension extends NodeExtension {
     }
 
     @Override
-    public XmlStringBuilder toXML(String enclosingNamespace) {
+    public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder();
         xml.halfOpenElement(getElementName());
         xml.attribute("jid", jid);

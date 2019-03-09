@@ -39,12 +39,12 @@ public class SaslStreamElements {
 
         public AuthMechanism(String mechanism, String authenticationText) {
             this.mechanism = Objects.requireNonNull(mechanism, "SASL mechanism shouldn't be null.");
-            this.authenticationText = StringUtils.requireNotNullOrEmpty(authenticationText,
-                            "SASL authenticationText must not be null or empty (RFC6120 6.4.2)");
+            this.authenticationText = StringUtils.requireNotNullNorEmpty(authenticationText,
+                            "SASL authenticationText must not be null nor empty (RFC6120 6.4.2)");
         }
 
         @Override
-        public XmlStringBuilder toXML(String enclosingNamespace) {
+        public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder();
             xml.halfOpenElement(ELEMENT).xmlnsAttribute(NAMESPACE).attribute("mechanism", mechanism).rightAngleBracket();
             xml.optAppend(authenticationText);
@@ -84,7 +84,7 @@ public class SaslStreamElements {
         }
 
         @Override
-        public XmlStringBuilder toXML(String enclosingNamespace) {
+        public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder().halfOpenElement(ELEMENT).xmlnsAttribute(
                             NAMESPACE).rightAngleBracket();
             xml.optAppend(data);
@@ -120,7 +120,7 @@ public class SaslStreamElements {
         }
 
         @Override
-        public XmlStringBuilder toXML(String enclosingNamespace) {
+        public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder();
             xml.halfOpenElement(ELEMENT).xmlnsAttribute(NAMESPACE).rightAngleBracket();
             xml.optAppend(authenticationText);
@@ -154,7 +154,7 @@ public class SaslStreamElements {
         /**
          * Construct a new SASL success stream element with optional additional data for the SASL layer.
          * (RFC6120 6.3.10)
-         * 
+         *
          * @param data additional data for the SASL layer or <code>null</code>
          */
         public Success(String data) {
@@ -163,7 +163,7 @@ public class SaslStreamElements {
 
         /**
          * Returns additional data for the SASL layer or <code>null</code>.
-         * 
+         *
          * @return additional data or <code>null</code>
          */
         public String getData() {
@@ -171,7 +171,7 @@ public class SaslStreamElements {
         }
 
         @Override
-        public XmlStringBuilder toXML(String enclosingNamespace) {
+        public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder();
             xml.halfOpenElement(ELEMENT).xmlnsAttribute(NAMESPACE).rightAngleBracket();
             xml.optAppend(data);
@@ -220,7 +220,7 @@ public class SaslStreamElements {
 
         /**
          * Get the SASL related error condition.
-         * 
+         *
          * @return the SASL related error condition.
          */
         public SASLError getSASLError() {
@@ -236,7 +236,7 @@ public class SaslStreamElements {
         }
 
         @Override
-        public XmlStringBuilder toXML(String enclosingNamespace) {
+        public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder();
             xml.halfOpenElement(ELEMENT).xmlnsAttribute(NAMESPACE).rightAngleBracket();
             xml.emptyElement(saslErrorString);
@@ -247,7 +247,7 @@ public class SaslStreamElements {
 
         @Override
         public String toString() {
-            return toXML(null).toString();
+            return toXML().toString();
         }
 
         @Override

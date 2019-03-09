@@ -141,6 +141,94 @@ hr {
 
 	<div id="pageBody">
 
+<h2>4.3.2 -- <span style="font-weight: normal;">2019-02-22</span></h2>
+
+<h2>        Bug
+</h2>
+<ul>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-842'>SMACK-842</a>] -         The RFC 3920 xml-not-well-formed error condition should be handled in stream error not a stanza error
+</li>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-843'>SMACK-843</a>] -         ManManager.pagePrevious() pages into the wrong direction
+</li>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-844'>SMACK-844</a>] -         Check if bounded unacknowledged stanzas queue is full before adding to it to avoid IllegalStateException
+</li>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-845'>SMACK-845</a>] -         Ensure that IQ response &#39;to&#39; address and ID are set correctly
+</li>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-846'>SMACK-846</a>] -         XMPPTCPConnection does not wait for stream features after authentication if compression is disabled
+</li>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-848'>SMACK-848</a>] -         Make MultiUserChat.leave() wait for response
+</li>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-850'>SMACK-850</a>] -         DeliveryReceiptManager should not send receipts with messages of type &#39;groupchat&#39;
+</li>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-855'>SMACK-855</a>] -         XMPPTCPConnection sometimes has two writer threads running
+</li>
+</ul>
+
+<h2>        Improvement
+</h2>
+<ul>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-847'>SMACK-847</a>] -         Make TCP socket connection attempt interruptable
+</li>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-849'>SMACK-849</a>] -         Smack Local SOCKS5 Proxy thread should be marked as daemon thread
+</li>
+</ul>
+
+<h2>4.3.1 -- <span style="font-weight: normal;">2018-10-14</span></h2>
+	  
+<h2>        Bug
+</h2>
+<ul>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-833'>SMACK-833</a>] -         XMLUtil.prettyFormatXml() throws on some Android devices
+</li>
+</ul>
+                    
+<h2>        Improvement
+</h2>
+<ul>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-829'>SMACK-829</a>] -         Disconnect BOSH client on shutdown
+</li>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-838'>SMACK-838</a>] -         FormField.getFirstValue() throws IndexOutOfBoundsException if there are no values
+</li>
+</ul>
+
+<h2>4.3.0 -- <span style="font-weight: normal;">2018-08-02</span></h2>
+
+<h2>        Bug
+</h2>
+<ul>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-759'>SMACK-759</a>] -         PubSubManager.getLeafNode() throws PubSubAssertionError.DiscoInfoNodeAssertionError if node exists but its not a PubSub Node
+</li>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-814'>SMACK-814</a>] -         NPE when using Node.getAffiliationsAsOwner()
+</li>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-815'>SMACK-815</a>] -         XEP-0184: DeliveryReceipt requires ID, although the XEP defines it as optional attribute
+</li>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-818'>SMACK-818</a>] -         EntityCapsManager sends presences with multiple CapsExtension causing disco#info lookup to fail
+</li>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-819'>SMACK-819</a>] -         ConcurrentModification Exception in MultiUserChatManager.java
+</li>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-820'>SMACK-820</a>] -         DNSUtil.setDaneProvider() does not set the DANE provider
+</li>
+</ul>
+
+<h2>        Task
+</h2>
+<ul>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-769'>SMACK-769</a>] -         Rename XMPPError to StanzaError
+</li>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-776'>SMACK-776</a>] -         Remove deprecated reconnection callbacks in ConnectionListener
+</li>
+</ul>
+
+<h2>        Improvement
+</h2>
+<ul>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-761'>SMACK-761</a>] -         Adopt ChatStateManager to new Chat API (chat2)
+</li>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-812'>SMACK-812</a>] -         Enable ModifierOrder checkstyle check
+</li>
+<li>[<a href='https://issues.igniterealtime.org/browse/SMACK-816'>SMACK-816</a>] -         SimplePayload should infer the XML element name and namespace
+</li>
+</ul>
 
 <h2>4.2.4 -- <span style="font-weight: normal;">2018-04-15</span></h2>
 

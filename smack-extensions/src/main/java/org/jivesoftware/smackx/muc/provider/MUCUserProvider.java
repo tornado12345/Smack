@@ -19,6 +19,7 @@ package org.jivesoftware.smackx.muc.provider;
 
 import java.io.IOException;
 
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.jivesoftware.smack.util.ParserUtils;
 
@@ -30,7 +31,7 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 /**
- * The MUCUserProvider parses packets with extended presence information about 
+ * The MUCUserProvider parses packets with extended presence information about
  * roles and affiliations.
  *
  * @author Gaston Dombiak
@@ -42,11 +43,11 @@ public class MUCUserProvider extends ExtensionElementProvider<MUCUser> {
      *
      * @param parser the XML parser, positioned at the starting element of the extension.
      * @return a PacketExtension.
-     * @throws IOException 
-     * @throws XmlPullParserException 
+     * @throws IOException
+     * @throws XmlPullParserException
      */
     @Override
-    public MUCUser parse(XmlPullParser parser, int initialDepth) throws XmlPullParserException, IOException {
+    public MUCUser parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment) throws XmlPullParserException, IOException {
         MUCUser mucUser = new MUCUser();
         outerloop: while (true) {
             switch (parser.next()) {

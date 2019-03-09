@@ -21,7 +21,7 @@ import org.jivesoftware.smack.util.XmlStringBuilder;
 
 /**
  * Represents an unsubscribe element.
- * 
+ *
  * @author Robin Collier
  */
 public class UnsubscribeExtension extends NodeExtension {
@@ -51,7 +51,7 @@ public class UnsubscribeExtension extends NodeExtension {
     }
 
     @Override
-    public XmlStringBuilder toXML(String enclosingNamespace) {
+    public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder();
         xml.halfOpenElement(getElementName());
         xml.attribute("jid", jid);

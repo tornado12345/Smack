@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2004 Jive Software, 2017 Florian Schmaus.
+ * Copyright 2004 Jive Software, 2017-2019 Florian Schmaus.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,12 +34,12 @@ import org.igniterealtime.smack.inttest.SmackIntegrationTestEnvironment;
 
 /**
  * Tests the DataForms extensions.
- * 
+ *
  * @author Gaston Dombiak
  */
 public class FormTest extends AbstractSmackIntegrationTest {
 
-    public FormTest(SmackIntegrationTestEnvironment environment) {
+    public FormTest(SmackIntegrationTestEnvironment<?> environment) {
         super(environment);
     }
 
@@ -48,8 +48,8 @@ public class FormTest extends AbstractSmackIntegrationTest {
      * 2. Retrieve the form to fill out, complete it and return it to the requestor
      * 3. Retrieve the completed form and check that everything is OK
      *
-     * @throws InterruptedException 
-     * @throws NotConnectedException 
+     * @throws InterruptedException
+     * @throws NotConnectedException
      */
     @SuppressWarnings("deprecation")
     @SmackIntegrationTest
@@ -148,11 +148,11 @@ public class FormTest extends AbstractSmackIntegrationTest {
             assertNotNull(completedForm.getField("name"));
             assertNotNull(completedForm.getField("description"));
             assertEquals(
-                completedForm.getField("name").getValues().get(0),
+                 completedForm.getField("name").getValues().get(0).toString(),
                 "Credit card number invalid");
             assertNotNull(completedForm.getField("time"));
             assertNotNull(completedForm.getField("age"));
-            assertEquals("The age is bad", "20", completedForm.getField("age").getValues().get(0));
+            assertEquals("The age is bad", "20", completedForm.getField("age").getValues().get(0).toString());
 
         }
         finally {

@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 
@@ -53,7 +54,7 @@ import org.xmlpull.v1.XmlPullParserException;
  * (<a href="http://www.xmpp.org/extensions/jep-0045.html">XEP-45</a>). However, most
  * existing clients still use this older protocol. Once MUC support becomes more
  * widespread, this API may be deprecated.
- * 
+ *
  * @author Matt Tucker
  */
 public class GroupChatInvitation implements ExtensionElement {
@@ -104,7 +105,7 @@ public class GroupChatInvitation implements ExtensionElement {
     }
 
     @Override
-    public XmlStringBuilder toXML(String enclosingNamespace) {
+    public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.attribute("jid", getRoomAddress());
         xml.closeEmptyElement();
@@ -135,7 +136,7 @@ public class GroupChatInvitation implements ExtensionElement {
 
         @Override
         public GroupChatInvitation parse(XmlPullParser parser,
-                        int initialDepth) throws XmlPullParserException,
+                        int initialDepth, XmlEnvironment xmlEnvironment) throws XmlPullParserException,
                         IOException {
             String roomAddress = parser.getAttributeValue("", "jid");
             // Advance to end of extension.

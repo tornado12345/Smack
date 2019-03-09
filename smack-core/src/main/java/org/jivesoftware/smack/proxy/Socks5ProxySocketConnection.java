@@ -21,15 +21,19 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.logging.Logger;
 
+import org.jivesoftware.smack.util.CloseableUtil;
 import org.jivesoftware.smack.util.StringUtils;
 
 /**
  * Socket factory for Socks5 proxy.
- * 
+ *
  * @author Atul Aggarwal
  */
 public class Socks5ProxySocketConnection implements ProxySocketConnection {
+    private static final Logger LOGGER = Logger.getLogger(Socks5ProxySocketConnection.class.getName());
+
     private final ProxyInfo proxy;
 
     Socks5ProxySocketConnection(ProxyInfo proxy) {
@@ -98,7 +102,7 @@ public class Socks5ProxySocketConnection implements ProxySocketConnection {
             fill(in, buf, 2);
 
             boolean check = false;
-            switch ((buf[1]) & 0xff) {
+            switch (buf[1] & 0xff) {
                 case 0:                // NO AUTHENTICATION REQUIRED
                     check = true;
                     break;
@@ -128,14 +132,14 @@ public class Socks5ProxySocketConnection implements ProxySocketConnection {
 */
                     index = 0;
                     buf[index++] = 1;
-                    buf[index++] = (byte) (user.length());
+                    buf[index++] = (byte) user.length();
                     byte[] userBytes = user.getBytes(StringUtils.UTF8);
-                    System.arraycopy(userBytes, 0, buf, index, 
+                    System.arraycopy(userBytes, 0, buf, index,
                         user.length());
                     index += user.length();
                     byte[] passwordBytes = passwd.getBytes(StringUtils.UTF8);
-                    buf[index++] = (byte) (passwordBytes.length);
-                    System.arraycopy(passwordBytes, 0, buf, index, 
+                    buf[index++] = (byte) passwordBytes.length;
+                    System.arraycopy(passwordBytes, 0, buf, index,
                         passwd.length());
                     index += passwd.length();
 
@@ -164,11 +168,7 @@ public class Socks5ProxySocketConnection implements ProxySocketConnection {
             }
 
             if (!check) {
-                try {
-                    socket.close();
-                }
-                catch (Exception eee) {
-                }
+                CloseableUtil.maybeClose(socket, LOGGER);
                 throw new ProxyException(ProxyInfo.ProxyType.SOCKS5,
                     "fail in SOCKS5 proxy");
             }
@@ -207,7 +207,7 @@ public class Socks5ProxySocketConnection implements ProxySocketConnection {
             byte[] hostb = host.getBytes(StringUtils.UTF8);
             int len = hostb.length;
             buf[index++] = 3;      // DOMAINNAME
-            buf[index++] = (byte) (len);
+            buf[index++] = (byte) len;
             System.arraycopy(hostb, 0, buf, index, len);
             index += len;
             buf[index++] = (byte) (port >>> 8);
@@ -253,12 +253,8 @@ public class Socks5ProxySocketConnection implements ProxySocketConnection {
             fill(in, buf, 4);
 
             if (buf[1] != 0) {
-                try {
-                    socket.close();
-                }
-                catch (Exception eee) {
-                }
-                throw new ProxyException(ProxyInfo.ProxyType.SOCKS5, 
+                CloseableUtil.maybeClose(socket, LOGGER);
+                throw new ProxyException(ProxyInfo.ProxyType.SOCKS5,
                     "server returns " + buf[1]);
             }
 
@@ -280,17 +276,13 @@ public class Socks5ProxySocketConnection implements ProxySocketConnection {
             throw e;
         }
         catch (Exception e) {
-            try {
-                socket.close();
-            }
-            catch (Exception eee) {
-            }
+            CloseableUtil.maybeClose(socket, LOGGER);
             // TODO convert to IOException(e) when minimum Android API level is 9 or higher
             throw new IOException(e.getLocalizedMessage());
         }
     }
 
-    private static void fill(InputStream in, byte[] buf, int len) 
+    private static void fill(InputStream in, byte[] buf, int len)
       throws IOException {
         int s = 0;
         while (s < len) {

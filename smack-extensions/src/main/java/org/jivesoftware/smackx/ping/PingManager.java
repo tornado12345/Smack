@@ -20,15 +20,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.jivesoftware.smack.AbstractConnectionClosedListener;
 import org.jivesoftware.smack.ConnectionCreationListener;
 import org.jivesoftware.smack.Manager;
-import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smack.ScheduledAction;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.SmackFuture;
@@ -59,7 +57,7 @@ import org.jxmpp.jid.Jid;
  * The default server ping interval is 30 minutes and can be modified with
  * {@link #setDefaultPingInterval(int)} and {@link #setPingInterval(int)}.
  * </p>
- * 
+ *
  * @author Florian Schmaus
  * @see <a href="http://www.xmpp.org/extensions/xep-0199.html">XEP-0199:XMPP Ping</a>
  */
@@ -80,7 +78,7 @@ public final class PingManager extends Manager {
     /**
      * Retrieves a {@link PingManager} for the specified {@link XMPPConnection}, creating one if it doesn't already
      * exist.
-     * 
+     *
      * @param connection
      * The connection the manager is attached to.
      * @return The new or existing manager.
@@ -115,7 +113,7 @@ public final class PingManager extends Manager {
      */
     private int pingInterval = defaultPingInterval;
 
-    private ScheduledFuture<?> nextAutomaticPing;
+    private ScheduledAction nextAutomaticPing;
 
     private PingManager(XMPPConnection connection) {
         super(connection);
@@ -149,7 +147,7 @@ public final class PingManager extends Manager {
             return true;
         }
 
-        final StanzaError xmppError = xmppErrorException.getXMPPError();
+        final StanzaError xmppError = xmppErrorException.getStanzaError();
 
         // We may received an error response from an intermediate service returning an error like
         // 'remote-server-not-found' or 'remote-server-timeout' to us (which would fake the 'from' address,
@@ -214,19 +212,19 @@ public final class PingManager extends Manager {
     }
 
     /**
-     * Pings the given jid. This method will return false if an error occurs.  The exception 
-     * to this, is a server ping, which will always return true if the server is reachable, 
+     * Pings the given jid. This method will return false if an error occurs.  The exception
+     * to this, is a server ping, which will always return true if the server is reachable,
      * event if there is an error on the ping itself (i.e. ping not supported).
      * <p>
-     * Use {@link #isPingSupported(Jid)} to determine if XMPP Ping is supported 
+     * Use {@link #isPingSupported(Jid)} to determine if XMPP Ping is supported
      * by the entity.
-     * 
+     *
      * @param jid The id of the entity the ping is being sent to
      * @param pingTimeout The time to wait for a reply in milliseconds
      * @return true if a reply was received from the entity, false otherwise.
      * @throws NoResponseException if there was no response from the jid.
-     * @throws NotConnectedException 
-     * @throws InterruptedException 
+     * @throws NotConnectedException
+     * @throws InterruptedException
      */
     public boolean ping(Jid jid, long pingTimeout) throws NotConnectedException, NoResponseException, InterruptedException {
         final XMPPConnection connection = connection();
@@ -246,14 +244,14 @@ public final class PingManager extends Manager {
     }
 
     /**
-     * Same as calling {@link #ping(Jid, long)} with the defaultpacket reply 
+     * Same as calling {@link #ping(Jid, long)} with the defaultpacket reply
      * timeout.
-     * 
+     *
      * @param jid The id of the entity the ping is being sent to
      * @return true if a reply was received from the entity, false otherwise.
      * @throws NotConnectedException
      * @throws NoResponseException if there was no response from the jid.
-     * @throws InterruptedException 
+     * @throws InterruptedException
      */
     public boolean ping(Jid jid) throws NotConnectedException, NoResponseException, InterruptedException {
         return ping(jid, connection().getReplyTimeout());
@@ -261,13 +259,13 @@ public final class PingManager extends Manager {
 
     /**
      * Query the specified entity to see if it supports the Ping protocol (XEP-0199).
-     * 
+     *
      * @param jid The id of the entity the query is being sent to
      * @return true if it supports ping, false otherwise.
-     * @throws XMPPErrorException An XMPP related error occurred during the request 
+     * @throws XMPPErrorException An XMPP related error occurred during the request
      * @throws NoResponseException if there was no response from the jid.
-     * @throws NotConnectedException 
-     * @throws InterruptedException 
+     * @throws NotConnectedException
+     * @throws InterruptedException
      */
     public boolean isPingSupported(Jid jid) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException  {
         return ServiceDiscoveryManager.getInstanceFor(connection()).supportsFeature(jid, Ping.NAMESPACE);
@@ -277,12 +275,12 @@ public final class PingManager extends Manager {
      * Pings the server. This method will return true if the server is reachable.  It
      * is the equivalent of calling <code>ping</code> with the XMPP domain.
      * <p>
-     * Unlike the {@link #ping(Jid)} case, this method will return true even if 
+     * Unlike the {@link #ping(Jid)} case, this method will return true even if
      * {@link #isPingSupported(Jid)} is false.
-     * 
+     *
      * @return true if a reply was received from the server, false otherwise.
      * @throws NotConnectedException
-     * @throws InterruptedException 
+     * @throws InterruptedException
      */
     public boolean pingMyServer() throws NotConnectedException, InterruptedException {
         return pingMyServer(true);
@@ -298,7 +296,7 @@ public final class PingManager extends Manager {
      * @param notifyListeners Notify the PingFailedListener in case of error if true
      * @return true if the user's server could be pinged.
      * @throws NotConnectedException
-     * @throws InterruptedException 
+     * @throws InterruptedException
      */
     public boolean pingMyServer(boolean notifyListeners) throws NotConnectedException, InterruptedException {
         return pingMyServer(notifyListeners, connection().getReplyTimeout());
@@ -315,7 +313,7 @@ public final class PingManager extends Manager {
      * @param pingTimeout The time to wait for a reply in milliseconds
      * @return true if the user's server could be pinged.
      * @throws NotConnectedException
-     * @throws InterruptedException 
+     * @throws InterruptedException
      */
     public boolean pingMyServer(boolean notifyListeners, long pingTimeout) throws NotConnectedException, InterruptedException {
         boolean res;
@@ -396,9 +394,10 @@ public final class PingManager extends Manager {
     }
 
     private void maybeStopPingServerTask() {
+        final ScheduledAction nextAutomaticPing = this.nextAutomaticPing;
         if (nextAutomaticPing != null) {
-            nextAutomaticPing.cancel(true);
-            nextAutomaticPing = null;
+            nextAutomaticPing.cancel();
+            this.nextAutomaticPing = null;
         }
     }
 
@@ -406,9 +405,7 @@ public final class PingManager extends Manager {
      * Ping the server if deemed necessary because automatic server pings are
      * enabled ({@link #setPingInterval(int)}) and the ping interval has expired.
      */
-    public synchronized void pingServerIfNecessary() {
-        final int DELTA = 1000; // 1 seconds
-        final int TRIES = 3; // 3 tries
+    public void pingServerIfNecessary() {
         final XMPPConnection connection = connection();
         if (connection == null) {
             // connection has been collected by GC
@@ -430,45 +427,31 @@ public final class PingManager extends Manager {
                 return;
             }
         }
-        if (connection.isAuthenticated()) {
-            boolean res = false;
+        if (!connection.isAuthenticated()) {
+            LOGGER.warning(connection + " was not authenticated");
+            return;
+        }
 
-            for (int i = 0; i < TRIES; i++) {
-                if (i != 0) {
-                    try {
-                        Thread.sleep(DELTA);
-                    } catch (InterruptedException e) {
-                        // We received an interrupt
-                        // This only happens if we should stop pinging
-                        return;
-                    }
-                }
-                try {
-                    res = pingMyServer(false);
-                }
-                catch (InterruptedException | SmackException e) {
-                    // Note that we log the connection here, so that it is not GC'ed between the call to isAuthenticated
-                    // a few lines above and the usage of the connection within pingMyServer(). In order to prevent:
-                    // https://community.igniterealtime.org/thread/59369
-                    LOGGER.log(Level.WARNING, "Exception while pinging server of " + connection, e);
-                    res = false;
-                }
-                // stop when we receive a pong back
-                if (res) {
-                    break;
-                }
-            }
-            if (!res) {
-                for (PingFailedListener l : pingFailedListeners) {
-                    l.pingFailed();
-                }
-            } else {
+        final long minimumTimeout = TimeUnit.MINUTES.toMillis(2);
+        final long connectionReplyTimeout = connection.getReplyTimeout();
+        final long timeout = connectionReplyTimeout > minimumTimeout ? connectionReplyTimeout : minimumTimeout;
+
+        SmackFuture<Boolean, Exception> pingFuture = pingAsync(connection.getXMPPServiceDomain(), timeout);
+        pingFuture.onSuccess(new SuccessCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean result) {
                 // Ping was successful, wind-up the periodic task again
                 maybeSchedulePingServerTask();
             }
-        } else {
-            LOGGER.warning("XMPPConnection was not authenticated");
-        }
+        });
+        pingFuture.onError(new ExceptionCallback<Exception>() {
+            @Override
+            public void processException(Exception exception) {
+                for (PingFailedListener l : pingFailedListeners) {
+                    l.pingFailed();
+                }
+            }
+        });
     }
 
     private final Runnable pingServerRunnable = new Runnable() {

@@ -18,7 +18,9 @@ package org.jivesoftware.smack.util;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -90,9 +92,14 @@ public final class FileUtils {
         InputStream is = getStreamForUri(uri, null);
         InputStreamReader sr = new InputStreamReader(is, StringUtils.UTF8);
         BufferedReader br = new BufferedReader(sr);
-        String line;
-        while ((line = br.readLine()) != null) {
-            set.add(line);
+        try {
+            String line;
+            while ((line = br.readLine()) != null) {
+                set.add(line);
+            }
+        }
+        finally {
+            br.close();
         }
         return true;
     }
@@ -102,13 +109,11 @@ public final class FileUtils {
      *
      * @param file
      * @return the content of file or null in case of an error
-     * @throws IOException 
+     * @throws IOException
      */
     @SuppressWarnings("DefaultCharset")
     public static String readFileOrThrow(File file) throws IOException {
-        Reader reader = null;
-        try {
-            reader = new FileReader(file);
+        try (Reader reader = new FileReader(file)) {
             char[] buf = new char[8192];
             int len;
             StringBuilder s = new StringBuilder();
@@ -116,11 +121,6 @@ public final class FileUtils {
                 s.append(buf, 0, len);
             }
             return s.toString();
-        }
-        finally {
-            if (reader != null) {
-                reader.close();
-            }
         }
     }
 
@@ -153,6 +153,75 @@ public final class FileUtils {
         catch (IOException e) {
             LOGGER.log(Level.WARNING, "writeFile", e);
             return false;
+        }
+    }
+
+    public static FileOutputStream prepareFileOutputStream(File file) throws IOException {
+        if (!file.exists()) {
+
+            // Create parent directory
+            File parent = file.getParentFile();
+            if (!parent.exists() && !parent.mkdirs()) {
+                throw new IOException("Cannot create directory " + parent.getAbsolutePath());
+            }
+
+            // Create file
+            if (!file.createNewFile()) {
+                throw new IOException("Cannot create file " + file.getAbsolutePath());
+            }
+        }
+
+        if (file.isDirectory()) {
+            throw new AssertionError("File " + file.getAbsolutePath() + " is not a file!");
+        }
+
+        return new FileOutputStream(file);
+    }
+
+    public static FileInputStream prepareFileInputStream(File file) throws IOException {
+        if (file.exists()) {
+            if (file.isFile()) {
+                return new FileInputStream(file);
+            } else {
+                throw new IOException("File " + file.getAbsolutePath() + " is not a file!");
+            }
+        } else {
+            throw new FileNotFoundException("File " + file.getAbsolutePath() + " not found.");
+        }
+    }
+
+    public static void maybeDeleteFileOrThrow(File file) throws IOException {
+        if (!file.exists()) {
+            return;
+        }
+
+        boolean successfullyDeleted = file.delete();
+        if (!successfullyDeleted) {
+            throw new IOException("Could not delete file " + file);
+        }
+    }
+
+    public static void maybeCreateFileWithParentDirectories(File file) throws IOException {
+        File parent = file.getParentFile();
+        if (!parent.exists() && !parent.mkdirs()) {
+            throw new IOException("Cannot create directory " + parent);
+        }
+
+        if (file.isFile()) {
+            return;
+        }
+
+        if (!file.exists()) {
+            if (file.createNewFile()) {
+                return;
+            }
+            throw new IOException("Cannot create file " + file);
+        }
+
+        if (file.isDirectory()) {
+            throw new IOException("File " + file + " exists, but is a directory.");
+        } else {
+            throw new IOException("File " + file + " exists, but is neither a file nor a directory");
         }
     }
 }

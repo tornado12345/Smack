@@ -21,7 +21,7 @@ import java.util.List;
 
 import org.jivesoftware.smack.util.StringUtils;
 
-import org.minidns.dnsname.DNSName;
+import org.minidns.dnsname.DnsName;
 
 /**
  * A DNS SRV RR.
@@ -29,7 +29,7 @@ import org.minidns.dnsname.DNSName;
  * @see <a href="http://tools.ietf.org/html/rfc2782">RFC 2782: A DNS RR for specifying the location of services (DNS
  * SRV)</a>
  * @author Florian Schmaus
- * 
+ *
  */
 public class SRVRecord extends HostAddress implements Comparable<SRVRecord> {
 
@@ -38,7 +38,7 @@ public class SRVRecord extends HostAddress implements Comparable<SRVRecord> {
 
     /**
      * SRV Record constructor.
-     * 
+     *
      * @param fqdn Fully qualified domain name
      * @param port The connection port
      * @param priority Priority of the target host
@@ -46,9 +46,9 @@ public class SRVRecord extends HostAddress implements Comparable<SRVRecord> {
      * @param inetAddresses list of addresses.
      * @throws IllegalArgumentException fqdn is null or any other field is not in valid range (0-65535).
      */
-    public SRVRecord(DNSName fqdn, int port, int priority, int weight, List<InetAddress> inetAddresses) {
+    public SRVRecord(DnsName fqdn, int port, int priority, int weight, List<InetAddress> inetAddresses) {
         super(fqdn, port, inetAddresses);
-        StringUtils.requireNotNullOrEmpty(fqdn, "The FQDN must not be null");
+        StringUtils.requireNotNullNorEmpty(fqdn, "The FQDN must not be null");
         if (weight < 0 || weight > 65535)
             throw new IllegalArgumentException(
                     "DNS SRV records weight must be a 16-bit unsigned integer (i.e. between 0-65535. Weight was: "

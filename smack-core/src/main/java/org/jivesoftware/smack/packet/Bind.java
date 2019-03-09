@@ -27,7 +27,7 @@ import org.jxmpp.jid.parts.Resourcepart;
  * resource but the server may return a modified version of the sent resource.<p>
  *
  * For more information refer to the following
- * <a href=http://www.xmpp.org/specs/rfc3920.html#bind>link</a>. 
+ * <a href=http://www.xmpp.org/specs/rfc3920.html#bind>link</a>.
  *
  * @author Gaston Dombiak
  */
@@ -89,7 +89,7 @@ public final class Bind extends IQ {
         }
 
         @Override
-        public String toXML(String enclosingNamespace) {
+        public String toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
             return '<' + ELEMENT + " xmlns='" + NAMESPACE + "'/>";
         }
 

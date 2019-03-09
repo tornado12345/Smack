@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 
-import org.jivesoftware.smack.ConnectionConfiguration.Builder;
 import org.jivesoftware.smack.DummyConnection;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPException;
@@ -71,8 +70,7 @@ public class RosterVersioningTest {
         DirectoryRosterStore store = DirectoryRosterStore.init(tmpFolder.newFolder("store"));
         populateStore(store);
 
-        Builder<?, ?> builder = DummyConnection.getDummyConfigurationBuilder();
-        connection = new DummyConnection(builder.build());
+        connection = new DummyConnection();
         connection.connect();
         connection.login();
         rosterListener = new TestRosterListener();
@@ -97,8 +95,8 @@ public class RosterVersioningTest {
     /**
      * Tests that receiving an empty roster result causes the roster to be populated
      * by all entries of the roster store.
-     * @throws SmackException 
-     * @throws XMPPException 
+     * @throws SmackException
+     * @throws XMPPException
      */
     @Test(timeout = 300000)
     public void testEqualVersionStored() throws InterruptedException, IOException, XMPPException, SmackException {
@@ -131,9 +129,9 @@ public class RosterVersioningTest {
 
     /**
      * Tests that a non-empty roster result empties the store.
-     * @throws SmackException 
-     * @throws XMPPException 
-     * @throws XmppStringprepException 
+     * @throws SmackException
+     * @throws XMPPException
+     * @throws XmppStringprepException
      */
     @Test(timeout = 5000)
     public void testOtherVersionStored() throws XMPPException, SmackException, XmppStringprepException {
@@ -175,6 +173,7 @@ public class RosterVersioningTest {
     /**
      * Test roster versioning with roster pushes.
      */
+    @SuppressWarnings("UndefinedEquals")
     @Test(timeout = 5000)
     public void testRosterVersioningWithCachedRosterAndPushes() throws Throwable {
         answerWithEmptyRosterResult();

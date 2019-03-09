@@ -38,7 +38,7 @@ public final class NoPermanentStoreHint extends MessageProcessingHint {
     }
 
     @Override
-    public String toXML(String enclosingNamespace) {
+    public String toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
         return '<' + ELEMENT + " xmlns='" + NAMESPACE + "'/>";
     }
 
@@ -60,7 +60,7 @@ public final class NoPermanentStoreHint extends MessageProcessingHint {
             // No need to set the no-permanent-store hint when a no-store hint is already set.
             return;
         }
-        setExplicitly(message);
+        message.overrideExtension(INSTANCE);
     }
 
     public static void setExplicitly(Message message) {

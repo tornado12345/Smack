@@ -16,6 +16,7 @@
  */
 package org.jivesoftware.smackx.chat_markers.provider;
 
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 
 import org.jivesoftware.smackx.chat_markers.element.ChatMarkersElements.DisplayedExtension;
@@ -24,16 +25,16 @@ import org.xmlpull.v1.XmlPullParser;
 
 /**
  * Displayed extension provider class (XEP-0333).
- * 
+ *
  * @see <a href="http://xmpp.org/extensions/xep-0333.html">XEP-0333: Chat
  *      Markers</a>
  * @author Fernando Ramirez
- * 
+ *
  */
 public class DisplayedProvider extends ExtensionElementProvider<DisplayedExtension> {
 
     @Override
-    public DisplayedExtension parse(XmlPullParser parser, int initialDepth) throws Exception {
+    public DisplayedExtension parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment) {
         String id = parser.getAttributeValue("", "id");
         return new DisplayedExtension(id);
     }

@@ -29,7 +29,7 @@ import org.jivesoftware.smack.util.XmlStringBuilder;
 
 /**
  * A GeoLocation Extension packet, which is used by the XMPP clients to exchange their respective geographic locations.
- * 
+ *
  * @see <a href="http://www.xmpp.org/extensions/xep-0080.html">XEP-0080</a>
  * @author Ishan Khanna
  */
@@ -214,7 +214,7 @@ public final class GeoLocation implements Serializable, ExtensionElement {
     }
 
     @Override
-    public CharSequence toXML(String enclosingNamespace) {
+    public CharSequence toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.rightAngleBracket();
         xml.optElement("accuracy", accuracy);

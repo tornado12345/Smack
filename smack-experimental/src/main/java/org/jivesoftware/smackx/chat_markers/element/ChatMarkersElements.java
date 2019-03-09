@@ -1,6 +1,6 @@
 /**
  *
- * Copyright © 2016 Fernando Ramirez
+ * Copyright © 2016 Fernando Ramirez, 2018 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,17 @@ package org.jivesoftware.smackx.chat_markers.element;
 
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.XmlStringBuilder;
+import org.jivesoftware.smackx.chat_markers.ChatMarkersState;
 
 /**
  * Chat Markers elements (XEP-0333).
- * 
+ *
  * @see <a href="http://xmpp.org/extensions/xep-0333.html">XEP-0333: Chat
  *      Markers</a>
  * @author Fernando Ramirez
- * 
+ *
  */
 public class ChatMarkersElements {
 
@@ -34,20 +36,22 @@ public class ChatMarkersElements {
 
     /**
      * Markable extension class.
-     * 
+     *
      * @see <a href="http://xmpp.org/extensions/xep-0333.html">XEP-0333: Chat
      *      Markers</a>
      * @author Fernando Ramirez
      *
      */
-    public static class MarkableExtension implements ExtensionElement {
+    public static final class MarkableExtension implements ExtensionElement {
+
+        public static final MarkableExtension INSTANCE = new MarkableExtension();
 
         /**
          * markable element.
          */
-        public static final String ELEMENT = "markable";
+        public static final String ELEMENT = ChatMarkersState.markable.toString();
 
-        public MarkableExtension() {
+        private MarkableExtension() {
         }
 
         @Override
@@ -61,7 +65,7 @@ public class ChatMarkersElements {
         }
 
         @Override
-        public CharSequence toXML(String enclosingNamespace) {
+        public CharSequence toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder(this);
             xml.closeEmptyElement();
             return xml;
@@ -72,34 +76,48 @@ public class ChatMarkersElements {
         }
     }
 
+    protected abstract static class ChatMarkerExtensionWithId implements ExtensionElement {
+        protected final String id;
+
+        protected ChatMarkerExtensionWithId(String id) {
+            this.id = StringUtils.requireNotNullNorEmpty(id, "Message ID must not be null");
+        }
+
+        /**
+         * Get the id.
+         *
+         * @return the id
+         */
+        public final String getId() {
+            return id;
+        }
+
+        @Override
+        public final XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
+            XmlStringBuilder xml = new XmlStringBuilder(this);
+            xml.attribute("id", id);
+            xml.closeEmptyElement();
+            return xml;
+        }
+    }
+
     /**
      * Received extension class.
-     * 
+     *
      * @see <a href="http://xmpp.org/extensions/xep-0333.html">XEP-0333: Chat
      *      Markers</a>
      * @author Fernando Ramirez
      *
      */
-    public static class ReceivedExtension implements ExtensionElement {
+    public static class ReceivedExtension extends ChatMarkerExtensionWithId {
 
         /**
          * received element.
          */
-        public static final String ELEMENT = "received";
-
-        private final String id;
+        public static final String ELEMENT = ChatMarkersState.received.toString();
 
         public ReceivedExtension(String id) {
-            this.id = id;
-        }
-
-        /**
-         * Get the id.
-         * 
-         * @return the id
-         */
-        public String getId() {
-            return id;
+            super(id);
         }
 
         @Override
@@ -110,14 +128,6 @@ public class ChatMarkersElements {
         @Override
         public String getNamespace() {
             return NAMESPACE;
-        }
-
-        @Override
-        public CharSequence toXML(String enclosingNamespace) {
-            XmlStringBuilder xml = new XmlStringBuilder(this);
-            xml.attribute("id", id);
-            xml.closeEmptyElement();
-            return xml;
         }
 
         public static ReceivedExtension from(Message message) {
@@ -127,32 +137,21 @@ public class ChatMarkersElements {
 
     /**
      * Displayed extension class.
-     * 
+     *
      * @see <a href="http://xmpp.org/extensions/xep-0333.html">XEP-0333: Chat
      *      Markers</a>
      * @author Fernando Ramirez
      *
      */
-    public static class DisplayedExtension implements ExtensionElement {
+    public static class DisplayedExtension extends ChatMarkerExtensionWithId {
 
         /**
          * displayed element.
          */
-        public static final String ELEMENT = "displayed";
-
-        private final String id;
+        public static final String ELEMENT = ChatMarkersState.displayed.toString();
 
         public DisplayedExtension(String id) {
-            this.id = id;
-        }
-
-        /**
-         * Get the id.
-         * 
-         * @return the id
-         */
-        public String getId() {
-            return id;
+            super(id);
         }
 
         @Override
@@ -163,14 +162,6 @@ public class ChatMarkersElements {
         @Override
         public String getNamespace() {
             return NAMESPACE;
-        }
-
-        @Override
-        public CharSequence toXML(String enclosingNamespace) {
-            XmlStringBuilder xml = new XmlStringBuilder(this);
-            xml.attribute("id", id);
-            xml.closeEmptyElement();
-            return xml;
         }
 
         public static DisplayedExtension from(Message message) {
@@ -180,32 +171,21 @@ public class ChatMarkersElements {
 
     /**
      * Acknowledged extension class.
-     * 
+     *
      * @see <a href="http://xmpp.org/extensions/xep-0333.html">XEP-0333: Chat
      *      Markers</a>
      * @author Fernando Ramirez
      *
      */
-    public static class AcknowledgedExtension implements ExtensionElement {
+    public static class AcknowledgedExtension extends ChatMarkerExtensionWithId {
 
         /**
          * acknowledged element.
          */
-        public static final String ELEMENT = "acknowledged";
-
-        private final String id;
+        public static final String ELEMENT = ChatMarkersState.acknowledged.toString();
 
         public AcknowledgedExtension(String id) {
-            this.id = id;
-        }
-
-        /**
-         * Get the id.
-         * 
-         * @return the id
-         */
-        public String getId() {
-            return id;
+            super(id);
         }
 
         @Override
@@ -216,14 +196,6 @@ public class ChatMarkersElements {
         @Override
         public String getNamespace() {
             return NAMESPACE;
-        }
-
-        @Override
-        public CharSequence toXML(String enclosingNamespace) {
-            XmlStringBuilder xml = new XmlStringBuilder(this);
-            xml.attribute("id", id);
-            xml.closeEmptyElement();
-            return xml;
         }
 
         public static AcknowledgedExtension from(Message message) {

@@ -20,6 +20,7 @@ package org.jivesoftware.smackx.workgroup.settings;
 import java.io.IOException;
 
 import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.util.StringUtils;
 
@@ -95,7 +96,7 @@ public class WorkgroupProperties extends IQ {
     public static class InternalProvider extends IQProvider<WorkgroupProperties> {
 
         @Override
-        public WorkgroupProperties parse(XmlPullParser parser, int initialDepth) throws XmlPullParserException, IOException {
+        public WorkgroupProperties parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment) throws XmlPullParserException, IOException {
             WorkgroupProperties props = new WorkgroupProperties();
 
             boolean done = false;
@@ -103,13 +104,15 @@ public class WorkgroupProperties extends IQ {
 
             while (!done) {
                 int eventType = parser.next();
-                if ((eventType == XmlPullParser.START_TAG) && ("authRequired".equals(parser.getName()))) {
+                if (eventType == XmlPullParser.START_TAG && "authRequired".equals(parser.getName())) {
+                    // CHECKSTYLE:OFF
                     props.setAuthRequired(Boolean.valueOf(parser.nextText()).booleanValue());
+                    // CHECKSTYLE:ON
                 }
-                else if ((eventType == XmlPullParser.START_TAG) && ("email".equals(parser.getName()))) {
+                else if (eventType == XmlPullParser.START_TAG && "email".equals(parser.getName())) {
                     props.setEmail(parser.nextText());
                 }
-                else if ((eventType == XmlPullParser.START_TAG) && ("name".equals(parser.getName()))) {
+                else if (eventType == XmlPullParser.START_TAG && "name".equals(parser.getName())) {
                     props.setFullName(parser.nextText());
                 }
                 else if (eventType == XmlPullParser.END_TAG && "workgroup-properties".equals(parser.getName())) {

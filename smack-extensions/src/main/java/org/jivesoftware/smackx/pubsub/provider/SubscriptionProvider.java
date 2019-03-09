@@ -18,6 +18,7 @@ package org.jivesoftware.smackx.pubsub.provider;
 
 import java.io.IOException;
 
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.jivesoftware.smack.util.ParserUtils;
 
@@ -30,12 +31,12 @@ import org.xmlpull.v1.XmlPullParserException;
 /**
  * Parses the <b>subscription</b> element out of the PubSub IQ message from
  * the server as specified in the <a href="http://xmpp.org/extensions/xep-0060.html#schemas-pubsub">subscription schema</a>.
- * 
+ *
  * @author Robin Collier
  */
 public class SubscriptionProvider extends ExtensionElementProvider<Subscription> {
     @Override
-    public Subscription parse(XmlPullParser parser, int initialDepth)
+    public Subscription parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment)
                     throws XmlPullParserException, IOException {
         Jid jid = ParserUtils.getJidAttribute(parser);
         String nodeId = parser.getAttributeValue(null, "node");

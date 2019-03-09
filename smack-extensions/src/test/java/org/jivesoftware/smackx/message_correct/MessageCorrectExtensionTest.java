@@ -28,12 +28,12 @@ public class MessageCorrectExtensionTest {
 
     private static final String idInitialMessage = "bad1";
 
-    private static final String initialMessageXml = "<message to='juliet@capulet.net/balcony' id='good1'>"
+    private static final String initialMessageXml = "<message xmlns='jabber:client' to='juliet@capulet.net/balcony' id='good1'>"
             + "<body>But soft, what light through yonder window breaks?</body>" + "</message>";
 
     private static final CharSequence messageCorrectionXml = "<replace xmlns='urn:xmpp:message-correct:0' id='bad1'/>";
 
-    private static final CharSequence expectedXml = "<message to='juliet@capulet.net/balcony' id='good1'>"
+    private static final CharSequence expectedXml = "<message xmlns='jabber:client' to='juliet@capulet.net/balcony' id='good1'>"
             + "<body>But soft, what light through yonder window breaks?</body>"
             + "<replace xmlns='urn:xmpp:message-correct:0' id='bad1'/>" + "</message>";
 
@@ -42,11 +42,11 @@ public class MessageCorrectExtensionTest {
         Message initialMessage = PacketParserUtils.parseStanza(initialMessageXml);
         MessageCorrectExtension messageCorrectExtension = new MessageCorrectExtension(idInitialMessage);
 
-        Assert.assertEquals(messageCorrectExtension.toXML(null).toString(), messageCorrectionXml);
+        Assert.assertEquals(messageCorrectExtension.toXML().toString(), messageCorrectionXml.toString());
 
         initialMessage.addExtension(messageCorrectExtension);
 
-        Assert.assertEquals(initialMessage.toXML(null), expectedXml);
+        Assert.assertEquals(initialMessage.toXML().toString(), expectedXml.toString());
     }
 
 }

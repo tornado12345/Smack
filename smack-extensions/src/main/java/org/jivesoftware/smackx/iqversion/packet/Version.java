@@ -46,7 +46,7 @@ public class Version extends IQ {
 
     /**
      * Request version IQ.
-     * 
+     *
      * @param to the jid where to request version from
      */
     public Version(Jid to) {
@@ -68,8 +68,8 @@ public class Version extends IQ {
     public Version(String name, String version, String os) {
         super(ELEMENT, NAMESPACE);
         this.setType(IQ.Type.result);
-        this.name = StringUtils.requireNotNullOrEmpty(name, "name must not be null");
-        this.version = StringUtils.requireNotNullOrEmpty(version, "version must not be null");
+        this.name = StringUtils.requireNotNullNorEmpty(name, "name must not be null");
+        this.version = StringUtils.requireNotNullNorEmpty(version, "version must not be null");
         this.os = os;
     }
 

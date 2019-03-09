@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.jivesoftware.smack.util.stringencoder.Base64;
 
@@ -45,15 +46,15 @@ public class JivePropertiesExtensionProvider extends ExtensionElementProvider<Ji
      * <p>
      * Note that you have to explicitly enabled Java object deserialization with @{link
      * {@link JivePropertiesManager#setJavaObjectEnabled(boolean)}
-     * 
+     *
      * @param parser the XML parser, positioned at the start of a properties sub-packet.
      * @return a map of the properties.
-     * @throws IOException 
-     * @throws XmlPullParserException 
+     * @throws IOException
+     * @throws XmlPullParserException
      */
     @Override
     public JivePropertiesExtension parse(XmlPullParser parser,
-                    int initialDepth) throws XmlPullParserException,
+                    int initialDepth, XmlEnvironment xmlEnvironment) throws XmlPullParserException,
                     IOException {
         Map<String, Object> properties = new HashMap<>();
         while (true) {
@@ -92,7 +93,9 @@ public class JivePropertiesExtensionProvider extends ExtensionElementProvider<Ji
                                 value = Double.valueOf(valueText);
                             }
                             else if ("boolean".equals(type)) {
+                                // CHECKSTYLE:OFF
                                 value = Boolean.valueOf(valueText);
+                                // CHECKSTYLE:ON
                             }
                             else if ("string".equals(type)) {
                                 value = valueText;

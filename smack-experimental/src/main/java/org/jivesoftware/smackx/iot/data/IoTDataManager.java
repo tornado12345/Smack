@@ -50,7 +50,7 @@ import org.jxmpp.jid.EntityFullJid;
 
 /**
  * A manager for XEP-0323: Internet of Things - Sensor Data.
- * 
+ *
  * @author Florian Schmaus {@literal <flo@geekplace.eu>}
  * @see <a href="http://xmpp.org/extensions/xep-0323.html">XEP-0323: Internet of Things - Sensor Data</a>
  */
@@ -192,9 +192,9 @@ public final class IoTDataManager extends IoTManager {
             doneCollector.nextResult();
         }
         finally {
-            // Ensure that the two collectors are canceled in any case.
+            // Canceling dataCollector will also cancel the doneCollector since it is configured as dataCollector's
+            // collector to reset.
             dataCollector.cancel();
-            doneCollector.cancel();
         }
 
         int collectedCount = dataCollector.getCollectedCount();

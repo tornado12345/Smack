@@ -25,13 +25,13 @@ import java.util.Enumeration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.StanzaCollector;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.provider.ProviderManager;
 
@@ -329,8 +329,8 @@ public class RTPBridge extends IQ {
     public static class Provider extends IQProvider<RTPBridge> {
 
         @Override
-        public RTPBridge parse(XmlPullParser parser, int initialDepth)
-                        throws SmackException, XmlPullParserException,
+        public RTPBridge parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment)
+                        throws XmlPullParserException,
                         IOException {
 
             boolean done = false;
@@ -339,7 +339,8 @@ public class RTPBridge extends IQ {
             String elementName;
 
             if (!parser.getNamespace().equals(RTPBridge.NAMESPACE))
-                throw new SmackException("Not a RTP Bridge packet");
+                // TODO: Should be SmackParseException.
+                throw new IOException("Not a RTP Bridge packet");
 
             RTPBridge iq = new RTPBridge();
 
@@ -392,8 +393,8 @@ public class RTPBridge extends IQ {
      * @param connection
      * @param sessionID
      * @return the new RTPBridge
-     * @throws NotConnectedException 
-     * @throws InterruptedException 
+     * @throws NotConnectedException
+     * @throws InterruptedException
      */
     @SuppressWarnings("deprecation")
     public static RTPBridge getRTPBridge(XMPPConnection connection, String sessionID) throws NotConnectedException, InterruptedException {
@@ -420,10 +421,10 @@ public class RTPBridge extends IQ {
      *
      * @param connection
      * @return true if the server supports the RTPBridge service
-     * @throws XMPPErrorException 
-     * @throws NoResponseException 
-     * @throws NotConnectedException 
-     * @throws InterruptedException 
+     * @throws XMPPErrorException
+     * @throws NoResponseException
+     * @throws NotConnectedException
+     * @throws InterruptedException
      */
     public static boolean serviceAvailable(XMPPConnection connection) throws NoResponseException,
                     XMPPErrorException, NotConnectedException, InterruptedException {
@@ -447,7 +448,7 @@ public class RTPBridge extends IQ {
 
         DiscoverInfo discoInfo = disco.discoverInfo(connection.getXMPPServiceDomain());
         for (DiscoverInfo.Identity identity : discoInfo.getIdentities()) {
-            if ((identity.getName() != null) && (identity.getName().startsWith("rtpbridge"))) {
+            if (identity.getName() != null && identity.getName().startsWith("rtpbridge")) {
                 return true;
             }
         }
@@ -460,8 +461,8 @@ public class RTPBridge extends IQ {
      *
      * @param connection
      * @return the RTPBridge
-     * @throws NotConnectedException 
-     * @throws InterruptedException 
+     * @throws NotConnectedException
+     * @throws InterruptedException
      */
     @SuppressWarnings("deprecation")
     public static RTPBridge relaySession(XMPPConnection connection, String sessionID, String pass, TransportCandidate proxyCandidate, TransportCandidate localCandidate) throws NotConnectedException, InterruptedException {
@@ -497,8 +498,8 @@ public class RTPBridge extends IQ {
      *
      * @param xmppConnection
      * @return public IP String or null if not found
-     * @throws NotConnectedException 
-     * @throws InterruptedException 
+     * @throws NotConnectedException
+     * @throws InterruptedException
      */
     @SuppressWarnings("deprecation")
     public static String getPublicIP(XMPPConnection xmppConnection) throws NotConnectedException, InterruptedException {

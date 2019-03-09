@@ -68,11 +68,11 @@ public class ParseStreamManagementTest {
 
     @Test
     public void testParseEnabledInvariant() throws XmlPullParserException, IOException {
-        String enabledString = (new StreamManagement.Enabled("stream-id", false)).toXML(null).toString();
+        String enabledString = new StreamManagement.Enabled("stream-id", false).toXML().toString();
         XmlPullParser parser = PacketParserUtils.getParserFor(enabledString);
         StreamManagement.Enabled enabled = ParseStreamManagement.enabled(parser);
 
-        assertEquals(enabledString, enabled.toXML(null).toString());
+        assertEquals(enabledString, enabled.toXML().toString());
     }
 
     @Test
@@ -85,7 +85,7 @@ public class ParseStreamManagementTest {
                 PacketParserUtils.getParserFor(failedStanza));
 
         assertThat(failedPacket, is(notNullValue()));
-        assertTrue(failedPacket.getXMPPErrorCondition() == null);
+        assertTrue(failedPacket.getStanzaErrorCondition() == null);
     }
 
     @Test
@@ -94,14 +94,14 @@ public class ParseStreamManagementTest {
 
         String failedStanza = XMLBuilder.create("failed")
                 .a("xmlns", "urn:xmpp:sm:3")
-                .element(errorCondition.toString(), StanzaError.NAMESPACE)
+                .element(errorCondition.toString(), StanzaError.ERROR_CONDITION_AND_TEXT_NAMESPACE)
                 .asString(outputProperties);
 
         StreamManagement.Failed failedPacket = ParseStreamManagement.failed(
                 PacketParserUtils.getParserFor(failedStanza));
 
         assertThat(failedPacket, is(notNullValue()));
-        assertTrue(failedPacket.getXMPPErrorCondition() == errorCondition);
+        assertTrue(failedPacket.getStanzaErrorCondition() == errorCondition);
     }
 
     @Test
@@ -118,7 +118,7 @@ public class ParseStreamManagementTest {
 
         StreamManagement.Failed failed = ParseStreamManagement.failed(parser);
 
-        assertEquals(StanzaError.Condition.item_not_found, failed.getXMPPErrorCondition());
+        assertEquals(StanzaError.Condition.item_not_found, failed.getStanzaErrorCondition());
 
         List<StanzaErrorTextElement> textElements = failed.getTextElements();
         assertEquals(1, textElements.size());

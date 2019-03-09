@@ -54,8 +54,9 @@ Smack Extensions and currently supported XEPs of smack-extensions
 | Software Version                            | [XEP-0092](https://xmpp.org/extensions/xep-0092.html)  | n/a       | Retrieve and announce the software application of an XMPP entity. |
 | Stream Initation                            | [XEP-0095](https://xmpp.org/extensions/xep-0095.html)  | n/a       | Initiating a data stream between any two XMPP entities. |
 | [SI File Transfer](filetransfer.md)         | [XEP-0096](https://xmpp.org/extensions/xep-0096.html)  | n/a       | Transfer files between two users over XMPP. |
+| User Mood                                   | [XEP-0107](https://xmpp.org/extensions/xep-0107.html)  | 1.2.1     | Communicate the users current mood. |
 | [Entity Capabilities](caps.md)              | [XEP-0115](https://xmpp.org/extensions/xep-0115.html)  | n/a       | Broadcasting and dynamic discovery of entity capabilities. |
-| [Jingle](jingle.html)                       | [XEP-0116](http://xmpp.org/extensions/xep-0166.html)   | n/a       | Initiate and manage sessions between two XMPP entities. |
+| [Jingle](jingle.html)                       | [XEP-0116](https://xmpp.org/extensions/xep-0166.html)  | n/a       | Initiate and manage sessions between two XMPP entities. |
 | Data Forms Validation                       | [XEP-0122](https://xmpp.org/extensions/xep-0122.html)  | n/a       | Enables an application to specify additional validation guidelines . |
 | Service Administration                      | [XEP-0133](https://xmpp.org/extensions/xep-0133.html)  | n/a       | Recommended best practices for service-level administration of servers and components using Ad-Hoc Commands. |
 | Stream Compression                          | [XEP-0138](https://xmpp.org/extensions/xep-0138.html)  | n/a       | Support for optional compression of the XMPP stream.
@@ -78,25 +79,30 @@ Smack Extensions and currently supported XEPs of smack-extensions
 
 Experimental Smack Extensions and currently supported XEPs of smack-experimental
 --------------------------------------------------------------------------------
-| Message Carbons                             | [XEP-0280](https://xmpp.org/extensions/xep-0280.html)  | n/a       | Keep all IM clients for a user engaged in a conversation, by carbon-copy outbound messages to all interested resources. |
-| [Message Archive Management](mam.md)        | [XEP-0313](https://xmpp.org/extensions/xep-0313.html)  | n/a       | Query and control an archive of messages stored on a server. |
-| [Internet of Things - Sensor Data](iot.md)  | [XEP-0323](https://xmpp.org/extensions/xep-0323.html)  | n/a       | Sensor data interchange over XMPP. |
-| [Internet of Things - Provisioning](iot.md) | [XEP-0324](https://xmpp.org/extensions/xep-0324.html)  | n/a       | Provisioning, access rights and user priviliges for the Internet of Things. |
-| [Internet of Things - Control](iot.md)      | [XEP-0325](https://xmpp.org/extensions/xep-0325.html)  | n/a       | Describes how to control devices or actuators in an XMPP-based sensor network. |
-| [HTTP over XMPP transport](hoxt.md)         | [XEP-0332](https://xmpp.org/extensions/xep-0332.html)  | n/a       | Allows to transport HTTP communication over XMPP peer-to-peer networks. |
-| Chat Markers         			  			  | [XEP-0333](https://xmpp.org/extensions/xep-0333.html)  | n/a       | A solution of marking the last received, displayed and acknowledged message in a chat. |
-| Message Processing Hints                    | [XEP-0334](https://xmpp.org/extensions/xep-0334.html)  | n/a       | Hints to entities routing or receiving a message. |
-| JSON Containers                             | [XEP-0335](https://xmpp.org/extensions/xep-0335.html)  | n/a       | Encapsulation of JSON data within XMPP Stanzas. |
-| [Internet of Things - Discovery](iot.md)    | [XEP-0347](https://xmpp.org/extensions/xep-0347.html)  | n/a       | Describes how Things can be installed and discovered by their owners. |
-| Client State Indication                     | [XEP-0352](https://xmpp.org/extensions/xep-0352.html)  | n/a       | A way for the client to indicate its active/inactive state. |
-| [Push Notifications](pushnotifications.md)  | [XEP-0357](https://xmpp.org/extensions/xep-0357.html)  | n/a       | Defines a way to manage push notifications from an XMPP Server. |
-| Stable and Unique Stanza IDs                | [XEP-0359](https://xmpp.org/extensions/xep-0359.html)  | 0.5.0     | This specification describes unique and stable IDs for messages. |
-| HTTP File Upload                            | [XEP-0363](https://xmpp.org/extensions/xep-0363.html)  | 0.3.1     | Protocol to request permissions to upload a file to an HTTP server and get a shareable URL. |
-| References                                  | [XEP-0372](https://xmpp.org/extensions/xep-0363.html)  | 0.2.0     | Add references like mentions or external data to stanzas. |
-| [Spoiler Messages](spoiler.md)              | [XEP-0382](https://xmpp.org/extensions/xep-0382.html)  | 0.2.0     | Indicate that the body of a message should be treated as a spoiler |
-| [OMEMO Multi End Message and Object Encryption](omemo.md) | [XEP-0384](https://xmpp.org/extensions/xep-0384.html) | n/a     | Encrypt messages using OMEMO encryption (currently only with smack-omemo-signal -> GPLv3). |
-| [Consistent Color Generation](consistent_colors.md) | [XEP-0392](https://xmpp.org/extensions/xep-0392.html)  | 0.4.0     | Generate consistent colors for identifiers like usernames to provide a consistent user experience. |
-| [Message Markup](messagemarkup.md)          | [XEP-0394](https://xmpp.org/extensions/xep-0394.html)  | 0.1.0     | Style message bodies while keeping body and markup information separated. |
+
+| Name                                                      | XEP                                                    | Version   | Description |
+|-----------------------------------------------------------|--------------------------------------------------------|-----------|-------------------------------------------------------------------------------------------------------------------------|
+| Message Carbons                                           | [XEP-0280](https://xmpp.org/extensions/xep-0280.html)  | n/a       | Keep all IM clients for a user engaged in a conversation, by carbon-copy outbound messages to all interested resources. |
+| [Message Archive Management](mam.md)                      | [XEP-0313](https://xmpp.org/extensions/xep-0313.html)  | n/a       | Query and control an archive of messages stored on a server. |
+| [Internet of Things - Sensor Data](iot.md)                | [XEP-0323](https://xmpp.org/extensions/xep-0323.html)  | n/a       | Sensor data interchange over XMPP. |
+| [Internet of Things - Provisioning](iot.md)               | [XEP-0324](https://xmpp.org/extensions/xep-0324.html)  | n/a       | Provisioning, access rights and user privileges for the Internet of Things. |
+| [Internet of Things - Control](iot.md)                    | [XEP-0325](https://xmpp.org/extensions/xep-0325.html)  | n/a       | Describes how to control devices or actuators in an XMPP-based sensor network. |
+| [HTTP over XMPP transport](hoxt.md)                       | [XEP-0332](https://xmpp.org/extensions/xep-0332.html)  | n/a       | Allows to transport HTTP communication over XMPP peer-to-peer networks. |
+| Chat Markers                                              | [XEP-0333](https://xmpp.org/extensions/xep-0333.html)  | n/a       | A solution of marking the last received, displayed and acknowledged message in a chat. |
+| Message Processing Hints                                  | [XEP-0334](https://xmpp.org/extensions/xep-0334.html)  | n/a       | Hints to entities routing or receiving a message. |
+| JSON Containers                                           | [XEP-0335](https://xmpp.org/extensions/xep-0335.html)  | n/a       | Encapsulation of JSON data within XMPP Stanzas. |
+| [Internet of Things - Discovery](iot.md)                  | [XEP-0347](https://xmpp.org/extensions/xep-0347.html)  | n/a       | Describes how Things can be installed and discovered by their owners. |
+| Client State Indication                                   | [XEP-0352](https://xmpp.org/extensions/xep-0352.html)  | n/a       | A way for the client to indicate its active/inactive state. |
+| [Push Notifications](pushnotifications.md)                | [XEP-0357](https://xmpp.org/extensions/xep-0357.html)  | n/a       | Defines a way to manage push notifications from an XMPP Server. |
+| Stable and Unique Stanza IDs                              | [XEP-0359](https://xmpp.org/extensions/xep-0359.html)  | 0.5.0     | This specification describes unique and stable IDs for messages. |
+| HTTP File Upload                                          | [XEP-0363](https://xmpp.org/extensions/xep-0363.html)  | 0.3.1     | Protocol to request permissions to upload a file to an HTTP server and get a shareable URL. |
+| References                                                | [XEP-0372](https://xmpp.org/extensions/xep-0363.html)  | 0.2.0     | Add references like mentions or external data to stanzas. |
+| [OpenPGP for XMPP](ox.md)                                 | [XEP-0373](https://xmpp.org/extensions/xep-0373.html)  | 0.3.2     | Utilize OpenPGP to exchange encrypted and signed content. |
+| [OpenPGP for XMPP: Instant Messaging](ox-im.md)           | [XEP-0374](https://xmpp.org/extensions/xep-0374.html)  | 0.2.0     | OpenPGP encrypted Instant Messaging. |
+| [Spoiler Messages](spoiler.md)                            | [XEP-0382](https://xmpp.org/extensions/xep-0382.html)  | 0.2.0     | Indicate that the body of a message should be treated as a spoiler. |
+| [OMEMO Multi End Message and Object Encryption](omemo.md) | [XEP-0384](https://xmpp.org/extensions/xep-0384.html)  | n/a       | Encrypt messages using OMEMO encryption (currently only with smack-omemo-signal -> GPLv3). |
+| [Consistent Color Generation](consistent_colors.md)       | [XEP-0392](https://xmpp.org/extensions/xep-0392.html)  | 0.4.0     | Generate consistent colors for identifiers like usernames to provide a consistent user experience. |
+| [Message Markup](messagemarkup.md)                        | [XEP-0394](https://xmpp.org/extensions/xep-0394.html)  | 0.1.0     | Style message bodies while keeping body and markup information separated. |
 
 Unofficial XMPP Extensions
 --------------------------

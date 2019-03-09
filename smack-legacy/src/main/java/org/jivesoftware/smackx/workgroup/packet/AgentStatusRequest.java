@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.util.ParserUtils;
 
@@ -121,13 +122,13 @@ public class AgentStatusRequest extends IQ {
     public static class Provider extends IQProvider<AgentStatusRequest> {
 
         @Override
-        public AgentStatusRequest parse(XmlPullParser parser, int initialDepth) throws XmlPullParserException, IOException {
+        public AgentStatusRequest parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment) throws XmlPullParserException, IOException {
             AgentStatusRequest statusRequest = new AgentStatusRequest();
 
             boolean done = false;
             while (!done) {
                 int eventType = parser.next();
-                if ((eventType == XmlPullParser.START_TAG) && ("agent".equals(parser.getName()))) {
+                if (eventType == XmlPullParser.START_TAG && "agent".equals(parser.getName())) {
                     statusRequest.agents.add(parseAgent(parser));
                 }
                 else if (eventType == XmlPullParser.END_TAG &&
@@ -146,7 +147,7 @@ public class AgentStatusRequest extends IQ {
             String name = null;
             while (!done) {
                 int eventType = parser.next();
-                if ((eventType == XmlPullParser.START_TAG) && ("name".equals(parser.getName()))) {
+                if (eventType == XmlPullParser.START_TAG && "name".equals(parser.getName())) {
                     name = parser.nextText();
                 }
                 else if (eventType == XmlPullParser.END_TAG &&

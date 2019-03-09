@@ -59,8 +59,8 @@ import org.jxmpp.jid.Jid;
  *
  * Pass in an XMPPConnection instance to
  * {@link #getAddHocCommandsManager(XMPPConnection)} in order to
- * get an instance of this class. 
- * 
+ * get an instance of this class.
+ *
  * @author Gabriel Guardincerri
  */
 public final class AdHocCommandManager extends Manager {
@@ -258,37 +258,10 @@ public final class AdHocCommandManager extends Manager {
      * @return the discovered items.
      * @throws XMPPException if the operation failed for some reason.
      * @throws SmackException if there was no response from the server.
-     * @throws InterruptedException 
+     * @throws InterruptedException
      */
     public DiscoverItems discoverCommands(Jid jid) throws XMPPException, SmackException, InterruptedException {
         return serviceDiscoveryManager.discoverItems(jid, NAMESPACE);
-    }
-
-    /**
-     * Publish the commands to an specific JID.
-     *
-     * @param jid the full JID to publish the commands to.
-     * @throws XMPPException if the operation failed for some reason.
-     * @throws SmackException if there was no response from the server.
-     * @throws InterruptedException 
-     * @deprecated This method uses no longer existent XEP-0030 features and will be removed.
-     */
-    @SuppressWarnings("deprecation")
-    @Deprecated
-    // TODO: Remove in Smack 4.4.
-    public void publishCommands(Jid jid) throws XMPPException, SmackException, InterruptedException {
-        // Collects the commands to publish as items
-        DiscoverItems discoverItems = new DiscoverItems();
-        Collection<AdHocCommandInfo> xCommandsList = getRegisteredCommands();
-
-        for (AdHocCommandInfo info : xCommandsList) {
-            DiscoverItems.Item item = new DiscoverItems.Item(info.getOwnerJID());
-            item.setName(info.getName());
-            item.setNode(info.getNode());
-            discoverItems.addItem(item);
-        }
-
-        serviceDiscoveryManager.publishItems(jid, NAMESPACE, discoverItems);
     }
 
     /**
@@ -315,7 +288,7 @@ public final class AdHocCommandManager extends Manager {
      *  <li>The command has more than one stage, if so, it saves the command and
      *      session ID for further use</li>
      * </ul>
-     * 
+     *
      * <br>
      * <br>
      * If this is not the first request, this method checks, before executing
@@ -330,7 +303,7 @@ public final class AdHocCommandManager extends Manager {
      *            the stanza to process.
      * @throws NotConnectedException
      * @throws NoResponseException
-     * @throws InterruptedException 
+     * @throws InterruptedException
      */
     private IQ processAdHocCommand(AdHocCommandData requestData) throws NoResponseException, NotConnectedException, InterruptedException {
         // Creates the response with the corresponding data
@@ -460,7 +433,7 @@ public final class AdHocCommandManager extends Manager {
                 // If there is an exception caused by the next, complete,
                 // prev or cancel method, then that error is returned to the
                 // requester.
-                StanzaError error = e.getXMPPError();
+                StanzaError error = e.getStanzaError();
 
                 // If the error type is cancel, then the execution is
                 // canceled therefore the status must show that, and the
@@ -570,7 +543,7 @@ public final class AdHocCommandManager extends Manager {
                     // If there is an exception caused by the next, complete,
                     // prev or cancel method, then that error is returned to the
                     // requester.
-                    StanzaError error = e.getXMPPError();
+                    StanzaError error = e.getStanzaError();
 
                     // If the error type is cancel, then the execution is
                     // canceled therefore the status must show that, and the
@@ -587,10 +560,10 @@ public final class AdHocCommandManager extends Manager {
 
     /**
      * Responds an error with an specific condition.
-     * 
+     *
      * @param response the response to send.
      * @param condition the condition of the error.
-     * @throws NotConnectedException 
+     * @throws NotConnectedException
      */
     private static IQ respondError(AdHocCommandData response,
             StanzaError.Condition condition) {
@@ -599,11 +572,11 @@ public final class AdHocCommandManager extends Manager {
 
     /**
      * Responds an error with an specific condition.
-     * 
+     *
      * @param response the response to send.
      * @param condition the condition of the error.
      * @param specificCondition the adhoc command error condition.
-     * @throws NotConnectedException 
+     * @throws NotConnectedException
      */
     private static IQ respondError(AdHocCommandData response, StanzaError.Condition condition,
             AdHocCommand.SpecificErrorCondition specificCondition) {
@@ -613,10 +586,10 @@ public final class AdHocCommandManager extends Manager {
 
     /**
      * Responds an error with an specific error.
-     * 
+     *
      * @param response the response to send.
      * @param error the error to send.
-     * @throws NotConnectedException 
+     * @throws NotConnectedException
      */
     private static IQ respondError(AdHocCommandData response, StanzaError.Builder error) {
         response.setType(IQ.Type.error);
@@ -626,17 +599,17 @@ public final class AdHocCommandManager extends Manager {
 
     /**
      * Creates a new instance of a command to be used by a new execution request
-     * 
+     *
      * @param commandNode the command node that identifies it.
      * @param sessionID the session id of this execution.
      * @return the command instance to execute.
      * @throws XMPPErrorException if there is problem creating the new instance.
-     * @throws SecurityException 
-     * @throws NoSuchMethodException 
-     * @throws InvocationTargetException 
-     * @throws IllegalArgumentException 
-     * @throws IllegalAccessException 
-     * @throws InstantiationException 
+     * @throws SecurityException
+     * @throws NoSuchMethodException
+     * @throws InvocationTargetException
+     * @throws IllegalArgumentException
+     * @throws IllegalAccessException
+     * @throws InstantiationException
      */
     private LocalCommand newInstanceOfCmd(String commandNode, String sessionID)
                     throws XMPPErrorException, InstantiationException, IllegalAccessException, IllegalArgumentException,
@@ -653,7 +626,7 @@ public final class AdHocCommandManager extends Manager {
     /**
      * Returns the registered commands of this command manager, which is related
      * to a connection.
-     * 
+     *
      * @return the registered commands.
      */
     private Collection<AdHocCommandInfo> getRegisteredCommands() {

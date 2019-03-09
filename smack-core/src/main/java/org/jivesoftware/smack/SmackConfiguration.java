@@ -29,7 +29,7 @@ import javax.net.ssl.HostnameVerifier;
 import org.jivesoftware.smack.compression.XMPPInputOutputStream;
 import org.jivesoftware.smack.debugger.ReflectionDebuggerFactory;
 import org.jivesoftware.smack.debugger.SmackDebuggerFactory;
-import org.jivesoftware.smack.parsing.ExceptionThrowingCallback;
+import org.jivesoftware.smack.parsing.ExceptionThrowingCallbackWithHint;
 import org.jivesoftware.smack.parsing.ParsingExceptionCallback;
 import org.jivesoftware.smack.util.Objects;
 
@@ -44,7 +44,7 @@ import org.jivesoftware.smack.util.Objects;
  * </ul>
  *
  * Configuration settings are stored in org.jivesoftware.smack/smack-config.xml.
- * 
+ *
  * @author Gaston Dombiak
  */
 public final class SmackConfiguration {
@@ -80,13 +80,13 @@ public final class SmackConfiguration {
      * The default parsing exception callback is {@link ExceptionThrowingCallback} which will
      * throw an exception and therefore disconnect the active connection.
      */
-    private static ParsingExceptionCallback defaultCallback = new ExceptionThrowingCallback();
+    private static ParsingExceptionCallback defaultCallback = new ExceptionThrowingCallbackWithHint();
 
     private static HostnameVerifier defaultHostnameVerififer;
 
     /**
      * Returns the Smack version information, eg "1.3.0".
-     * 
+     *
      * @return the Smack version information.
      */
     public static String getVersion() {
@@ -96,7 +96,7 @@ public final class SmackConfiguration {
     /**
      * Returns the number of milliseconds to wait for a response from
      * the server. The default value is 5000 ms.
-     * 
+     *
      * @return the milliseconds to wait for a response from the server
      * @deprecated use {@link #getDefaultReplyTimeout()} instead.
      */
@@ -108,7 +108,7 @@ public final class SmackConfiguration {
     /**
      * Sets the number of milliseconds to wait for a response from
      * the server.
-     * 
+     *
      * @param timeout the milliseconds to wait for a response from the server
      * @deprecated use {@link #setDefaultReplyTimeout(int)} instead.
      */
@@ -120,7 +120,7 @@ public final class SmackConfiguration {
     /**
      * Returns the number of milliseconds to wait for a response from
      * the server. The default value is 5000 ms.
-     * 
+     *
      * @return the milliseconds to wait for a response from the server
      */
     public static int getDefaultReplyTimeout() {
@@ -134,7 +134,7 @@ public final class SmackConfiguration {
     /**
      * Sets the number of milliseconds to wait for a response from
      * the server.
-     * 
+     *
      * @param timeout the milliseconds to wait for a response from the server
      */
     public static void setDefaultReplyTimeout(int timeout) {
@@ -153,9 +153,9 @@ public final class SmackConfiguration {
     }
 
     /**
-     * Gets the default max size of a stanza collector before it will delete 
+     * Gets the default max size of a stanza collector before it will delete
      * the older packets.
-     * 
+     *
      * @return The number of packets to queue before deleting older packets.
      */
     public static int getStanzaCollectorSize() {
@@ -163,9 +163,9 @@ public final class SmackConfiguration {
     }
 
     /**
-     * Sets the default max size of a stanza collector before it will delete 
+     * Sets the default max size of a stanza collector before it will delete
      * the older packets.
-     * 
+     *
      * @param collectorSize the number of packets to queue before deleting older packets.
      */
     public static void setStanzaCollectorSize(int collectorSize) {
@@ -235,7 +235,7 @@ public final class SmackConfiguration {
 
     /**
      * Returns the default parsing exception callback.
-     * 
+     *
      * @return the default parsing exception callback
      * @see ParsingExceptionCallback
      */
@@ -334,7 +334,7 @@ public final class SmackConfiguration {
 
     /**
      * Check if Smack was successfully initialized.
-     * 
+     *
      * @return true if smack was initialized, false otherwise
      */
     public static boolean isSmackInitialized() {

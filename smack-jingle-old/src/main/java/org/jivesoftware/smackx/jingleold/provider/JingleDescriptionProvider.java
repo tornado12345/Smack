@@ -18,7 +18,7 @@ package org.jivesoftware.smackx.jingleold.provider;
 
 import java.io.IOException;
 
-import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 
 import org.jivesoftware.smackx.jingleold.media.PayloadType;
@@ -29,14 +29,14 @@ import org.xmlpull.v1.XmlPullParserException;
 
 /**
  * Parser for a Jingle description.
- * 
+ *
  * @author Alvaro Saurin
  */
 public abstract class JingleDescriptionProvider extends ExtensionElementProvider<JingleDescription> {
 
     /**
      * Parse a iq/jingle/description/payload-type element.
-     * 
+     *
      * @param parser
      *            the input to parse
      * @return a payload type element
@@ -63,16 +63,15 @@ public abstract class JingleDescriptionProvider extends ExtensionElementProvider
 
     /**
      * Parse a iq/jingle/description element.
-     * 
+     *
      * @param parser
      *            the input to parse
      * @return a description element
-     * @throws SmackException 
-     * @throws IOException 
-     * @throws XmlPullParserException 
+     * @throws IOException
+     * @throws XmlPullParserException
      */
     @Override
-    public JingleDescription parse(XmlPullParser parser, int initialDepth) throws SmackException, XmlPullParserException, IOException {
+    public JingleDescription parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment) throws XmlPullParserException, IOException {
         boolean done = false;
         JingleDescription desc = getInstance();
 
@@ -84,7 +83,8 @@ public abstract class JingleDescriptionProvider extends ExtensionElementProvider
                 if (name.equals(PayloadType.NODENAME)) {
                     desc.addPayloadType(parsePayload(parser));
                 } else {
-                    throw new SmackException("Unknow element \"" + name + "\" in content.");
+                    // TODO: Should be SmackParseException.
+                    throw new IOException("Unknow element \"" + name + "\" in content.");
                 }
             } else if (eventType == XmlPullParser.END_TAG) {
                 if (name.equals(JingleDescription.NODENAME)) {

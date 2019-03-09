@@ -29,11 +29,11 @@ import org.jxmpp.jid.BareJid;
 /**
  * Represents a affiliation between a user and a node, where the {@link Type} defines
  * the type of affiliation.
- * 
- * Affiliations are retrieved from the {@link PubSubManager#getAffiliations()} method, which 
- * gets affiliations for the calling user, based on the identity that is associated with 
+ *
+ * Affiliations are retrieved from the {@link PubSubManager#getAffiliations()} method, which
+ * gets affiliations for the calling user, based on the identity that is associated with
  * the {@link XMPPConnection}.
- * 
+ *
  * @author Robin Collier
  */
 public class Affiliation implements ExtensionElement {
@@ -70,7 +70,7 @@ public class Affiliation implements ExtensionElement {
 
     /**
      * Constructs an affiliation.
-     * 
+     *
      * @param node The node the user is affiliated with.
      * @param affiliation the optional affiliation.
      */
@@ -80,13 +80,13 @@ public class Affiliation implements ExtensionElement {
 
     /**
      * Constructs an affiliation.
-     * 
+     *
      * @param node The node the user is affiliated with.
      * @param affiliation the optional affiliation.
      * @param namespace the affiliation's namespace.
      */
     public Affiliation(String node, Type affiliation, AffiliationNamespace namespace) {
-        this.node = StringUtils.requireNotNullOrEmpty(node, "node must not be null or empty");
+        this.node = StringUtils.requireNotNullNorEmpty(node, "node must not be null nor empty");
         this.affiliation = affiliation;
         this.jid = null;
         this.namespace = Objects.requireNonNull(namespace);
@@ -174,7 +174,7 @@ public class Affiliation implements ExtensionElement {
     }
 
     @Override
-    public XmlStringBuilder toXML(String enclosingNamespace) {
+    public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.optAttribute("node", node);
         xml.optAttribute("jid", jid);

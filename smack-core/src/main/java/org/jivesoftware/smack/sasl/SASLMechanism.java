@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2003-2007 Jive Software, 2014-2016 Florian Schmaus
+ * Copyright 2003-2007 Jive Software, 2014-2019 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,18 @@
  */
 package org.jivesoftware.smack.sasl;
 
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
+
 import javax.net.ssl.SSLSession;
 import javax.security.auth.callback.CallbackHandler;
 
 import org.jivesoftware.smack.ConnectionConfiguration;
-import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
+import org.jivesoftware.smack.SmackException.SmackSaslException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.sasl.packet.SaslStreamElements.AuthMechanism;
 import org.jivesoftware.smack.sasl.packet.SaslStreamElements.Response;
-import org.jivesoftware.smack.util.StringTransformer;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.stringencoder.Base64;
 
@@ -53,22 +55,6 @@ public abstract class SASLMechanism implements Comparable<SASLMechanism> {
     public static final String EXTERNAL = "EXTERNAL";
     public static final String GSSAPI = "GSSAPI";
     public static final String PLAIN = "PLAIN";
-
-    // TODO Remove once Smack's min Android API is 9, where java.text.Normalizer is available
-    private static StringTransformer saslPrepTransformer;
-
-    /**
-     * Set the SASLPrep StringTransformer.
-     * <p>
-     * A simple SASLPrep StringTransformer would be for example: <code>java.text.Normalizer.normalize(string, Form.NFKC);</code>
-     * </p>
-     * 
-     * @param stringTransformer set StringTransformer to use for SASLPrep.
-     * @see <a href="http://tools.ietf.org/html/rfc4013">RFC 4013 - SASLprep: Stringprep Profile for User Names and Passwords</a>
-     */
-    public static void setSaslPrepTransformer(StringTransformer stringTransformer) {
-        saslPrepTransformer = stringTransformer;
-    }
 
     protected XMPPConnection connection;
 
@@ -111,28 +97,28 @@ public abstract class SASLMechanism implements Comparable<SASLMechanism> {
      * Builds and sends the <tt>auth</tt> stanza to the server. Note that this method of
      * authentication is not recommended, since it is very inflexible. Use
      * {@link #authenticate(String, DomainBareJid, CallbackHandler, EntityBareJid, SSLSession)} whenever possible.
-     * 
+     *
      * Explanation of auth stanza:
-     * 
-     * The client authentication stanza needs to include the digest-uri of the form: xmpp/serviceName 
-     * From RFC-2831: 
+     *
+     * The client authentication stanza needs to include the digest-uri of the form: xmpp/serviceName
+     * From RFC-2831:
      * digest-uri = "digest-uri" "=" digest-uri-value
      * digest-uri-value = serv-type "/" host [ "/" serv-name ]
-     * 
-     * digest-uri: 
-     * Indicates the principal name of the service with which the client 
-     * wishes to connect, formed from the serv-type, host, and serv-name. 
+     *
+     * digest-uri:
+     * Indicates the principal name of the service with which the client
+     * wishes to connect, formed from the serv-type, host, and serv-name.
      * For example, the FTP service
      * on "ftp.example.com" would have a "digest-uri" value of "ftp/ftp.example.com"; the SMTP
      * server from the example above would have a "digest-uri" value of
      * "smtp/mail3.example.com/example.com".
-     * 
+     *
      * host:
      * The DNS host name or IP address for the service requested. The DNS host name
      * must be the fully-qualified canonical name of the host. The DNS host name is the
      * preferred form; see notes on server processing of the digest-uri.
-     * 
-     * serv-name: 
+     *
+     * serv-name:
      * Indicates the name of the service if it is replicated. The service is
      * considered to be replicated if the client's service-location process involves resolution
      * using standard DNS lookup operations, and if these operations involve DNS records (such
@@ -153,13 +139,13 @@ public abstract class SASLMechanism implements Comparable<SASLMechanism> {
      * @param password the password for this account.
      * @param authzid the optional authorization identity.
      * @param sslSession the optional SSL/TLS session (if one was established)
-     * @throws SmackException If a network error occurs while authenticating.
-     * @throws NotConnectedException 
-     * @throws InterruptedException 
+     * @throws SmackSaslException if a SASL related error occurs.
+     * @throws NotConnectedException
+     * @throws InterruptedException
      */
     public final void authenticate(String username, String host, DomainBareJid serviceName, String password,
                     EntityBareJid authzid, SSLSession sslSession)
-                    throws SmackException, NotConnectedException, InterruptedException {
+                    throws SmackSaslException, NotConnectedException, InterruptedException {
         this.authenticationId = username;
         this.host = host;
         this.serviceName = serviceName;
@@ -171,10 +157,7 @@ public abstract class SASLMechanism implements Comparable<SASLMechanism> {
         authenticate();
     }
 
-    /**
-     * @throws SmackException
-     */
-    protected void authenticateInternal() throws SmackException {
+    protected void authenticateInternal() throws SmackSaslException {
     }
 
     /**
@@ -186,12 +169,12 @@ public abstract class SASLMechanism implements Comparable<SASLMechanism> {
      * @param cbh      the CallbackHandler to obtain user information.
      * @param authzid the optional authorization identity.
      * @param sslSession the optional SSL/TLS session (if one was established)
-     * @throws SmackException
-     * @throws NotConnectedException 
-     * @throws InterruptedException 
+     * @throws SmackSaslException if a SASL related error occurs.
+     * @throws NotConnectedException
+     * @throws InterruptedException
      */
     public void authenticate(String host, DomainBareJid serviceName, CallbackHandler cbh, EntityBareJid authzid, SSLSession sslSession)
-                    throws SmackException, NotConnectedException, InterruptedException {
+                    throws SmackSaslException, NotConnectedException, InterruptedException {
         this.host = host;
         this.serviceName = serviceName;
         this.authorizationId = authzid;
@@ -201,9 +184,9 @@ public abstract class SASLMechanism implements Comparable<SASLMechanism> {
         authenticate();
     }
 
-    protected abstract void authenticateInternal(CallbackHandler cbh) throws SmackException;
+    protected abstract void authenticateInternal(CallbackHandler cbh) throws SmackSaslException;
 
-    private void authenticate() throws SmackException, NotConnectedException, InterruptedException {
+    private void authenticate() throws SmackSaslException, NotConnectedException, InterruptedException {
         byte[] authenticationBytes = getAuthenticationText();
         String authenticationText;
         // Some SASL mechanisms do return an empty array (e.g. EXTERNAL from javax), so check that
@@ -225,11 +208,11 @@ public abstract class SASLMechanism implements Comparable<SASLMechanism> {
      * Should return the initial response of the SASL mechanism. The returned byte array will be
      * send base64 encoded to the server. SASL mechanism are free to return <code>null</code> or an
      * empty array here.
-     * 
+     *
      * @return the initial response or null
-     * @throws SmackException
+     * @throws SmackSaslException
      */
-    protected abstract byte[] getAuthenticationText() throws SmackException;
+    protected abstract byte[] getAuthenticationText() throws SmackSaslException;
 
     /**
      * The server is challenging the SASL mechanism for the stanza he just sent. Send a
@@ -237,10 +220,11 @@ public abstract class SASLMechanism implements Comparable<SASLMechanism> {
      *
      * @param challengeString a base64 encoded string representing the challenge.
      * @param finalChallenge true if this is the last challenge send by the server within the success stanza
-     * @throws SmackException exception
+     * @throws SmackSaslException if a SASL related error occurs.
      * @throws InterruptedException if the connection is interrupted
+     * @throws NotConnectedException
      */
-    public final void challengeReceived(String challengeString, boolean finalChallenge) throws SmackException, InterruptedException {
+    public final void challengeReceived(String challengeString, boolean finalChallenge) throws SmackSaslException, InterruptedException, NotConnectedException {
         byte[] challenge = Base64.decode((challengeString != null && challengeString.equals("=")) ? "" : challengeString);
         byte[] response = evaluateChallenge(challenge);
         if (finalChallenge) {
@@ -265,9 +249,9 @@ public abstract class SASLMechanism implements Comparable<SASLMechanism> {
      * @param challenge challenge to evaluate.
      *
      * @return null.
-     * @throws SmackException in case of an error.
+     * @throws SmackSaslException If a SASL related error occurs.
      */
-    protected byte[] evaluateChallenge(byte[] challenge) throws SmackException {
+    protected byte[] evaluateChallenge(byte[] challenge) throws SmackSaslException {
         return null;
     }
 
@@ -292,7 +276,7 @@ public abstract class SASLMechanism implements Comparable<SASLMechanism> {
      */
     public abstract int getPriority();
 
-    public abstract void checkIfSuccessfulOrThrow() throws SmackException;
+    public abstract void checkIfSuccessfulOrThrow() throws SmackSaslException;
 
     public SASLMechanism instanceForAuthentication(XMPPConnection connection, ConnectionConfiguration connectionConfiguration) {
         SASLMechanism saslMechansim = newInstance();
@@ -313,17 +297,13 @@ public abstract class SASLMechanism implements Comparable<SASLMechanism> {
 
     /**
      * SASLprep the given String. The resulting String is in UTF-8.
-     * 
+     *
      * @param string the String to sasl prep.
      * @return the given String SASL preped
      * @see <a href="http://tools.ietf.org/html/rfc4013">RFC 4013 - SASLprep: Stringprep Profile for User Names and Passwords</a>
      */
     protected static String saslPrep(String string) {
-        StringTransformer stringTransformer = saslPrepTransformer;
-        if (stringTransformer != null) {
-            return stringTransformer.transform(string);
-        }
-        return string;
+        return Normalizer.normalize(string, Form.NFKC);
     }
 
     @Override

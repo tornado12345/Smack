@@ -25,7 +25,7 @@ import org.jivesoftware.smackx.xhtmlim.packet.XHTMLExtension;
 
 /**
  * Bits of Binary extension element.
- * 
+ *
  * @author Fernando Ramirez
  * @see <a href="http://xmpp.org/extensions/xep-0231.html">XEP-0231: Bits of
  *      Binary</a>
@@ -38,7 +38,7 @@ public class BoBExtension extends XHTMLExtension {
 
     /**
      * Bits of Binary extension constructor.
-     * 
+     *
      * @param bobHash
      * @param alt
      * @param paragraph
@@ -51,7 +51,7 @@ public class BoBExtension extends XHTMLExtension {
 
     /**
      * Get the BoB hash.
-     * 
+     *
      * @return the BoB hash
      */
     public BoBHash getBoBHash() {
@@ -60,7 +60,7 @@ public class BoBExtension extends XHTMLExtension {
 
     /**
      * Get the alt field.
-     * 
+     *
      * @return the alt field
      */
     public String getAlt() {
@@ -68,7 +68,7 @@ public class BoBExtension extends XHTMLExtension {
     }
 
     @Override
-    public XmlStringBuilder toXML(String enclosingNamespace) {
+    public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.rightAngleBracket();
 

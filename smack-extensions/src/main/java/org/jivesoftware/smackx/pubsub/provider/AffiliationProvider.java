@@ -16,7 +16,9 @@
  */
 package org.jivesoftware.smackx.pubsub.provider;
 
-import org.jivesoftware.smack.SmackException;
+import java.io.IOException;
+
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.jivesoftware.smack.util.ParserUtils;
 
@@ -29,14 +31,13 @@ import org.xmlpull.v1.XmlPullParser;
 /**
  * Parses the affiliation element out of the reply stanza from the server
  * as specified in the <a href="http://xmpp.org/extensions/xep-0060.html#schemas-pubsub">affiliation schema</a>.
- * 
+ *
  * @author Robin Collier
  */
 public class AffiliationProvider extends ExtensionElementProvider<Affiliation> {
 
     @Override
-    public Affiliation parse(XmlPullParser parser, int initialDepth)
-            throws Exception {
+    public Affiliation parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment) throws IOException {
         String node = parser.getAttributeValue(null, "node");
         BareJid jid = ParserUtils.getBareJidAttribute(parser);
         String namespaceString = parser.getNamespace();
@@ -56,7 +57,8 @@ public class AffiliationProvider extends ExtensionElementProvider<Affiliation> {
             affiliation = new Affiliation(jid, affiliationType, namespace);
         }
         else {
-            throw new SmackException("Invalid affililation. Either one of 'node' or 'jid' must be set"
+            // TODO: Should be SmackParsingException.
+            throw new IOException("Invalid affililation. Either one of 'node' or 'jid' must be set"
                     + ". Node: " + node
                     + ". Jid: " + jid
                     + '.');

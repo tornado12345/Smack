@@ -23,10 +23,10 @@ import org.jivesoftware.smack.util.XmlStringBuilder;
 
 /**
  * An Extension that implements XEP-0308: Last Message Correction
- * 
+ *
  * This extension is expected to be added to message stanzas. Please refer to
  * the XEP for more implementation guidelines.
- * 
+ *
  * @author Fernando Ramirez, f.e.ramirez94@gmail.com
  * @see <a href="http://xmpp.org/extensions/xep-0308.html">XEP-0308:&nbsp;Last
  *      &nbsp;Message&nbsp;Correction</a>
@@ -55,7 +55,7 @@ public class MessageCorrectExtension implements ExtensionElement {
     private final String idInitialMessage;
 
     public MessageCorrectExtension(String idInitialMessage) {
-        this.idInitialMessage = StringUtils.requireNotNullOrEmpty(idInitialMessage, "idInitialMessage must not be null");
+        this.idInitialMessage = StringUtils.requireNotNullNorEmpty(idInitialMessage, "idInitialMessage must not be null");
     }
 
     public String getIdInitialMessage() {
@@ -68,7 +68,7 @@ public class MessageCorrectExtension implements ExtensionElement {
     }
 
     @Override
-    public XmlStringBuilder toXML(String enclosingNamespace) {
+    public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.attribute(ID_TAG, getIdInitialMessage());
         xml.closeEmptyElement();

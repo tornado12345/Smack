@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2017 Florian Schmaus.
+ * Copyright 2017-2018 Florian Schmaus.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,13 @@ import org.jivesoftware.smack.packet.Stanza;
 
 import org.jxmpp.jid.Jid;
 
-public final class ToTypeFilter extends AbstractJidTypeFilter {
+public final class ToTypeFilter extends AbstractExactJidTypeFilter {
 
     public static final ToTypeFilter ENTITY_FULL_JID = new ToTypeFilter(JidType.entityFull);
     public static final ToTypeFilter ENTITY_BARE_JID = new ToTypeFilter(JidType.entityBare);
     public static final ToTypeFilter DOMAIN_FULL_JID = new ToTypeFilter(JidType.domainFull);
     public static final ToTypeFilter DOMAIN_BARE_JID = new ToTypeFilter(JidType.domainBare);
+    public static final ToTypeFilter TO_ANY_JID = new ToTypeFilter(JidType.any);
 
     public static final StanzaFilter ENTITY_FULL_OR_BARE_JID = new OrFilter(ENTITY_FULL_JID, ENTITY_BARE_JID);
 

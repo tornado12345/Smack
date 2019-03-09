@@ -27,7 +27,7 @@ import org.jivesoftware.smack.packet.Stanza;
 /**
  * Represents the conversation transcript that occurred in a group chat room between an Agent
  * and a user that requested assistance. The transcript contains all the Messages that were sent
- * to the room as well as the sent presences. 
+ * to the room as well as the sent presences.
  *
  * @author Gaston Dombiak
  */
@@ -83,7 +83,7 @@ public class Transcript extends IQ {
                 .append("\">");
 
         for (Stanza packet : packets) {
-            buf.append(packet.toXML(null));
+            buf.append(packet.toXML());
         }
 
         return buf;

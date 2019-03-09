@@ -309,7 +309,7 @@ public abstract class TransportCandidate {
         if (obj == null) {
             return false;
         }
-        if (getClass() != obj.getClass()) {
+        if (!(obj instanceof TransportCandidate)) {
             return false;
         }
         final TransportCandidate other = (TransportCandidate) obj;
@@ -447,7 +447,7 @@ public abstract class TransportCandidate {
     /**
      * Type-safe enum for the transportElement protocol.
      */
-    public static class Protocol {
+    public static final class Protocol {
 
         public static final Protocol UDP = new Protocol("udp");
 
@@ -584,7 +584,7 @@ public abstract class TransportCandidate {
             if (obj == null) {
                 return false;
             }
-            if (getClass() != obj.getClass()) {
+            if (!(obj instanceof Channel)) {
                 return false;
             }
             final Channel other = (Channel) obj;
@@ -777,8 +777,8 @@ public abstract class TransportCandidate {
                                 String pt = addr[1];
 
                                 // CHECKSTYLE:OFF
-                                if (pass.equals(password) 
-                                        && transportCandidate.getIp().indexOf(ip) != -1 
+                                if (pass.equals(password)
+                                        && transportCandidate.getIp().indexOf(ip) != -1
                                         && transportCandidate.getPort() == Integer.parseInt(pt)) {
                                     // CHECKSTYLE:ON
                                     LOGGER.fine("ECHO OK: " + candidate.getIp() + ":" + candidate.getPort() + " <-> " + transportCandidate.getIp() + ":" + transportCandidate.getPort());

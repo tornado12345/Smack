@@ -19,6 +19,7 @@ package org.jivesoftware.smackx.xevent.provider;
 
 import java.io.IOException;
 
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 
 import org.jivesoftware.smackx.xevent.packet.MessageEvent;
@@ -39,11 +40,11 @@ public class MessageEventProvider extends ExtensionElementProvider<MessageEvent>
      *
      * @param parser the XML parser, positioned at the starting element of the extension.
      * @return a PacketExtension.
-     * @throws IOException 
-     * @throws XmlPullParserException 
+     * @throws IOException
+     * @throws XmlPullParserException
      */
     @Override
-    public MessageEvent parse(XmlPullParser parser, int initialDepth)
+    public MessageEvent parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment)
                     throws XmlPullParserException, IOException {
         MessageEvent messageEvent = new MessageEvent();
         boolean done = false;

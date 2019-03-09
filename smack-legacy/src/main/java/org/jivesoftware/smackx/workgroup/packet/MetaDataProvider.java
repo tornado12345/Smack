@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 
 import org.jivesoftware.smackx.workgroup.MetaData;
@@ -38,11 +39,11 @@ public class MetaDataProvider extends ExtensionElementProvider<MetaData> {
 
     /**
      * PacketExtensionProvider implementation.
-     * @throws IOException 
-     * @throws XmlPullParserException 
+     * @throws IOException
+     * @throws XmlPullParserException
      */
     @Override
-    public MetaData parse(XmlPullParser parser, int initialDepth) throws XmlPullParserException, IOException {
+    public MetaData parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment) throws XmlPullParserException, IOException {
         Map<String, List<String>> metaData = MetaDataUtils.parseMetaData(parser);
 
         return new MetaData(metaData);

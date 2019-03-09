@@ -21,7 +21,7 @@ import java.util.Collection;
 
 /**
  * Represents a request to publish an item(s) to a specific node.
- * 
+ *
  * @author Robin Collier
  */
 public class PublishItem<T extends Item> extends NodeExtension {
@@ -29,7 +29,7 @@ public class PublishItem<T extends Item> extends NodeExtension {
 
     /**
      * Construct a request to publish an item to a node.
-     * 
+     *
      * @param nodeId The node to publish to
      * @param toPublish The {@link Item} to publish
      */
@@ -41,7 +41,7 @@ public class PublishItem<T extends Item> extends NodeExtension {
 
     /**
      * Construct a request to publish multiple items to a node.
-     * 
+     *
      * @param nodeId The node to publish to
      * @param toPublish The list of {@link Item} to publish
      */
@@ -51,7 +51,7 @@ public class PublishItem<T extends Item> extends NodeExtension {
     }
 
     @Override
-    public String toXML(String enclosingNamespace) {
+    public String toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
         StringBuilder builder = new StringBuilder("<");
         builder.append(getElementName());
         builder.append(" node='");
@@ -59,7 +59,7 @@ public class PublishItem<T extends Item> extends NodeExtension {
         builder.append("'>");
 
         for (Item item : items) {
-            builder.append(item.toXML(null));
+            builder.append(item.toXML());
         }
         builder.append("</publish>");
 

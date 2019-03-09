@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2003-2007 Jive Software.
+ * Copyright 2003-2007 Jive Software, 2019 Florian Schmaus.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.jivesoftware.smack.SmackConfiguration;
 import org.jivesoftware.smack.compress.packet.Compress;
 import org.jivesoftware.smack.packet.EmptyResultIQ;
 import org.jivesoftware.smack.packet.ErrorIQ;
@@ -41,6 +42,8 @@ import org.jivesoftware.smack.packet.StanzaError;
 import org.jivesoftware.smack.packet.StartTls;
 import org.jivesoftware.smack.packet.StreamError;
 import org.jivesoftware.smack.packet.UnparsedIQ;
+import org.jivesoftware.smack.packet.XmlEnvironment;
+import org.jivesoftware.smack.parsing.SmackParsingException;
 import org.jivesoftware.smack.parsing.StandardExtensionElementProvider;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.jivesoftware.smack.provider.IQProvider;
@@ -71,6 +74,9 @@ public class PacketParserUtils {
     public static final boolean XML_PULL_PARSER_SUPPORTS_ROUNDTRIP;
 
     static {
+        // Ensure that Smack is initialized.
+        SmackConfiguration.getVersion();
+
         XmlPullParser xmlPullParser;
         boolean roundtrip = false;
         try {
@@ -92,6 +98,7 @@ public class PacketParserUtils {
         XML_PULL_PARSER_SUPPORTS_ROUNDTRIP = roundtrip;
     }
 
+    // TODO: Rename argument name from 'stanza' to 'element'.
     public static XmlPullParser getParserFor(String stanza) throws XmlPullParserException, IOException {
         return getParserFor(new StringReader(stanza));
     }
@@ -131,28 +138,29 @@ public class PacketParserUtils {
 
     @SuppressWarnings("unchecked")
     public static <S extends Stanza> S parseStanza(String stanza) throws Exception {
-        return (S) parseStanza(getParserFor(stanza));
+        return (S) parseStanza(getParserFor(stanza), null);
     }
 
     /**
      * Tries to parse and return either a Message, IQ or Presence stanza.
-     * 
+     *
      * connection is optional and is used to return feature-not-implemented errors for unknown IQ stanzas.
      *
      * @param parser
+     * @param outerXmlEnvironment the outer XML environment (optional).
      * @return a stanza which is either a Message, IQ or Presence.
-     * @throws Exception 
+     * @throws Exception
      */
-    public static Stanza parseStanza(XmlPullParser parser) throws Exception {
+    public static Stanza parseStanza(XmlPullParser parser, XmlEnvironment outerXmlEnvironment) throws Exception {
         ParserUtils.assertAtStartTag(parser);
         final String name = parser.getName();
         switch (name) {
         case Message.ELEMENT:
-            return parseMessage(parser);
+            return parseMessage(parser, outerXmlEnvironment);
         case IQ.IQ_ELEMENT:
-            return parseIQ(parser);
+            return parseIQ(parser, outerXmlEnvironment);
         case Presence.ELEMENT:
-            return parsePresence(parser);
+            return parsePresence(parser, outerXmlEnvironment);
         default:
             throw new IllegalArgumentException("Can only parse message, iq or presence, not " + name);
         }
@@ -166,7 +174,7 @@ public class PacketParserUtils {
      * <code>getText()</code> if the parser is on START_TAG or END_TAG. So you must not rely on this
      * behavior when using the parser.
      * </p>
-     * 
+     *
      * @return A suitable XmlPullParser for XMPP parsing
      * @throws XmlPullParserException
      */
@@ -194,7 +202,7 @@ public class PacketParserUtils {
      * <code>getText()</code> if the parser is on START_TAG or END_TAG. So you must not rely on this
      * behavior when using the parser.
      * </p>
-     * 
+     *
      * @param reader
      * @return A suitable XmlPullParser for XMPP parsing
      * @throws XmlPullParserException
@@ -205,18 +213,25 @@ public class PacketParserUtils {
         return parser;
     }
 
+    public static Message parseMessage(XmlPullParser parser) throws XmlPullParserException, IOException, SmackParsingException {
+        return parseMessage(parser, null);
+    }
+
     /**
      * Parses a message packet.
      *
      * @param parser the XML parser, positioned at the start of a message packet.
+     * @param outerXmlEnvironment the outer XML environment (optional).
      * @return a Message packet.
-     * @throws Exception 
+     * @throws XmlPullParserException
+     * @throws IOException
+     * @throws SmackParsingException
      */
-    public static Message parseMessage(XmlPullParser parser)
-                    throws Exception {
+    public static Message parseMessage(XmlPullParser parser, XmlEnvironment outerXmlEnvironment) throws XmlPullParserException, IOException, SmackParsingException {
         ParserUtils.assertAtStartTag(parser);
         assert (parser.getName().equals(Message.ELEMENT));
 
+        XmlEnvironment messageXmlEnvironment = XmlEnvironment.from(parser, outerXmlEnvironment);
         final int initialDepth = parser.getDepth();
         Message message = new Message();
         message.setStanzaId(parser.getAttributeValue("", "id"));
@@ -226,17 +241,8 @@ public class PacketParserUtils {
         if (typeString != null) {
             message.setType(Message.Type.fromString(typeString));
         }
-        String language = getLanguageAttribute(parser);
-
-        // determine message's default language
-        String defaultLanguage;
-        if (language != null && !"".equals(language.trim())) {
-            message.setLanguage(language);
-            defaultLanguage = language;
-        }
-        else {
-            defaultLanguage = Stanza.getDefaultLanguage();
-        }
+        String language = ParserUtils.getXmlLang(parser);
+        message.setLanguage(language);
 
         // Parse sub-elements. We include extra logic to make sure the values
         // are only read once. This is because it's possible for the names to appear
@@ -250,27 +256,11 @@ public class PacketParserUtils {
                 String namespace = parser.getNamespace();
                 switch (elementName) {
                 case "subject":
-                    String xmlLangSubject = getLanguageAttribute(parser);
-                    if (xmlLangSubject == null) {
-                        xmlLangSubject = defaultLanguage;
-                    }
-
+                    String xmlLangSubject = ParserUtils.getXmlLang(parser);
                     String subject = parseElementText(parser);
 
                     if (message.getSubject(xmlLangSubject) == null) {
                         message.addSubject(xmlLangSubject, subject);
-                    }
-                    break;
-                case Message.BODY:
-                    String xmlLang = getLanguageAttribute(parser);
-                    if (xmlLang == null) {
-                        xmlLang = defaultLanguage;
-                    }
-
-                    String body = parseElementText(parser);
-
-                    if (message.getBody(xmlLang) == null) {
-                        message.addBody(xmlLang, body);
                     }
                     break;
                 case "thread":
@@ -279,10 +269,10 @@ public class PacketParserUtils {
                     }
                     break;
                 case "error":
-                    message.setError(parseError(parser));
+                    message.setError(parseError(parser, messageXmlEnvironment));
                     break;
                  default:
-                    PacketParserUtils.addExtensionElement(message, parser, elementName, namespace);
+                    PacketParserUtils.addExtensionElement(message, parser, elementName, namespace, messageXmlEnvironment);
                     break;
                 }
                 break;
@@ -295,6 +285,11 @@ public class PacketParserUtils {
         }
 
         message.setThread(thread);
+
+        // TODO check for duplicate body elements. This means we need to check for duplicate xml:lang pairs and for
+        // situations where we have a body element with an explicit xml lang set and once where the value is inherited
+        // and both values are equal.
+
         return message;
     }
 
@@ -307,7 +302,7 @@ public class PacketParserUtils {
      * </p>
      * This method is used for the parts where the XMPP specification requires elements that contain
      * only text or are the empty element.
-     * 
+     *
      * @param parser
      * @return the textual content of the element as String
      * @throws XmlPullParserException
@@ -378,7 +373,7 @@ public class PacketParserUtils {
      * closing tag of the same depth is returned as String.
      * </p>
      * Note that only the outermost namespace attributes ("xmlns") will be returned, not nested ones.
-     * 
+     *
      * @param parser the XML pull parser
      * @return the content of a tag
      * @throws XmlPullParserException if parser encounters invalid XML
@@ -415,7 +410,7 @@ public class PacketParserUtils {
      * <p>
      * In particular Android's XmlPullParser does not support XML_ROUNDTRIP.
      * </p>
-     * 
+     *
      * @param parser
      * @param depth
      * @param fullNamespaces
@@ -498,8 +493,7 @@ public class PacketParserUtils {
             if (!(event == XmlPullParser.START_TAG && parser.isEmptyElementTag())) {
                 CharSequence text = parser.getText();
                 if (event == XmlPullParser.TEXT) {
-                    // TODO the toString() can be removed in Smack 4.2.
-                    text = StringUtils.escapeForXmlText(text.toString());
+                    text = StringUtils.escapeForXmlText(text);
                 }
                 sb.append(text);
             }
@@ -511,17 +505,24 @@ public class PacketParserUtils {
         return sb;
     }
 
+    public static Presence parsePresence(XmlPullParser parser) throws XmlPullParserException, IOException, SmackParsingException {
+        return parsePresence(parser, null);
+    }
+
     /**
      * Parses a presence packet.
      *
      * @param parser the XML parser, positioned at the start of a presence packet.
+     * @param outerXmlEnvironment the outer XML environment (optional).
      * @return a Presence packet.
-     * @throws Exception 
+     * @throws IOException
+     * @throws XmlPullParserException
+     * @throws SmackParsingException
      */
-    public static Presence parsePresence(XmlPullParser parser)
-                    throws Exception {
+    public static Presence parsePresence(XmlPullParser parser, XmlEnvironment outerXmlEnvironment) throws XmlPullParserException, IOException, SmackParsingException {
         ParserUtils.assertAtStartTag(parser);
         final int initialDepth = parser.getDepth();
+        XmlEnvironment presenceXmlEnvironment = XmlEnvironment.from(parser, outerXmlEnvironment);
 
         Presence.Type type = Presence.Type.available;
         String typeString = parser.getAttributeValue("", "type");
@@ -533,7 +534,7 @@ public class PacketParserUtils {
         presence.setFrom(ParserUtils.getJidAttribute(parser, "from"));
         presence.setStanzaId(parser.getAttributeValue("", "id"));
 
-        String language = getLanguageAttribute(parser);
+        String language = ParserUtils.getXmlLang(parser);
         if (language != null && !"".equals(language.trim())) {
         // CHECKSTYLE:OFF
         	presence.setLanguage(language);
@@ -571,14 +572,14 @@ public class PacketParserUtils {
                     }
                     break;
                 case "error":
-                    presence.setError(parseError(parser));
+                    presence.setError(parseError(parser, presenceXmlEnvironment));
                     break;
                 default:
                 // Otherwise, it must be a packet extension.
                     // Be extra robust: Skip PacketExtensions that cause Exceptions, instead of
                     // failing completely here. See SMACK-390 for more information.
                     try {
-                        PacketParserUtils.addExtensionElement(presence, parser, elementName, namespace);
+                        PacketParserUtils.addExtensionElement(presence, parser, elementName, namespace, presenceXmlEnvironment);
                     } catch (Exception e) {
                         LOGGER.warning("Failed to parse extension element in Presence stanza: \"" + e + "\" from: '"
                                         + presence.getFrom() + " id: '" + presence.getStanzaId() + "'");
@@ -596,16 +597,22 @@ public class PacketParserUtils {
         return presence;
     }
 
+    public static IQ parseIQ(XmlPullParser parser) throws Exception {
+        return parseIQ(parser, null);
+    }
+
     /**
      * Parses an IQ packet.
      *
      * @param parser the XML parser, positioned at the start of an IQ packet.
+     * @param outerXmlEnvironment the outer XML environment (optional).
      * @return an IQ object.
      * @throws Exception
      */
-    public static IQ parseIQ(XmlPullParser parser) throws Exception {
+    public static IQ parseIQ(XmlPullParser parser, XmlEnvironment outerXmlEnvironment) throws Exception {
         ParserUtils.assertAtStartTag(parser);
         final int initialDepth = parser.getDepth();
+        XmlEnvironment iqXmlEnvironment = XmlEnvironment.from(parser, outerXmlEnvironment);
         IQ iqPacket = null;
         StanzaError.Builder error = null;
 
@@ -623,14 +630,14 @@ public class PacketParserUtils {
                 String namespace = parser.getNamespace();
                 switch (elementName) {
                 case "error":
-                    error = PacketParserUtils.parseError(parser);
+                    error = PacketParserUtils.parseError(parser, iqXmlEnvironment);
                     break;
                 // Otherwise, see if there is a registered provider for
                 // this element name and namespace.
                 default:
                     IQProvider<IQ> provider = ProviderManager.getIQProvider(elementName, namespace);
                     if (provider != null) {
-                            iqPacket = provider.parse(parser);
+                            iqPacket = provider.parse(parser, outerXmlEnvironment);
                     }
                     // Note that if we reach this code, it is guranteed that the result IQ contained a child element
                     // (RFC 6120 § 8.2.3 6) because otherwhise we would have reached the END_TAG first.
@@ -679,8 +686,8 @@ public class PacketParserUtils {
      *
      * @param parser the XML parser, positioned at the start of the mechanisms stanza.
      * @return a collection of Stings with the mechanisms included in the mechanisms stanza.
-     * @throws IOException 
-     * @throws XmlPullParserException 
+     * @throws IOException
+     * @throws XmlPullParserException
      */
     public static Collection<String> parseMechanisms(XmlPullParser parser)
                     throws XmlPullParserException, IOException {
@@ -749,7 +756,7 @@ public class PacketParserUtils {
         if (descriptiveTexts == null) {
             descriptiveTexts = new HashMap<>();
         }
-        String xmllang = getLanguageAttribute(parser);
+        String xmllang = ParserUtils.getXmlLang(parser);
         if (xmllang == null) {
             // XMPPError assumes the default locale, 'en', or the empty string.
             // Establish the invariant that there is never null as a key.
@@ -764,11 +771,11 @@ public class PacketParserUtils {
 
     /**
      * Parses SASL authentication error packets.
-     * 
+     *
      * @param parser the XML parser.
      * @return a SASL Failure packet.
-     * @throws IOException 
-     * @throws XmlPullParserException 
+     * @throws IOException
+     * @throws XmlPullParserException
      */
     public static SASLFailure parseSASLFailure(XmlPullParser parser) throws XmlPullParserException, IOException {
         final int initialDepth = parser.getDepth();
@@ -797,19 +804,27 @@ public class PacketParserUtils {
         return new SASLFailure(condition, descriptiveTexts);
     }
 
+    public static StreamError parseStreamError(XmlPullParser parser) throws XmlPullParserException, IOException, SmackParsingException {
+        return parseStreamError(parser, null);
+    }
+
     /**
      * Parses stream error packets.
      *
      * @param parser the XML parser.
+     * @param outerXmlEnvironment the outer XML environment (optional).
      * @return an stream error packet.
-     * @throws Exception if an exception occurs while parsing the packet.
+     * @throws IOException
+     * @throws XmlPullParserException
+     * @throws SmackParsingException
      */
-    public static StreamError parseStreamError(XmlPullParser parser) throws Exception {
+    public static StreamError parseStreamError(XmlPullParser parser, XmlEnvironment outerXmlEnvironment) throws XmlPullParserException, IOException, SmackParsingException {
         final int initialDepth = parser.getDepth();
         List<ExtensionElement> extensions = new ArrayList<>();
         Map<String, String> descriptiveTexts = null;
         StreamError.Condition condition = null;
         String conditionText = null;
+        XmlEnvironment streamErrorXmlEnvironment = XmlEnvironment.from(parser, outerXmlEnvironment);
         outerloop: while (true) {
             int eventType = parser.next();
             switch (eventType) {
@@ -833,7 +848,7 @@ public class PacketParserUtils {
                     }
                     break;
                 default:
-                    PacketParserUtils.addExtensionElement(extensions, parser, name, namespace);
+                    PacketParserUtils.addExtensionElement(extensions, parser, name, namespace, streamErrorXmlEnvironment);
                     break;
                 }
                 break;
@@ -847,17 +862,24 @@ public class PacketParserUtils {
         return new StreamError(condition, conditionText, descriptiveTexts, extensions);
     }
 
+    public static StanzaError.Builder parseError(XmlPullParser parser) throws XmlPullParserException, IOException, SmackParsingException {
+        return parseError(parser, null);
+    }
+
     /**
      * Parses error sub-packets.
      *
      * @param parser the XML parser.
+     * @param outerXmlEnvironment the outer XML environment (optional).
      * @return an error sub-packet.
-     * @throws Exception 
+     * @throws IOException
+     * @throws XmlPullParserException
+     * @throws SmackParsingException
      */
-    public static StanzaError.Builder parseError(XmlPullParser parser)
-                    throws Exception {
+    public static StanzaError.Builder parseError(XmlPullParser parser, XmlEnvironment outerXmlEnvironment) throws XmlPullParserException, IOException, SmackParsingException {
         final int initialDepth = parser.getDepth();
         Map<String, String> descriptiveTexts = null;
+        XmlEnvironment stanzaErrorXmlEnvironment = XmlEnvironment.from(parser, outerXmlEnvironment);
         List<ExtensionElement> extensions = new ArrayList<>();
         StanzaError.Builder builder = StanzaError.getBuilder();
 
@@ -872,7 +894,7 @@ public class PacketParserUtils {
                 String name = parser.getName();
                 String namespace = parser.getNamespace();
                 switch (namespace) {
-                case StanzaError.NAMESPACE:
+                case StanzaError.ERROR_CONDITION_AND_TEXT_NAMESPACE:
                     switch (name) {
                     case Stanza.TEXT:
                         descriptiveTexts = parseDescriptiveTexts(parser, descriptiveTexts);
@@ -886,7 +908,7 @@ public class PacketParserUtils {
                     }
                     break;
                 default:
-                    PacketParserUtils.addExtensionElement(extensions, parser, name, namespace);
+                    PacketParserUtils.addExtensionElement(extensions, parser, name, namespace, stanzaErrorXmlEnvironment);
                 }
                 break;
             case XmlPullParser.END_TAG:
@@ -905,38 +927,24 @@ public class PacketParserUtils {
      * @param elementName the XML element name of the extension element.
      * @param namespace the XML namespace of the stanza extension.
      * @param parser the XML parser, positioned at the starting element of the extension.
+     * @param outerXmlEnvironment the outer XML environment (optional).
      *
      * @return an extension element.
-     * @throws Exception when an error occurs during parsing.
-     * @deprecated use {@link #parseExtensionElement(String, String, XmlPullParser)} instead.
-     */
-    @Deprecated
-    public static ExtensionElement parsePacketExtension(String elementName, String namespace,
-                    XmlPullParser parser) throws Exception {
-        return parseExtensionElement(elementName, namespace, parser);
-    }
-
-    /**
-     * Parses an extension element.
-     *
-     * @param elementName the XML element name of the extension element.
-     * @param namespace the XML namespace of the stanza extension.
-     * @param parser the XML parser, positioned at the starting element of the extension.
-     *
-     * @return an extension element.
-     * @throws Exception when an error occurs during parsing.
+     * @throws XmlPullParserException
+     * @throws IOException
+     * @throws SmackParsingException
      */
     public static ExtensionElement parseExtensionElement(String elementName, String namespace,
-                    XmlPullParser parser) throws Exception {
+                    XmlPullParser parser, XmlEnvironment outerXmlEnvironment) throws XmlPullParserException, IOException, SmackParsingException {
         ParserUtils.assertAtStartTag(parser);
         // See if a provider is registered to handle the extension.
         ExtensionElementProvider<ExtensionElement> provider = ProviderManager.getExtensionProvider(elementName, namespace);
         if (provider != null) {
-                return provider.parse(parser);
+                return provider.parse(parser, outerXmlEnvironment);
         }
 
         // No providers registered, so use a default extension.
-        return StandardExtensionElementProvider.INSTANCE.parse(parser);
+        return StandardExtensionElementProvider.INSTANCE.parse(parser, outerXmlEnvironment);
     }
 
     public static StartTls parseStartTlsFeature(XmlPullParser parser)
@@ -970,7 +978,10 @@ public class PacketParserUtils {
         ParserUtils.assertAtStartTag(parser);
         final int initialDepth = parser.getDepth();
         boolean optional = false;
-        if (!parser.isEmptyElementTag()) {
+        if (parser.isEmptyElementTag()) {
+            return new Session.Feature(optional);
+        }
+
         outerloop: while (true) {
             int event = parser.next();
             switch (event) {
@@ -988,73 +999,30 @@ public class PacketParserUtils {
                 }
             }
         }
-        }
+
         return new Session.Feature(optional);
-
     }
 
-    // TODO Remove this static method and use ParserUtils.getXmlLang(XmlPullParser) instead.
-    private static String getLanguageAttribute(XmlPullParser parser) {
-    // CHECKSTYLE:OFF
-    	for (int i = 0; i < parser.getAttributeCount(); i++) {
-            String attributeName = parser.getAttributeName(i);
-            if ( "xml:lang".equals(attributeName) ||
-    // CHECKSTYLE:ON
-                    ("lang".equals(attributeName) &&
-                            "xml".equals(parser.getAttributePrefix(i)))) {
-    // CHECKSTYLE:OFF
-    			return parser.getAttributeValue(i);
-    		}
-    	}
-    	return null;
-    // CHECKSTYLE:ON
-    }
-
-    @Deprecated
-    public static void addPacketExtension(Stanza packet, XmlPullParser parser) throws Exception {
-        addExtensionElement(packet, parser);
-    }
-
-    @Deprecated
-    public static void addPacketExtension(Stanza packet, XmlPullParser parser, String elementName, String namespace)
-                    throws Exception {
-        addExtensionElement(packet, parser, elementName, namespace);
-    }
-
-    @Deprecated
-    public static void addPacketExtension(Collection<ExtensionElement> collection, XmlPullParser parser)
-                    throws Exception {
-        addExtensionElement(collection, parser, parser.getName(), parser.getNamespace());
-    }
-
-    @Deprecated
-    public static void addPacketExtension(Collection<ExtensionElement> collection, XmlPullParser parser,
-                    String elementName, String namespace) throws Exception {
-        addExtensionElement(collection, parser, elementName, namespace);
-    }
-
-
-    public static void addExtensionElement(Stanza packet, XmlPullParser parser)
-                    throws Exception {
+    public static void addExtensionElement(Stanza packet, XmlPullParser parser, XmlEnvironment outerXmlEnvironment)
+                    throws XmlPullParserException, IOException, SmackParsingException {
         ParserUtils.assertAtStartTag(parser);
-        addExtensionElement(packet, parser, parser.getName(), parser.getNamespace());
+        addExtensionElement(packet, parser, parser.getName(), parser.getNamespace(), outerXmlEnvironment);
     }
 
     public static void addExtensionElement(Stanza packet, XmlPullParser parser, String elementName,
-                    String namespace) throws Exception {
-        ExtensionElement packetExtension = parseExtensionElement(elementName, namespace, parser);
+            String namespace, XmlEnvironment outerXmlEnvironment) throws XmlPullParserException, IOException, SmackParsingException {
+        ExtensionElement packetExtension = parseExtensionElement(elementName, namespace, parser, outerXmlEnvironment);
         packet.addExtension(packetExtension);
     }
 
-    public static void addExtensionElement(Collection<ExtensionElement> collection,
-                    XmlPullParser parser) throws Exception {
-        addExtensionElement(collection, parser, parser.getName(), parser.getNamespace());
+    public static void addExtensionElement(Collection<ExtensionElement> collection, XmlPullParser parser, XmlEnvironment outerXmlEnvironment)
+                    throws XmlPullParserException, IOException, SmackParsingException {
+        addExtensionElement(collection, parser, parser.getName(), parser.getNamespace(), outerXmlEnvironment);
     }
 
-    public static void addExtensionElement(Collection<ExtensionElement> collection,
-                    XmlPullParser parser, String elementName, String namespace)
-                    throws Exception {
-        ExtensionElement packetExtension = parseExtensionElement(elementName, namespace, parser);
+    public static void addExtensionElement(Collection<ExtensionElement> collection, XmlPullParser parser,
+                    String elementName, String namespace, XmlEnvironment outerXmlEnvironment) throws XmlPullParserException, IOException, SmackParsingException {
+        ExtensionElement packetExtension = parseExtensionElement(elementName, namespace, parser, outerXmlEnvironment);
         collection.add(packetExtension);
     }
 }

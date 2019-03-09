@@ -31,9 +31,9 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 
 /**
- * Loads the {@link IQProvider} and {@link ExtensionElementProvider} information from a standard provider file in preparation 
+ * Loads the {@link IQProvider} and {@link ExtensionElementProvider} information from a standard provider file in preparation
  * for loading into the {@link ProviderManager}.
- * 
+ *
  * @author Robin Collier
  *
  */
@@ -53,10 +53,10 @@ public class ProviderFileLoader implements ProviderLoader {
     @SuppressWarnings("unchecked")
     public ProviderFileLoader(InputStream providerStream, ClassLoader classLoader) {
         // Load processing providers.
-        try {
+        try (InputStream is = providerStream) {
             XmlPullParser parser = XmlPullParserFactory.newInstance().newPullParser();
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true);
-            parser.setInput(providerStream, "UTF-8");
+            parser.setInput(is, "UTF-8");
             int eventType = parser.getEventType();
             do {
                 if (eventType == XmlPullParser.START_TAG) {
@@ -139,14 +139,6 @@ public class ProviderFileLoader implements ProviderLoader {
         catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Unknown error occurred while parsing provider file", e);
             exceptions.add(e);
-        }
-        finally {
-            try {
-                providerStream.close();
-            }
-            catch (Exception e) {
-                // Ignore.
-            }
         }
     }
 

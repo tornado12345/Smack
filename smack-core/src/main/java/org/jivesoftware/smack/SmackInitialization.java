@@ -18,7 +18,6 @@
 package org.jivesoftware.smack;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Collection;
@@ -26,15 +25,24 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.jivesoftware.smack.compress.provider.CompressedProvider;
+import org.jivesoftware.smack.compress.provider.FailureProvider;
 import org.jivesoftware.smack.compression.Java7ZlibInputOutputStream;
+import org.jivesoftware.smack.compression.XmppCompressionManager;
+import org.jivesoftware.smack.compression.zlib.ZlibXmppCompressionFactory;
 import org.jivesoftware.smack.initializer.SmackInitializer;
 import org.jivesoftware.smack.packet.Bind;
+import org.jivesoftware.smack.packet.Message.Body;
 import org.jivesoftware.smack.provider.BindIQProvider;
+import org.jivesoftware.smack.provider.BodyElementProvider;
 import org.jivesoftware.smack.provider.ProviderManager;
+import org.jivesoftware.smack.provider.TlsFailureProvider;
+import org.jivesoftware.smack.provider.TlsProceedProvider;
 import org.jivesoftware.smack.sasl.core.SASLAnonymous;
 import org.jivesoftware.smack.sasl.core.SASLXOauth2Mechanism;
 import org.jivesoftware.smack.sasl.core.SCRAMSHA1Mechanism;
 import org.jivesoftware.smack.sasl.core.ScramSha1PlusMechanism;
+import org.jivesoftware.smack.util.CloseableUtil;
 import org.jivesoftware.smack.util.FileUtils;
 import org.jivesoftware.smack.util.StringUtils;
 
@@ -59,17 +67,15 @@ public final class SmackInitialization {
      */
     static {
         String smackVersion;
+        BufferedReader reader = null;
         try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(FileUtils.getStreamForClasspathFile("org.jivesoftware.smack/version", null), StringUtils.UTF8));
+            reader = new BufferedReader(new InputStreamReader(FileUtils.getStreamForClasspathFile("org.jivesoftware.smack/version", null), StringUtils.UTF8));
             smackVersion = reader.readLine();
-            try {
-                reader.close();
-            } catch (IOException e) {
-                LOGGER.log(Level.WARNING, "IOException closing stream", e);
-            }
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Could not determine Smack version", e);
             smackVersion = "unknown";
+        } finally {
+            CloseableUtil.maybeClose(reader, LOGGER);
         }
         SMACK_VERSION = smackVersion;
 
@@ -97,6 +103,8 @@ public final class SmackInitialization {
         // Add the Java7 compression handler first, since it's preferred
         SmackConfiguration.compressionHandlers.add(new Java7ZlibInputOutputStream());
 
+        XmppCompressionManager.registerXmppCompressionFactory(ZlibXmppCompressionFactory.INSTANCE);
+
         // Use try block since we may not have permission to get a system
         // property (for example, when an applet).
         try {
@@ -116,6 +124,12 @@ public final class SmackInitialization {
         SASLAuthentication.registerSASLMechanism(new SASLAnonymous());
 
         ProviderManager.addIQProvider(Bind.ELEMENT, Bind.NAMESPACE, new BindIQProvider());
+        ProviderManager.addExtensionProvider(Body.ELEMENT, Body.NAMESPACE, new BodyElementProvider());
+
+        ProviderManager.addNonzaProvider(TlsProceedProvider.INSTANCE);
+        ProviderManager.addNonzaProvider(TlsFailureProvider.INSTANCE);
+        ProviderManager.addNonzaProvider(CompressedProvider.INSTANCE);
+        ProviderManager.addNonzaProvider(FailureProvider.INSTANCE);
 
         SmackConfiguration.smackInitialized = true;
     }
@@ -143,12 +157,7 @@ public final class SmackInitialization {
             eventType = parser.next();
         }
         while (eventType != XmlPullParser.END_DOCUMENT);
-        try {
-            cfgFileStream.close();
-        }
-        catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Error while closing config file input stream", e);
-        }
+        CloseableUtil.maybeClose(cfgFileStream, LOGGER);
     }
 
     private static void parseClassesToLoad(XmlPullParser parser, boolean optional,

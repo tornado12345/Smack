@@ -25,7 +25,7 @@ import org.jivesoftware.smack.packet.ExtensionElement;
 
 /**
  * Jingle content.
- * 
+ *
  * @author Jeff Williams
  */
 public class JingleContent implements ExtensionElement {
@@ -59,7 +59,7 @@ public class JingleContent implements ExtensionElement {
 
     /**
      * Returns the XML element name of the element.
-     * 
+     *
      * @return the XML element name of the element.
      */
     @Override
@@ -69,7 +69,7 @@ public class JingleContent implements ExtensionElement {
 
     /**
      * Return the namespace.
-     * 
+     *
      * @return The namespace
      */
     @Override
@@ -80,7 +80,7 @@ public class JingleContent implements ExtensionElement {
 
     /**
      * Sets the description for this Jingle content.
-     * 
+     *
      * @param description
      *            The description
      */
@@ -90,7 +90,7 @@ public class JingleContent implements ExtensionElement {
 
     /**
      * Gets the description for this Jingle content.
-     * 
+     *
      * @return The description.
      */
     public JingleDescription getDescription() {
@@ -99,7 +99,7 @@ public class JingleContent implements ExtensionElement {
 
     /**
      * Adds a JingleTransport type to the packet.
-     * 
+     *
      * @param transport
      *            the JingleTransport to add.
      */
@@ -111,7 +111,7 @@ public class JingleContent implements ExtensionElement {
 
     /**
      * Adds a list of transports to add to the packet.
-     * 
+     *
      * @param transports
      *            the transports to add.
      */
@@ -125,7 +125,7 @@ public class JingleContent implements ExtensionElement {
 
     /**
      * Returns an Iterator for the JingleTransports in the packet.
-     * 
+     *
      * @return an Iterator for the JingleTransports in the packet.
      */
     public Iterator<JingleTransport> getJingleTransports() {
@@ -134,7 +134,7 @@ public class JingleContent implements ExtensionElement {
 
     /**
      * Returns a list for the JingleTransports in the packet.
-     * 
+     *
      * @return a list for the JingleTransports in the packet.
      */
     public List<JingleTransport> getJingleTransportsList() {
@@ -145,7 +145,7 @@ public class JingleContent implements ExtensionElement {
 
     /**
      * Returns a count of the JingleTransports in the Jingle packet.
-     * 
+     *
      * @return the number of the JingleTransports in the Jingle packet.
      */
     public int getJingleTransportsCount() {
@@ -156,11 +156,11 @@ public class JingleContent implements ExtensionElement {
 
     /**
      * Convert a Jingle description to XML.
-     * 
+     *
      * @return a string with the XML representation
      */
     @Override
-    public String toXML(String enclosingNamespace) {
+    public String toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
         StringBuilder buf = new StringBuilder();
 
         synchronized (transports) {
@@ -171,12 +171,12 @@ public class JingleContent implements ExtensionElement {
 
             // Add the description.
             if (description != null) {
-                buf.append(description.toXML(null));
+                buf.append(description.toXML());
             }
 
             // Add all of the transports.
             for (JingleTransport transport : transports) {
-                buf.append(transport.toXML(null));
+                buf.append(transport.toXML());
             }
             buf.append("</").append(getElementName()).append('>');
         }

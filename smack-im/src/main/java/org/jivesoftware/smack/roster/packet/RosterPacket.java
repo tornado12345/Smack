@@ -39,7 +39,7 @@ import org.jxmpp.jid.BareJid;
  * @author Matt Tucker
  * @author Florian Schmaus
  */
-public class RosterPacket extends IQ {
+public final class RosterPacket extends IQ {
 
     public static final String ELEMENT = QUERY_ELEMENT;
     public static final String NAMESPACE = "jabber:iq:roster";
@@ -91,7 +91,7 @@ public class RosterPacket extends IQ {
 
         synchronized (rosterItems) {
             for (Item entry : rosterItems) {
-                buf.append(entry.toXML(null));
+                buf.append(entry.toXML());
             }
         }
         return buf;
@@ -110,7 +110,7 @@ public class RosterPacket extends IQ {
      * the groups the roster item belongs to.
      */
     // TODO Make this class immutable.
-    public static class Item implements NamedElement {
+    public static final class Item implements NamedElement {
 
         /**
          * The constant value "{@value}".
@@ -126,7 +126,7 @@ public class RosterPacket extends IQ {
          */
         private boolean subscriptionPending;
 
-        // TODO Make immutable. 
+        // TODO Make immutable.
         private String name;
         private ItemType itemType = ItemType.none;
         private boolean approved;
@@ -272,7 +272,7 @@ public class RosterPacket extends IQ {
         }
 
         @Override
-        public XmlStringBuilder toXML(String enclosingNamespace) {
+        public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder(this);
             xml.attribute("jid", jid);
             xml.optAttribute("name", name);
@@ -295,7 +295,7 @@ public class RosterPacket extends IQ {
             final int prime = 31;
             int result = 1;
             result = prime * result + ((groupNames == null) ? 0 : groupNames.hashCode());
-            result = prime * result + ((subscriptionPending) ? 0 : 1);
+            result = prime * result + (subscriptionPending ? 0 : 1);
             result = prime * result + ((itemType == null) ? 0 : itemType.hashCode());
             result = prime * result + ((name == null) ? 0 : name.hashCode());
             result = prime * result + ((jid == null) ? 0 : jid.hashCode());
@@ -399,7 +399,7 @@ public class RosterPacket extends IQ {
          * point in the direction presence messages are sent. For example, if there is only a head
          * pointing to the big dot, then the local user will receive presence information from the
          * remote entity.
-         * 
+         *
          * @return the symbolic representation of this item type.
          */
         public String asSymbol() {

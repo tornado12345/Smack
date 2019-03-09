@@ -17,15 +17,20 @@
 
 package org.jivesoftware.smackx.xdata;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import org.jivesoftware.smack.packet.NamedElement;
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 
 import org.jivesoftware.smackx.xdatavalidation.packet.ValidateElement;
+
+import org.jxmpp.util.XmppDateTime;
 
 /**
  * Represents a field of a form. The field could be used to represent a question to complete,
@@ -45,7 +50,7 @@ public class FormField implements NamedElement {
 
     /**
      * Form Field Types as defined in XEP-4 § 3.3.
-     * 
+     *
      * @see <a href="http://xmpp.org/extensions/xep-0004.html#protocol-fieldtypes">XEP-4 § 3.3 Field Types</a>
      */
     public enum Type {
@@ -152,7 +157,7 @@ public class FormField implements NamedElement {
      * @param variable the variable name of the question.
      */
     public FormField(String variable) {
-        this.variable = StringUtils.requireNotNullOrEmpty(variable, "Variable must not be null or empty");
+        this.variable = StringUtils.requireNotNullNorEmpty(variable, "Variable must not be null nor empty");
     }
 
     /**
@@ -257,13 +262,30 @@ public class FormField implements NamedElement {
      */
     public String getFirstValue() {
         CharSequence firstValue;
+
         synchronized (values) {
+            if (values.isEmpty()) {
+                return null;
+            }
             firstValue = values.get(0);
         }
-        if (firstValue == null) {
+
+        return firstValue.toString();
+    }
+
+    /**
+     * Parses the first value of this form field as XEP-0082 date/time format and returns a date instance or {@code null}.
+     *
+     * @return a Date instance representing the date/time information of the first value of this field.
+     * @throws ParseException if parsing fails.
+     * @since 4.3.0
+     */
+    public Date getFirstValueAsDate() throws ParseException {
+        String valueString = getFirstValue();
+        if (valueString == null) {
             return null;
         }
-        return firstValue.toString();
+        return XmppDateTime.parseXEP0082Date(valueString);
     }
 
     /**
@@ -273,7 +295,7 @@ public class FormField implements NamedElement {
      * "uniquely identifies the field in the context of the form" (if the field is not of type 'fixed', in which case
      * the field "MAY possess a 'var' attribute")
      * </p>
-     * 
+     *
      * @return the variable name of the question.
      */
     public String getVariable() {
@@ -362,6 +384,18 @@ public class FormField implements NamedElement {
     }
 
     /**
+     * Adds the given Date as XEP-0082 formated string by invoking {@link #addValue(CharSequence)} after the date
+     * instance was formated.
+     *
+     * @param date the date instance to add as XEP-0082 formated string.
+     * @since 4.3.0
+     */
+    public void addValue(Date date) {
+        String dateString = XmppDateTime.formatXEP0082Date(date);
+        addValue(dateString);
+    }
+
+    /**
      * Adds a default values to the question if the question is part of a form to fill out.
      * Otherwise, adds an answered values to the question.
      *
@@ -378,7 +412,7 @@ public class FormField implements NamedElement {
      */
     protected void resetValues() {
         synchronized (values) {
-            values.removeAll(new ArrayList<>(values));
+            values.clear();
         }
     }
 
@@ -400,7 +434,7 @@ public class FormField implements NamedElement {
     }
 
     @Override
-    public XmlStringBuilder toXML(String enclosingNamespace) {
+    public XmlStringBuilder toXML(XmlEnvironment enclosingNamespace) {
         XmlStringBuilder buf = new XmlStringBuilder(this);
         // Add attributes
         buf.optAttribute("label", getLabel());
@@ -416,7 +450,7 @@ public class FormField implements NamedElement {
         }
         // Loop through all the values and append them to the string buffer
         for (Option option : getOptions()) {
-            buf.append(option.toXML(null));
+            buf.append(option.toXML());
         }
         buf.optElement(validateElement);
         buf.closeElement(this);
@@ -434,12 +468,12 @@ public class FormField implements NamedElement {
 
         FormField other = (FormField) obj;
 
-        return toXML(null).equals(other.toXML(null));
+        return toXML().toString().equals(other.toXML().toString());
     }
 
     @Override
     public int hashCode() {
-        return toXML(null).hashCode();
+        return toXML().toString().hashCode();
     }
 
     /**
@@ -447,7 +481,7 @@ public class FormField implements NamedElement {
      *
      * @author Gaston Dombiak
      */
-    public static class Option implements NamedElement {
+    public static final class Option implements NamedElement {
 
         public static final String ELEMENT = "option";
 
@@ -492,7 +526,7 @@ public class FormField implements NamedElement {
         }
 
         @Override
-        public XmlStringBuilder toXML(String enclosingNamespace) {
+        public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
             XmlStringBuilder xml = new XmlStringBuilder(this);
             // Add attribute
             xml.optAttribute("label", getLabel());

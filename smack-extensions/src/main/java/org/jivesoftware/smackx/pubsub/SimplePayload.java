@@ -29,9 +29,9 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 /**
- * The default payload representation for {@link PayloadItem#getPayload()}.  It simply 
+ * The default payload representation for {@link PayloadItem#getPayload()}.  It simply
  * stores the XML payload as a string.
- *  
+ *
  * @author Robin Collier
  */
 public class SimplePayload implements ExtensionElement {
@@ -57,14 +57,14 @@ public class SimplePayload implements ExtensionElement {
 
         payload = xmlPayload;
 
-        elemName = StringUtils.requireNotNullOrEmpty(qname.getLocalPart(), "Could not determine element name from XML payload");
-        ns = StringUtils.requireNotNullOrEmpty(qname.getNamespaceURI(), "Could not determine namespace from XML payload");
+        elemName = StringUtils.requireNotNullNorEmpty(qname.getLocalPart(), "Could not determine element name from XML payload");
+        ns = StringUtils.requireNotNullNorEmpty(qname.getNamespaceURI(), "Could not determine namespace from XML payload");
     }
 
     /**
-     * Construct a <tt>SimplePayload</tt> object with the specified element name, 
+     * Construct a <tt>SimplePayload</tt> object with the specified element name,
      * namespace and content.  The content must be well formed XML.
-     * 
+     *
      * @param elementName The root element name (of the payload)
      * @param namespace The namespace of the payload, null if there is none
      * @param xmlPayload The payload data
@@ -93,12 +93,12 @@ public class SimplePayload implements ExtensionElement {
     }
 
     @Override
-    public String toXML(String enclosingNamespace) {
+    public String toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
         return payload;
     }
 
     @Override
     public String toString() {
-        return getClass().getName() + "payload [" + toXML(null) + "]";
+        return getClass().getName() + "payload [" + toXML() + "]";
     }
 }

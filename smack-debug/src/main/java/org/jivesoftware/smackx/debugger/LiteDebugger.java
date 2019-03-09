@@ -51,9 +51,9 @@ import org.jivesoftware.smack.util.WriterListener;
 import org.jxmpp.jid.EntityFullJid;
 
 /**
- * The LiteDebugger is a very simple debugger that allows to debug sent, received and 
+ * The LiteDebugger is a very simple debugger that allows to debug sent, received and
  * interpreted messages.
- * 
+ *
  * @author Gaston Dombiak
  */
 public class LiteDebugger extends SmackDebugger {
@@ -82,7 +82,7 @@ public class LiteDebugger extends SmackDebugger {
         frame = new JFrame("Smack Debug Window -- " + connection.getXMPPServiceDomain() + ":" +
                 connection.getPort());
 
-        // Add listener for window closing event 
+        // Add listener for window closing event
         frame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent evt) {
@@ -265,10 +265,10 @@ public class LiteDebugger extends SmackDebugger {
     }
 
     /**
-     * Notification that the root window is closing. Stop listening for received and 
+     * Notification that the root window is closing. Stop listening for received and
      * transmitted packets.
-     * 
-     * @param evt the event that indicates that the root window is closing 
+     *
+     * @param evt the event that indicates that the root window is closing
      */
     public void rootWindowClosing(WindowEvent evt) {
         // TODO: Remove debugger from connection.
@@ -304,21 +304,13 @@ public class LiteDebugger extends SmackDebugger {
     }
 
     @Override
-    public Reader newConnectionReader(Reader newReader) {
-        ((ObservableReader) reader).removeReaderListener(readerListener);
-        ObservableReader debugReader = new ObservableReader(newReader);
-        debugReader.addReaderListener(readerListener);
-        reader = debugReader;
-        return reader;
+    public void outgoingStreamSink(CharSequence outgoingCharSequence) {
+        writerListener.write(outgoingCharSequence.toString());
     }
 
     @Override
-    public Writer newConnectionWriter(Writer newWriter) {
-        ((ObservableWriter) writer).removeWriterListener(writerListener);
-        ObservableWriter debugWriter = new ObservableWriter(newWriter);
-        debugWriter.addWriterListener(writerListener);
-        writer = debugWriter;
-        return writer;
+    public void incomingStreamSink(CharSequence incomingCharSequence) {
+        readerListener.read(incomingCharSequence.toString());
     }
 
     @Override
@@ -331,8 +323,8 @@ public class LiteDebugger extends SmackDebugger {
 
     @Override
     public void onIncomingStreamElement(TopLevelStreamElement streamElement) {
-        interpretedText1.append(streamElement.toXML(null).toString());
-        interpretedText2.append(streamElement.toXML(null).toString());
+        interpretedText1.append(streamElement.toXML().toString());
+        interpretedText2.append(streamElement.toXML().toString());
         interpretedText1.append(NEWLINE);
         interpretedText2.append(NEWLINE);
     }

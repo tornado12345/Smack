@@ -302,7 +302,7 @@ public class StringUtils {
         return randomString(length, SECURE_RANDOM.get());
     }
 
-    private static String randomString(final int length, Random random) {
+    public static String randomString(final int length, Random random) {
         if (length < 1) {
             return null;
         }
@@ -382,7 +382,7 @@ public class StringUtils {
 
     /**
      * Returns true if the given CharSequence is empty.
-     * 
+     *
      * @param cs
      * @return true if the given CharSequence is empty
      */
@@ -444,8 +444,40 @@ public class StringUtils {
         return csOne.toString().compareTo(csTwo.toString());
     }
 
+    /**
+     * Require a {@link CharSequence} to be neither null, nor empty.
+     *
+     * @deprecated use {@link #requireNotNullNorEmpty(CharSequence, String)} instead.
+     * @param cs CharSequence
+     * @param message error message
+     * @param <CS> CharSequence type
+     * @return cs
+     */
+    @Deprecated
     public static <CS extends CharSequence> CS requireNotNullOrEmpty(CS cs, String message) {
+        return requireNotNullNorEmpty(cs, message);
+    }
+
+    /**
+     * Require a {@link CharSequence} to be neither null, nor empty.
+     *
+     * @param cs CharSequence
+     * @param message error message
+     * @param <CS> CharSequence type
+     * @return cs
+     */
+    public static <CS extends CharSequence> CS requireNotNullNorEmpty(CS cs, String message) {
         if (isNullOrEmpty(cs)) {
+            throw new IllegalArgumentException(message);
+        }
+        return cs;
+    }
+
+    public static <CS extends CharSequence> CS requireNullOrNotEmpty(CS cs, String message) {
+        if (cs == null) {
+            return null;
+        }
+        if (cs.toString().isEmpty()) {
             throw new IllegalArgumentException(message);
         }
         return cs;

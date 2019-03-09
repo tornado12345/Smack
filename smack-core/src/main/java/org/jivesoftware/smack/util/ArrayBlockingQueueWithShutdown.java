@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2014 Florian Schmaus
+ * Copyright 2014-2018 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * <p>
  * Based on ArrayBlockingQueue of OpenJDK by Doug Lea (who released ArrayBlockingQueue as public
  * domain).
- * 
+ *
  * @param <E> the type of elements held in this collection
  */
 public class ArrayBlockingQueueWithShutdown<E> extends AbstractQueue<E> implements BlockingQueue<E> {
@@ -58,10 +58,16 @@ public class ArrayBlockingQueueWithShutdown<E> extends AbstractQueue<E> implemen
     }
 
     private void insert(E e) {
+        insert(e, true);
+    }
+
+    private void insert(E e, boolean signalNotEmpty) {
         items[putIndex] = e;
         putIndex = inc(putIndex);
         count++;
-        notEmpty.signal();
+        if (signalNotEmpty) {
+            notEmpty.signal();
+        }
     }
 
     private E extract() {
@@ -170,7 +176,7 @@ public class ArrayBlockingQueueWithShutdown<E> extends AbstractQueue<E> implemen
 
     /**
      * Returns true if the queue is currently shut down.
-     * 
+     *
      * @return true if the queue is shut down.
      */
     public boolean isShutdown() {
@@ -226,6 +232,35 @@ public class ArrayBlockingQueueWithShutdown<E> extends AbstractQueue<E> implemen
         }
     }
 
+    public boolean offerAndShutdown(E e) {
+        checkNotNull(e);
+        boolean res;
+        lock.lock();
+        try {
+            res = offer(e);
+            shutdown();
+        } finally {
+            lock.unlock();
+        }
+        return res;
+    }
+
+    private void putInternal(E e, boolean signalNotEmpty) throws InterruptedException {
+        assert lock.isHeldByCurrentThread();
+
+        while (isFull()) {
+            try {
+                notFull.await();
+                checkNotShutdown();
+            }
+            catch (InterruptedException ie) {
+                notFull.signal();
+                throw ie;
+            }
+        }
+        insert(e, signalNotEmpty);
+    }
+
     /**
      * Inserts the specified element into this queue, waiting if necessary
      * for space to become available.
@@ -246,19 +281,67 @@ public class ArrayBlockingQueueWithShutdown<E> extends AbstractQueue<E> implemen
         lock.lockInterruptibly();
 
         try {
-            while (isFull()) {
-                try {
-                    notFull.await();
-                    checkNotShutdown();
-                }
-                catch (InterruptedException ie) {
-                    notFull.signal();
-                    throw ie;
-                }
-            }
-            insert(e);
+            putInternal(e, true);
         }
         finally {
+            lock.unlock();
+        }
+    }
+
+    public void putAll(Collection<? extends E> elements) throws InterruptedException {
+        checkNotNull(elements);
+        lock.lockInterruptibly();
+
+        try {
+            for (E element : elements) {
+                putInternal(element, false);
+            }
+        } finally {
+            notEmpty.signalAll();
+            lock.unlock();
+        }
+    }
+
+    public enum TryPutResult {
+        /**
+         * The method was unable to acquire the queue lock.
+         */
+        couldNotLock,
+
+        /**
+         * The queue was shut down.
+         */
+        queueWasShutDown,
+
+        /**
+         * The method was unable to put another element into the queue because the queue was full.
+         */
+        queueWasFull,
+
+        /**
+         * The element was successfully placed into the queue.
+         */
+        putSuccessful,
+    }
+
+    public TryPutResult tryPut(E e) {
+        checkNotNull(e);
+
+        boolean locked = lock.tryLock();
+        if (!locked) {
+            return TryPutResult.couldNotLock;
+        }
+        try {
+            if (isShutdown) {
+                return TryPutResult.queueWasShutDown;
+            }
+            if (isFull()) {
+                return TryPutResult.queueWasFull;
+            }
+
+            insert(e);
+            return TryPutResult.putSuccessful;
+        } finally {
             lock.unlock();
         }
     }
@@ -312,6 +395,72 @@ public class ArrayBlockingQueueWithShutdown<E> extends AbstractQueue<E> implemen
             return e;
         }
         finally {
+            lock.unlock();
+        }
+    }
+
+    public enum TryTakeResultCode {
+        /**
+         * The method was unable to acquire the queue lock.
+         */
+        couldNotLock,
+
+        /**
+         * The queue was shut down.
+         */
+        queueWasShutDown,
+
+        /**
+         * The queue was empty.
+         */
+        queueWasEmpty,
+
+        /**
+         * An element was successfully removed from the queue.
+         */
+        takeSuccessful,
+    }
+
+    public static final class TryTakeResult<E> {
+        private final E element;
+        private final TryTakeResultCode resultCode;
+
+        private TryTakeResult(TryTakeResultCode resultCode) {
+            assert resultCode != null;
+            this.resultCode = resultCode;
+            this.element = null;
+        }
+
+        private TryTakeResult(E element) {
+            assert element != null;
+            this.resultCode = TryTakeResultCode.takeSuccessful;
+            this.element = element;
+        }
+
+        public TryTakeResultCode getResultCode() {
+            return resultCode;
+        }
+
+        public E getElement() {
+            return element;
+        }
+    }
+
+    public TryTakeResult<E> tryTake() {
+        boolean locked = lock.tryLock();
+        if (!locked) {
+            return new TryTakeResult<E>(TryTakeResultCode.couldNotLock);
+        }
+        try {
+            if (isShutdown) {
+                return new TryTakeResult<E>(TryTakeResultCode.queueWasShutDown);
+            }
+            if (hasNoElements()) {
+                return new TryTakeResult<E>(TryTakeResultCode.queueWasEmpty);
+            }
+            E element = extract();
+            return new TryTakeResult<E>(element);
+        } finally {
             lock.unlock();
         }
     }

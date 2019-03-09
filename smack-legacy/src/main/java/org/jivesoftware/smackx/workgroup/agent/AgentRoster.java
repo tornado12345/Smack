@@ -70,8 +70,8 @@ public class AgentRoster {
      * Constructs a new AgentRoster.
      *
      * @param connection an XMPP connection.
-     * @throws NotConnectedException 
-     * @throws InterruptedException 
+     * @throws NotConnectedException
+     * @throws InterruptedException
      */
     AgentRoster(XMPPConnection connection, EntityBareJid workgroupJID) throws NotConnectedException, InterruptedException {
         this.connection = connection;
@@ -93,8 +93,8 @@ public class AgentRoster {
      * Reloads the entire roster from the server. This is an asynchronous operation,
      * which means the method will return immediately, and the roster will be
      * reloaded at a later point when the server responds to the reload request.
-     * @throws NotConnectedException 
-     * @throws InterruptedException 
+     * @throws NotConnectedException
+     * @throws InterruptedException
      */
     public void reload() throws NotConnectedException, InterruptedException {
         AgentStatusRequest request = new AgentStatusRequest();
@@ -299,7 +299,7 @@ public class AgentRoster {
             EntityFullJid from = presence.getFrom().asEntityFullJidIfPossible();
             if (from == null) {
                 // TODO Check if we need to ignore these presences or this is a server bug?
-                LOGGER.warning("Presence with non full JID from: " + presence.toXML(null));
+                LOGGER.warning("Presence with non full JID from: " + presence.toXML());
                 return;
             }
             Jid key = getPresenceMapKey(from);

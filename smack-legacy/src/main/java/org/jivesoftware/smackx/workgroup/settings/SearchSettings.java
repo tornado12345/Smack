@@ -19,6 +19,7 @@ package org.jivesoftware.smackx.workgroup.settings;
 import java.io.IOException;
 
 import org.jivesoftware.smack.packet.SimpleIQ;
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.util.StringUtils;
 
@@ -78,7 +79,7 @@ public class SearchSettings extends SimpleIQ {
     public static class InternalProvider extends IQProvider<SearchSettings> {
 
         @Override
-        public SearchSettings parse(XmlPullParser parser, int initialDepth) throws XmlPullParserException, IOException {
+        public SearchSettings parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment) throws XmlPullParserException, IOException {
             SearchSettings settings = new SearchSettings();
 
             boolean done = false;
@@ -87,10 +88,10 @@ public class SearchSettings extends SimpleIQ {
 
             while (!done) {
                 int eventType = parser.next();
-                if ((eventType == XmlPullParser.START_TAG) && ("forums".equals(parser.getName()))) {
+                if (eventType == XmlPullParser.START_TAG && "forums".equals(parser.getName())) {
                     forums = parser.nextText();
                 }
-                else if ((eventType == XmlPullParser.START_TAG) && ("kb".equals(parser.getName()))) {
+                else if ((eventType == XmlPullParser.START_TAG) && "kb".equals(parser.getName())) {
                     kb = parser.nextText();
                 }
                 else if (eventType == XmlPullParser.END_TAG && "search-settings".equals(parser.getName())) {

@@ -62,15 +62,15 @@ public class ItemValidationTest extends InitExtensions {
     public void verifyBasicItem() throws Exception {
         Item simpleItem = new Item();
         String simpleCtrl = "<item xmlns='http://jabber.org/protocol/pubsub' />";
-        assertXMLEqual(simpleCtrl, simpleItem.toXML(null).toString());
+        assertXMLEqual(simpleCtrl, simpleItem.toXML().toString());
 
         Item idItem = new Item("uniqueid");
         String idCtrl = "<item xmlns='http://jabber.org/protocol/pubsub' id='uniqueid'/>";
-        assertXMLEqual(idCtrl, idItem.toXML(null).toString());
+        assertXMLEqual(idCtrl, idItem.toXML().toString());
 
         Item itemWithNodeId = new Item("testId", "testNode");
         String nodeIdCtrl = "<item xmlns='http://jabber.org/protocol/pubsub' id='testId' node='testNode' />";
-        assertXMLEqual(nodeIdCtrl, itemWithNodeId.toXML(null).toString());
+        assertXMLEqual(nodeIdCtrl, itemWithNodeId.toXML().toString());
     }
 
     @Test
@@ -78,16 +78,16 @@ public class ItemValidationTest extends InitExtensions {
         SimplePayload payload = new SimplePayload("<data xmlns='https://example.org'>This is the payload</data>");
 
         PayloadItem<SimplePayload> simpleItem = new PayloadItem<>(payload);
-        String simpleCtrl = "<item xmlns='http://jabber.org/protocol/pubsub'>" + payload.toXML(null) + "</item>";
-        assertXMLEqual(simpleCtrl, simpleItem.toXML(null).toString());
+        String simpleCtrl = "<item xmlns='http://jabber.org/protocol/pubsub'>" + payload.toXML() + "</item>";
+        assertXMLEqual(simpleCtrl, simpleItem.toXML().toString());
 
         PayloadItem<SimplePayload> idItem = new PayloadItem<>("uniqueid", payload);
-        String idCtrl = "<item xmlns='http://jabber.org/protocol/pubsub' id='uniqueid'>" + payload.toXML(null) + "</item>";
-        assertXMLEqual(idCtrl, idItem.toXML(null).toString());
+        String idCtrl = "<item xmlns='http://jabber.org/protocol/pubsub' id='uniqueid'>" + payload.toXML() + "</item>";
+        assertXMLEqual(idCtrl, idItem.toXML().toString());
 
         PayloadItem<SimplePayload> itemWithNodeId = new PayloadItem<>("testId", "testNode", payload);
-        String nodeIdCtrl = "<item xmlns='http://jabber.org/protocol/pubsub' id='testId' node='testNode'>" + payload.toXML(null) + "</item>";
-        assertXMLEqual(nodeIdCtrl, itemWithNodeId.toXML(null).toString());
+        String nodeIdCtrl = "<item xmlns='http://jabber.org/protocol/pubsub' id='testId' node='testNode'>" + payload.toXML() + "</item>";
+        assertXMLEqual(nodeIdCtrl, itemWithNodeId.toXML().toString());
     }
 
     @Test
@@ -97,8 +97,8 @@ public class ItemValidationTest extends InitExtensions {
                 "<event xmlns='http://jabber.org/protocol/pubsub#event'>" +
                     "<items node='testNode'>" +
                         "<item id='testid1' />" +
-                    "</items>" + 
-                 "</event>" + 
+                    "</items>" +
+                 "</event>" +
             "</message>");
 
         Stanza message = PacketParserUtils.parseMessage(parser);
@@ -126,9 +126,9 @@ public class ItemValidationTest extends InitExtensions {
                     "<items node='testNode'>" +
                         "<item id='testid1' >" +
                             itemContent +
-                        "</item>" + 
-                    "</items>" + 
-                 "</event>" + 
+                        "</item>" +
+                    "</items>" +
+                 "</event>" +
             "</message>");
 
         Stanza message = PacketParserUtils.parseMessage(parser);
@@ -145,12 +145,12 @@ public class ItemValidationTest extends InitExtensions {
         SimplePayload payload = (SimplePayload) item.getPayload();
         assertEquals("foo", payload.getElementName());
         assertEquals("smack:test", payload.getNamespace());
-        assertXMLEqual(itemContent, payload.toXML(null).toString());
+        assertXMLEqual(itemContent, payload.toXML().toString());
     }
 
     @Test
     public void parseComplexItem() throws Exception {
-        String itemContent = 
+        String itemContent =
                 "<entry xmlns='http://www.w3.org/2005/Atom'>" +
                     "<title>Soliloquy</title>" +
                     "<summary>" +
@@ -172,9 +172,9 @@ public class ItemValidationTest extends InitExtensions {
                     "<items node='testNode'>" +
                         "<item id='testid1' >" +
                             itemContent +
-                        "</item>" + 
-                    "</items>" + 
-                 "</event>" + 
+                        "</item>" +
+                    "</items>" +
+                 "</event>" +
             "</message>");
 
         Stanza message = PacketParserUtils.parseMessage(parser);
@@ -191,7 +191,7 @@ public class ItemValidationTest extends InitExtensions {
         SimplePayload payload = (SimplePayload) item.getPayload();
         assertEquals("entry", payload.getElementName());
         assertEquals("http://www.w3.org/2005/Atom", payload.getNamespace());
-        assertXMLEqual(itemContent, payload.toXML(null).toString());
+        assertXMLEqual(itemContent, payload.toXML().toString());
     }
 
     @Test
@@ -204,9 +204,9 @@ public class ItemValidationTest extends InitExtensions {
                     "<items node='testNode'>" +
                         "<item id='testid1' >" +
                             itemContent +
-                        "</item>" + 
-                    "</items>" + 
-                 "</event>" + 
+                        "</item>" +
+                    "</items>" +
+                 "</event>" +
             "</message>");
 
         Stanza message = PacketParserUtils.parseMessage(parser);
@@ -226,6 +226,6 @@ public class ItemValidationTest extends InitExtensions {
         assertEquals("testid1", item.getId());
         assertTrue(item.getPayload() instanceof SimplePayload);
 
-        assertXMLEqual(itemContent, item.getPayload().toXML(null).toString());
+        assertXMLEqual(itemContent, item.getPayload().toXML().toString());
     }
 }

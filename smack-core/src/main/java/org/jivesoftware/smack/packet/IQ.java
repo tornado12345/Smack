@@ -17,6 +17,7 @@
 
 package org.jivesoftware.smack.packet;
 
+import java.util.List;
 import java.util.Locale;
 
 import org.jivesoftware.smack.util.Objects;
@@ -125,10 +126,10 @@ public abstract class IQ extends Stanza {
     }
 
     @Override
-    public final XmlStringBuilder toXML(String enclosingNamespace) {
-        XmlStringBuilder buf = new XmlStringBuilder(enclosingNamespace);
+    public final XmlStringBuilder toXML(XmlEnvironment enclosingXmlEnvironment) {
+        XmlStringBuilder buf = new XmlStringBuilder(enclosingXmlEnvironment);
         buf.halfOpenElement(IQ_ELEMENT);
-        addCommonAttributes(buf);
+        addCommonAttributes(buf, enclosingXmlEnvironment);
         if (type == null) {
             buf.attribute("type", "get");
         }
@@ -136,7 +137,7 @@ public abstract class IQ extends Stanza {
             buf.attribute("type", type.toString());
         }
         buf.rightAngleBracket();
-        buf.append(getChildElementXML());
+        buf.append(getChildElementXML(enclosingXmlEnvironment));
         buf.closeElement(IQ_ELEMENT);
         return buf;
     }
@@ -148,19 +149,32 @@ public abstract class IQ extends Stanza {
      * @return the child element section of the IQ XML.
      */
     public final XmlStringBuilder getChildElementXML() {
+        return getChildElementXML(null);
+    }
+
+    /**
+     * Returns the sub-element XML section of the IQ packet, or the empty String if there
+     * isn't one.
+     *
+     * @param enclosingXmlEnvironment the enclosing XML namespace.
+     * @return the child element section of the IQ XML.
+     * @since 4.3.0
+     */
+    public final XmlStringBuilder getChildElementXML(XmlEnvironment enclosingXmlEnvironment) {
         XmlStringBuilder xml = new XmlStringBuilder();
         if (type == Type.error) {
             // Add the error sub-packet, if there is one.
-            appendErrorIfExists(xml);
+            appendErrorIfExists(xml, enclosingXmlEnvironment);
         }
         else if (childElementName != null) {
             // Add the query section if there is one.
             IQChildElementXmlStringBuilder iqChildElement = getIQChildElementBuilder(new IQChildElementXmlStringBuilder(this));
             if (iqChildElement != null) {
                 xml.append(iqChildElement);
-                XmlStringBuilder extensionsXml = getExtensionsXML();
+
+                List<ExtensionElement> extensionsXml = getExtensions();
                 if (iqChildElement.isEmptyElement) {
-                    if (extensionsXml.length() == 0) {
+                    if (extensionsXml.isEmpty()) {
                          xml.closeEmptyElement();
                          return xml;
                     } else {
@@ -209,7 +223,7 @@ public abstract class IQ extends Stanza {
      * </pre>
      * If your IQ does not contain any attributes or child elements (besides {@link ExtensionElement}s), consider sub-classing
      * {@link SimpleIQ} instead.
-     * 
+     *
      * @param xml a pre-created builder which already has the child element and the 'xmlns' attribute set.
      * @return the build to create the IQ child content.
      */
@@ -226,7 +240,7 @@ public abstract class IQ extends Stanza {
     protected final void initializeAsResultFor(IQ request) {
         if (!(request.getType() == Type.get || request.getType() == Type.set)) {
             throw new IllegalArgumentException(
-                    "IQ must be of type 'set' or 'get'. Original IQ: " + request.toXML(null));
+                    "IQ must be of type 'set' or 'get'. Original IQ: " + request.toXML());
         }
         setStanzaId(request.getStanzaId());
         setFrom(request.getTo());
@@ -275,7 +289,7 @@ public abstract class IQ extends Stanza {
     public static ErrorIQ createErrorResponse(final IQ request, final StanzaError.Builder error) {
         if (!(request.getType() == Type.get || request.getType() == Type.set)) {
             throw new IllegalArgumentException(
-                    "IQ must be of type 'set' or 'get'. Original IQ: " + request.toXML(null));
+                    "IQ must be of type 'set' or 'get'. Original IQ: " + request.toXML());
         }
         final ErrorIQ result = new ErrorIQ(error);
         result.setStanzaId(request.getStanzaId());
@@ -367,7 +381,6 @@ public abstract class IQ extends Stanza {
         }
 
         private IQChildElementXmlStringBuilder(String element, String namespace) {
-            super("");
             prelude(element, namespace);
             this.element = element;
         }

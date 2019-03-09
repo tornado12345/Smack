@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2003-2007 Jive Software, 2015-2018 Florian Schmaus
+ * Copyright 2003-2007 Jive Software, 2015-2019 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,9 +62,16 @@ import org.jivesoftware.smack.util.XmlStringBuilder;
  * @see <a href="http://xmpp.org/rfcs/rfc6120.html#stanzas-error-syntax">RFC 6120 - 8.3.2 Syntax: The Syntax of XMPP error stanzas</a>
  */
 // TODO Use StanzaErrorTextElement here.
-public class StanzaError extends AbstractError {
+public class StanzaError extends AbstractError implements ExtensionElement {
 
-    public static final String NAMESPACE = "urn:ietf:params:xml:ns:xmpp-stanzas";
+    public static final String ERROR_CONDITION_AND_TEXT_NAMESPACE = "urn:ietf:params:xml:ns:xmpp-stanzas";
+
+    /**
+     * TODO describe me.
+     */
+    @Deprecated
+    public static final String NAMESPACE = ERROR_CONDITION_AND_TEXT_NAMESPACE;
+
     public static final String ERROR = "error";
 
     private static final Logger LOGGER = Logger.getLogger(StanzaError.class.getName());
@@ -104,20 +111,20 @@ public class StanzaError extends AbstractError {
     /**
      * Creates a new error with the specified type, condition and message.
      * This constructor is used when the condition is not recognized automatically by XMPPError
-     * i.e. there is not a defined instance of ErrorCondition or it does not apply the default 
+     * i.e. there is not a defined instance of ErrorCondition or it does not apply the default
      * specification.
-     * 
+     *
      * @param type the error type.
      * @param condition the error condition.
      * @param conditionText
      * @param errorGenerator
-     * @param descriptiveTexts 
+     * @param descriptiveTexts
      * @param extensions list of stanza extensions
      * @param stanza the stanza carrying this XMPP error.
      */
     public StanzaError(Condition condition, String conditionText, String errorGenerator, Type type, Map<String, String> descriptiveTexts,
             List<ExtensionElement> extensions, Stanza stanza) {
-        super(descriptiveTexts, NAMESPACE, extensions);
+        super(descriptiveTexts, ERROR_CONDITION_AND_TEXT_NAMESPACE, extensions);
         this.condition = Objects.requireNonNull(condition, "condition must not be null");
         this.stanza = stanza;
         // Some implementations may send the condition as non-empty element containing the empty string, that is
@@ -197,20 +204,25 @@ public class StanzaError extends AbstractError {
         return sb.toString();
     }
 
-    /**
-     * Returns the error as XML.
-     *
-     * @return the error as XML.
-     */
-    public XmlStringBuilder toXML() {
-        XmlStringBuilder xml = new XmlStringBuilder();
-        xml.halfOpenElement(ERROR);
+    @Override
+    public String getElementName() {
+        return ERROR;
+    }
+
+    @Override
+    public String getNamespace() {
+        return StreamOpen.CLIENT_NAMESPACE;
+    }
+
+    @Override
+    public XmlStringBuilder toXML(XmlEnvironment enclosingNamespace) {
+        XmlStringBuilder xml = new XmlStringBuilder(this, enclosingNamespace);
         xml.attribute("type", type.toString());
         xml.optAttribute("by", errorGenerator);
         xml.rightAngleBracket();
 
         xml.halfOpenElement(condition.toString());
-        xml.xmlnsAttribute(NAMESPACE);
+        xml.xmlnsAttribute(ERROR_CONDITION_AND_TEXT_NAMESPACE);
         if (conditionText != null) {
             xml.rightAngleBracket();
             xml.escape(conditionText);
@@ -222,7 +234,7 @@ public class StanzaError extends AbstractError {
 
         addDescriptiveTextsAndExtensions(xml);
 
-        xml.closeElement(ERROR);
+        xml.closeElement(this);
         return xml;
     }
 
@@ -364,11 +376,6 @@ public class StanzaError extends AbstractError {
         }
 
         public static Condition fromString(String string) {
-            // Backwards compatibility for older implementations still using RFC 3920. RFC 6120
-            // changed 'xml-not-well-formed' to 'not-well-formed'.
-            if ("xml-not-well-formed".equals(string)) {
-                string = "not-well-formed";
-            }
             string = string.replace('-', '_');
             Condition condition = null;
             try {

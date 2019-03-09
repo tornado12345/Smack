@@ -182,9 +182,9 @@ public final class FileTransferNegotiator extends Manager {
      * @return The file transfer object that handles the transfer
      * @throws NoStreamMethodsOfferedException If there are either no stream methods contained in the packet, or
      *                       there is not an appropriate stream method.
-     * @throws NotConnectedException 
-     * @throws NoAcceptableTransferMechanisms 
-     * @throws InterruptedException 
+     * @throws NotConnectedException
+     * @throws NoAcceptableTransferMechanisms
+     * @throws InterruptedException
      */
     public StreamNegotiator selectStreamNegotiator(
             FileTransferRequest request) throws NotConnectedException, NoStreamMethodsOfferedException, NoAcceptableTransferMechanisms, InterruptedException {
@@ -239,7 +239,7 @@ public final class FileTransferNegotiator extends Manager {
             throw new FileTransferException.NoAcceptableTransferMechanisms();
         }
 
-        if (isByteStream && isIBB) { 
+        if (isByteStream && isIBB) {
             return new FaultTolerantNegotiator(connection(),
                     byteStreamTransferManager,
                     inbandTransferManager);
@@ -260,7 +260,7 @@ public final class FileTransferNegotiator extends Manager {
     public static String getNextStreamID() {
         StringBuilder buffer = new StringBuilder();
         buffer.append(STREAM_INIT_PREFIX);
-        buffer.append(Math.abs(randomGenerator.nextLong()));
+        buffer.append(randomGenerator.nextInt(Integer.MAX_VALUE) + randomGenerator.nextInt(Integer.MAX_VALUE));
 
         return buffer.toString();
     }
@@ -296,10 +296,10 @@ public final class FileTransferNegotiator extends Manager {
      *                        user to respond. If they do not respond in time, this
      * @return Returns the stream negotiator selected by the peer.
      * @throws XMPPErrorException Thrown if there is an error negotiating the file transfer.
-     * @throws NotConnectedException 
-     * @throws NoResponseException 
-     * @throws NoAcceptableTransferMechanisms 
-     * @throws InterruptedException 
+     * @throws NotConnectedException
+     * @throws NoResponseException
+     * @throws NoAcceptableTransferMechanisms
+     * @throws InterruptedException
      */
     public StreamNegotiator negotiateOutgoingTransfer(final Jid userID,
             final String streamID, final String fileName, final long size,
@@ -342,10 +342,11 @@ public final class FileTransferNegotiator extends Manager {
         boolean isByteStream = false;
         boolean isIBB = false;
         for (CharSequence variable : field.getValues()) {
-            if (variable.equals(Bytestream.NAMESPACE) && !IBB_ONLY) {
+            String variableString = variable.toString();
+            if (variableString.equals(Bytestream.NAMESPACE) && !IBB_ONLY) {
                 isByteStream = true;
             }
-            else if (variable.equals(DataPacketExtension.NAMESPACE)) {
+            else if (variableString.equals(DataPacketExtension.NAMESPACE)) {
                 isIBB = true;
             }
         }

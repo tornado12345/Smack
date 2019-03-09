@@ -24,16 +24,16 @@ import org.jivesoftware.smack.util.stringencoder.StringEncoder;
 
 /**
  * A Base 64 encoding implementation that generates filename and Url safe encodings.
- * 
+ *
  * <p>
- * Note: This does NOT produce standard Base 64 encodings, but a variant as defined in 
+ * Note: This does NOT produce standard Base 64 encodings, but a variant as defined in
  * Section 4 of RFC3548:
  * <a href="http://www.faqs.org/rfcs/rfc3548.html">http://www.faqs.org/rfcs/rfc3548.html</a>.
  * </p>
- * 
+ *
  * @author Robin Collier
  */
-public final class Java7Base64UrlSafeEncoder implements StringEncoder {
+public final class Java7Base64UrlSafeEncoder implements StringEncoder<String> {
 
     private static final Java7Base64UrlSafeEncoder instance = new Java7Base64UrlSafeEncoder();
 

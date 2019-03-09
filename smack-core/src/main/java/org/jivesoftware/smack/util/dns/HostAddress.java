@@ -17,6 +17,7 @@
 package org.jivesoftware.smack.util.dns;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -26,23 +27,23 @@ import java.util.Map.Entry;
 
 import org.jivesoftware.smack.SmackException.ConnectionException;
 
-import org.minidns.dnsname.DNSName;
+import org.minidns.dnsname.DnsName;
 
 public class HostAddress {
-    private final DNSName fqdn;
+    private final DnsName fqdn;
     private final int port;
     private final Map<InetAddress, Exception> exceptions = new LinkedHashMap<>();
     private final List<InetAddress> inetAddresses;
 
     /**
      * Creates a new HostAddress with the given FQDN.
-     * 
+     *
      * @param fqdn the optional fully qualified domain name (FQDN).
      * @param port The port to connect on.
      * @param inetAddresses list of addresses.
      * @throws IllegalArgumentException If the port is out of valid range (0 - 65535).
      */
-    public HostAddress(DNSName fqdn, int port, List<InetAddress> inetAddresses) {
+    public HostAddress(DnsName fqdn, int port, List<InetAddress> inetAddresses) {
         if (port < 0 || port > 65535)
             throw new IllegalArgumentException(
                     "Port must be a 16-bit unsigned integer (i.e. between 0-65535. Port was: " + port);
@@ -65,11 +66,19 @@ public class HostAddress {
      * @param fqdn the domain name of the host.
      * @param e the exception causing the failure.
      */
-    public HostAddress(DNSName fqdn, Exception e) {
+    public HostAddress(DnsName fqdn, Exception e) {
         this.fqdn = fqdn;
         this.port = 5222;
         inetAddresses = Collections.emptyList();
         setException(e);
+    }
+
+    public HostAddress(InetSocketAddress inetSocketAddress, Exception exception) {
+        String hostString = inetSocketAddress.getHostString();
+        this.fqdn = DnsName.from(hostString);
+        this.port = inetSocketAddress.getPort();
+        inetAddresses = Collections.emptyList();
+        setException(exception);
     }
 
     public String getHost() {
@@ -88,7 +97,7 @@ public class HostAddress {
      *
      * @return the fully qualified domain name or <code>null</code>
      */
-    public DNSName getFQDN() {
+    public DnsName getFQDN() {
         return fqdn;
     }
 
@@ -109,7 +118,7 @@ public class HostAddress {
      * Retrieve the Exception that caused a connection failure to this HostAddress. Every
      * HostAddress found in {@link ConnectionException} will have an Exception set,
      * which can be retrieved with this method.
-     * 
+     *
      * @return the Exception causing this HostAddress to fail
      */
     public Map<InetAddress, Exception> getExceptions() {

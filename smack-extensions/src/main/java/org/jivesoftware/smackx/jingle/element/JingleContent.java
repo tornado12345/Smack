@@ -75,7 +75,7 @@ public final class JingleContent implements NamedElement {
                     JingleContentDescription description, JingleContentTransport transport) {
         this.creator = Objects.requireNonNull(creator, "Jingle content creator must not be null");
         this.disposition = disposition;
-        this.name = StringUtils.requireNotNullOrEmpty(name, "Jingle content name must not be null or empty");
+        this.name = StringUtils.requireNotNullNorEmpty(name, "Jingle content name must not be null nor empty");
         this.senders = senders;
         this.description = description;
         this.transport = transport;
@@ -99,7 +99,7 @@ public final class JingleContent implements NamedElement {
 
     /**
      * Gets the description for this Jingle content.
-     * 
+     *
      * @return The description.
      */
     public JingleContentDescription getDescription() {
@@ -108,7 +108,7 @@ public final class JingleContent implements NamedElement {
 
     /**
      * Returns an Iterator for the JingleTransports in the packet.
-     * 
+     *
      * @return an Iterator for the JingleTransports in the packet.
      * @deprecated use {@link #getTransport()} instead.
      */
@@ -119,7 +119,7 @@ public final class JingleContent implements NamedElement {
 
     /**
      * Returns an Iterator for the JingleTransports in the packet.
-     * 
+     *
      * @return an Iterator for the JingleTransports in the packet.
      */
     public JingleContentTransport getTransport() {
@@ -132,7 +132,7 @@ public final class JingleContent implements NamedElement {
     }
 
     @Override
-    public XmlStringBuilder toXML(String enclosingNamespace) {
+    public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.attribute(CREATOR_ATTRIBUTE_NAME, creator);
         xml.optAttribute(DISPOSITION_ATTRIBUTE_NAME, disposition);

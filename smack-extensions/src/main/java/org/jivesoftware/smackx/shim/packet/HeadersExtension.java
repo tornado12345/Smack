@@ -25,9 +25,9 @@ import org.jivesoftware.smack.util.XmlStringBuilder;
 
 /**
  * Extension representing a list of headers as specified in <a href="http://xmpp.org/extensions/xep-0131">Stanza Headers and Internet Metadata (SHIM)</a>.
- * 
+ *
  * @see Header
- * 
+ *
  * @author Robin Collier
  */
 public class HeadersExtension implements ExtensionElement {
@@ -59,7 +59,7 @@ public class HeadersExtension implements ExtensionElement {
     }
 
     @Override
-    public XmlStringBuilder toXML(String enclosingNamespace) {
+    public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.rightAngleBracket();
         xml.append(headers);

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2015 Florian Schmaus
+ * Copyright 2015-2018 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
  */
 package org.jivesoftware.smack.util;
 
+import java.util.Collection;
+
 public class Objects {
 
     public static <T> T requireNonNull(T obj, String message) {
@@ -27,5 +29,24 @@ public class Objects {
 
     public static <T> T requireNonNull(T obj) {
         return requireNonNull(obj, null);
+    }
+
+    /**
+     * Require a collection to be neither null, nor empty.
+     *
+     * @param collection collection
+     * @param message error message
+     * @param <T> Collection type
+     * @return collection
+     */
+    public static <T extends Collection<?>> T requireNonNullNorEmpty(T collection, String message) {
+        if (requireNonNull(collection).isEmpty()) {
+            throw new IllegalArgumentException(message);
+        }
+        return collection;
+    }
+
+    public static boolean equals(Object a, Object b) {
+        return a == b || (a != null && a.equals(b));
     }
 }
