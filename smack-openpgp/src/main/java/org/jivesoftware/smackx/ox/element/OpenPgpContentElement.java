@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2017 Florian Schmaus, 2018 Paul Schaub.
+ * Copyright 2017-2019 Florian Schmaus, 2018 Paul Schaub.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
  */
 package org.jivesoftware.smackx.ox.element;
 
-import static org.jivesoftware.smack.util.StringUtils.requireNotNullNorEmpty;
-
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -25,6 +23,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+
+import javax.xml.namespace.QName;
 
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.util.MultiMap;
@@ -34,7 +34,6 @@ import org.jivesoftware.smack.util.XmlStringBuilder;
 
 import org.jxmpp.jid.Jid;
 import org.jxmpp.util.XmppDateTime;
-import org.jxmpp.util.XmppStringUtils;
 
 /**
  * This class describes an OpenPGP content element. It defines the elements and fields that OpenPGP content elements
@@ -48,18 +47,18 @@ public abstract class OpenPgpContentElement implements ExtensionElement {
     public static final String ATTR_STAMP = "stamp";
     public static final String ELEM_PAYLOAD = "payload";
 
-    private final Set<Jid> to;
+    private final Set<? extends Jid> to;
     private final Date timestamp;
-    private final MultiMap<String, ExtensionElement> payload;
+    private final MultiMap<QName, ExtensionElement> payload;
 
     private String timestampString;
 
-    protected OpenPgpContentElement(Set<Jid> to, Date timestamp, List<ExtensionElement> payload) {
+    protected OpenPgpContentElement(Set<? extends Jid> to, Date timestamp, List<ExtensionElement> payload) {
         this.to = to;
         this.timestamp = Objects.requireNonNull(timestamp);
         this.payload = new MultiMap<>();
         for (ExtensionElement e : payload) {
-            this.payload.put(XmppStringUtils.generateKey(e.getElementName(), e.getNamespace()), e);
+            this.payload.put(e.getQName(), e);
         }
     }
 
@@ -68,7 +67,7 @@ public abstract class OpenPgpContentElement implements ExtensionElement {
      *
      * @return recipients.
      */
-    public final Set<Jid> getTo() {
+    public final Set<? extends Jid> getTo() {
         return to;
     }
 
@@ -104,16 +103,14 @@ public abstract class OpenPgpContentElement implements ExtensionElement {
      * @return a set of all matching extensions.
      */
     public List<ExtensionElement> getExtensions(String elementName, String namespace) {
-        requireNotNullNorEmpty(elementName, "elementName must not be null or empty");
-        requireNotNullNorEmpty(namespace, "namespace must not be null or empty");
-        String key = XmppStringUtils.generateKey(elementName, namespace);
+        QName key = new QName(namespace, elementName);
         return payload.getAll(key);
     }
 
     /**
      * Returns the first extension of this stanza that has the given namespace.
      * <p>
-     * When possible, use {@link #getExtension(String,String)} instead.
+     * When possible, use {@link #getExtension(String, String)} instead.
      * </p>
      *
      * @param namespace the namespace of the extension that is desired.
@@ -125,21 +122,21 @@ public abstract class OpenPgpContentElement implements ExtensionElement {
 
     /**
      * Returns the first extension that matches the specified element name and
-     * namespace, or <tt>null</tt> if it doesn't exist. If the provided elementName is null,
+     * namespace, or <code>null</code> if it doesn't exist. If the provided elementName is null,
      * only the namespace is matched. Extensions are
      * are arbitrary XML elements in standard XMPP stanzas.
      *
      * @param elementName the XML element name of the extension. (May be null)
      * @param namespace the XML element namespace of the extension.
      * @param <PE> type of the ExtensionElement.
-     * @return the extension, or <tt>null</tt> if it doesn't exist.
+     * @return the extension, or <code>null</code> if it doesn't exist.
      */
     @SuppressWarnings("unchecked")
     public <PE extends ExtensionElement> PE getExtension(String elementName, String namespace) {
         if (namespace == null) {
             return null;
         }
-        String key = XmppStringUtils.generateKey(elementName, namespace);
+        QName key = new QName(namespace, elementName);
         ExtensionElement packetExtension;
         synchronized (payload) {
             packetExtension = payload.getFirst(key);
@@ -163,7 +160,7 @@ public abstract class OpenPgpContentElement implements ExtensionElement {
     }
 
     protected void addCommonXml(XmlStringBuilder xml) {
-        for (Jid toJid : (to != null ? to : Collections.<Jid>emptySet())) {
+        for (Jid toJid : to != null ? to : Collections.<Jid>emptySet()) {
             xml.halfOpenElement(ELEM_TO).attribute(ATTR_JID, toJid).closeEmptyElement();
         }
 

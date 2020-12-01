@@ -31,6 +31,9 @@ import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.chat2.ChatManager;
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.packet.MessageBuilder;
+import org.jivesoftware.smack.xml.XmlPullParserException;
+
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.eme.element.ExplicitMessageEncryptionElement;
 import org.jivesoftware.smackx.hints.element.StoreHint;
@@ -41,14 +44,12 @@ import org.jivesoftware.smackx.ox.crypto.OpenPgpElementAndMetadata;
 import org.jivesoftware.smackx.ox.element.OpenPgpContentElement;
 import org.jivesoftware.smackx.ox.element.OpenPgpElement;
 import org.jivesoftware.smackx.ox.element.SigncryptElement;
-import org.jivesoftware.smackx.ox.listener.SigncryptElementReceivedListener;
 
 import org.bouncycastle.openpgp.PGPException;
 import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.Jid;
 import org.pgpainless.decryption_verification.OpenPgpMetadata;
 import org.pgpainless.key.OpenPgpV4Fingerprint;
-import org.xmlpull.v1.XmlPullParserException;
 
 /**
  * Entry point of Smacks API for XEP-0374: OpenPGP for XMPP: Instant Messaging.
@@ -125,7 +126,7 @@ public final class OXInstantMessagingManager extends Manager {
     private OXInstantMessagingManager(final XMPPConnection connection) {
         super(connection);
         openPgpManager = OpenPgpManager.getInstanceFor(connection);
-        openPgpManager.registerSigncryptReceivedListener(signcryptElementReceivedListener);
+        openPgpManager.registerSigncryptReceivedListener(this::signcryptElementReceivedListener);
         announceSupportForOxInstantMessaging();
     }
 
@@ -135,7 +136,7 @@ public final class OXInstantMessagingManager extends Manager {
      * @param connection XMPP connection
      * @return manager instance
      */
-    public static OXInstantMessagingManager getInstanceFor(XMPPConnection connection) {
+    public static synchronized OXInstantMessagingManager getInstanceFor(XMPPConnection connection) {
         OXInstantMessagingManager manager = INSTANCES.get(connection);
 
         if (manager == null) {
@@ -227,11 +228,15 @@ public final class OXInstantMessagingManager extends Manager {
     public OpenPgpMetadata sendOxMessage(OpenPgpContact contact, CharSequence body)
             throws InterruptedException, IOException,
             SmackException.NotConnectedException, SmackException.NotLoggedInException, PGPException {
-        Message message = new Message(contact.getJid());
+        MessageBuilder messageBuilder = connection()
+                .getStanzaFactory()
+                .buildMessageStanza()
+                .to(contact.getJid());
+
         Message.Body mBody = new Message.Body(null, body.toString());
+        OpenPgpMetadata metadata = addOxMessage(messageBuilder, contact, Collections.<ExtensionElement>singletonList(mBody));
 
-        OpenPgpMetadata metadata = addOxMessage(message, contact, Collections.<ExtensionElement>singletonList(mBody));
-
+        Message message = messageBuilder.build();
         ChatManager.getInstanceFor(connection()).chatWith(contact.getJid().asEntityBareJidIfPossible()).send(message);
 
         return metadata;
@@ -240,7 +245,7 @@ public final class OXInstantMessagingManager extends Manager {
     /**
      * Add an OX-IM message element to a message.
      *
-     * @param message message
+     * @param messageBuilder a message builder.
      * @param contact recipient of the message
      * @param payload payload which will be encrypted and signed
      *
@@ -250,16 +255,16 @@ public final class OXInstantMessagingManager extends Manager {
      * @throws PGPException in case something goes wrong during encryption
      * @throws IOException IO is dangerous (we need to read keys)
      */
-    public OpenPgpMetadata addOxMessage(Message message, OpenPgpContact contact, List<ExtensionElement> payload)
+    public OpenPgpMetadata addOxMessage(MessageBuilder messageBuilder, OpenPgpContact contact, List<ExtensionElement> payload)
             throws SmackException.NotLoggedInException, PGPException, IOException {
-        return addOxMessage(message, Collections.singleton(contact), payload);
+        return addOxMessage(messageBuilder, Collections.singleton(contact), payload);
     }
 
     /**
      * Add an OX-IM message element to a message.
      *
-     * @param message message
-     * @param contacts recipients of the message
+     * @param messageBuilder message
+     * @param recipients recipients of the message
      * @param payload payload which will be encrypted and signed
      *
      * @return metadata about the messages encryption + signatures.
@@ -268,21 +273,17 @@ public final class OXInstantMessagingManager extends Manager {
      * @throws PGPException in case something goes wrong during encryption
      * @throws IOException IO is dangerous (we need to read keys)
      */
-    public OpenPgpMetadata addOxMessage(Message message, Set<OpenPgpContact> contacts, List<ExtensionElement> payload)
+    public OpenPgpMetadata addOxMessage(MessageBuilder messageBuilder, Set<OpenPgpContact> recipients, List<ExtensionElement> payload)
             throws SmackException.NotLoggedInException, IOException, PGPException {
 
-        HashSet<OpenPgpContact> recipients = new HashSet<>(contacts);
-        OpenPgpContact self = openPgpManager.getOpenPgpSelf();
-        recipients.add(self);
-
         OpenPgpElementAndMetadata openPgpElementAndMetadata = signAndEncrypt(recipients, payload);
-        message.addExtension(openPgpElementAndMetadata.getElement());
+        messageBuilder.addExtension(openPgpElementAndMetadata.getElement());
 
         // Set hints on message
-        ExplicitMessageEncryptionElement.set(message,
+        ExplicitMessageEncryptionElement.set(messageBuilder,
                 ExplicitMessageEncryptionElement.ExplicitMessageEncryptionProtocol.openpgpV0);
-        StoreHint.set(message);
-        setOXBodyHint(message);
+        StoreHint.set(messageBuilder);
+        setOXBodyHint(messageBuilder);
 
         return openPgpElementAndMetadata.getMetadata();
     }
@@ -348,16 +349,13 @@ public final class OXInstantMessagingManager extends Manager {
      *
      * @param message message
      */
-    private static void setOXBodyHint(Message message) {
+    private static void setOXBodyHint(MessageBuilder message) {
         message.setBody("This message is encrypted using XEP-0374: OpenPGP for XMPP: Instant Messaging.");
     }
 
-    private final SigncryptElementReceivedListener signcryptElementReceivedListener = new SigncryptElementReceivedListener() {
-        @Override
-        public void signcryptElementReceived(OpenPgpContact contact, Message originalMessage, SigncryptElement signcryptElement, OpenPgpMetadata metadata) {
-            for (OxMessageListener listener : oxMessageListeners) {
-                listener.newIncomingOxMessage(contact, originalMessage, signcryptElement, metadata);
-            }
+    private void signcryptElementReceivedListener(OpenPgpContact contact, Message originalMessage, SigncryptElement signcryptElement, OpenPgpMetadata metadata) {
+        for (OxMessageListener listener : oxMessageListeners) {
+            listener.newIncomingOxMessage(contact, originalMessage, signcryptElement, metadata);
         }
-    };
+    }
 }

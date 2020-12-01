@@ -26,9 +26,8 @@ import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.parsing.SmackParsingException;
 import org.jivesoftware.smack.provider.NonzaProvider;
 import org.jivesoftware.smack.util.PacketParserUtils;
-
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
+import org.jivesoftware.smack.xml.XmlPullParser;
+import org.jivesoftware.smack.xml.XmlPullParserException;
 
 public final class FailureProvider extends NonzaProvider<Failure> {
 
@@ -46,9 +45,9 @@ public final class FailureProvider extends NonzaProvider<Failure> {
         XmlEnvironment failureXmlEnvironment = XmlEnvironment.from(parser, xmlEnvironment);
 
         outerloop: while (true) {
-            int eventType = parser.next();
+            XmlPullParser.Event eventType = parser.next();
             switch (eventType) {
-            case XmlPullParser.START_TAG:
+            case START_ELEMENT:
                 String name = parser.getName();
                 String namespace = parser.getNamespace();
                 switch (namespace) {
@@ -62,8 +61,7 @@ public final class FailureProvider extends NonzaProvider<Failure> {
                 case StreamOpen.SERVER_NAMESPACE:
                     switch (name) {
                         case StanzaError.ERROR:
-                            StanzaError.Builder stanzaErrorBuilder = PacketParserUtils.parseError(parser, failureXmlEnvironment);
-                            stanzaError = stanzaErrorBuilder.build();
+                            stanzaError = PacketParserUtils.parseError(parser, failureXmlEnvironment);
                             break;
                         default:
                             LOGGER.warning("Unknown element in " + namespace + ": " + name);
@@ -72,11 +70,12 @@ public final class FailureProvider extends NonzaProvider<Failure> {
                     break;
                 }
                 break;
-            case XmlPullParser.END_TAG:
+            case END_ELEMENT:
                 if (parser.getDepth() == initialDepth) {
                     break outerloop;
                 }
                 break;
+            default: // fall out
             }
         }
 

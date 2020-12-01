@@ -16,14 +16,15 @@
  */
 package org.jivesoftware.smackx.bytestreams.socks5.packet;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.packet.NamedElement;
+import org.jivesoftware.smack.util.InternetAddress;
 import org.jivesoftware.smack.util.Objects;
-import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 
 import org.jxmpp.jid.Jid;
@@ -117,7 +118,7 @@ public class Bytestream extends IQ {
      * @param address The internet address of the stream host.
      * @return The added stream host.
      */
-    public StreamHost addStreamHost(final Jid JID, final String address) {
+    public StreamHost addStreamHost(final Jid JID, String address) {
         return addStreamHost(JID, address, 0);
     }
 
@@ -129,7 +130,7 @@ public class Bytestream extends IQ {
      * @param port The port on which the remote host is seeking connections.
      * @return The added stream host.
      */
-    public StreamHost addStreamHost(final Jid JID, final String address, final int port) {
+    public StreamHost addStreamHost(final Jid JID, String address, final int port) {
         StreamHost host = new StreamHost(JID, address, port);
         addStreamHost(host);
 
@@ -259,19 +260,26 @@ public class Bytestream extends IQ {
         return xml;
     }
 
+    private abstract static class BytestreamExtensionElement implements ExtensionElement {
+        @Override
+        public final String getNamespace() {
+            return NAMESPACE;
+        }
+    }
+
     /**
      * Stanza extension that represents a potential SOCKS5 proxy for the file transfer. Stream hosts
      * are forwarded to the target of the file transfer who then chooses and connects to one.
      *
      * @author Alexander Wenckus
      */
-    public static class StreamHost implements NamedElement {
+    public static class StreamHost extends BytestreamExtensionElement {
 
         public static String ELEMENTNAME = "streamhost";
 
         private final Jid jid;
 
-        private final String address;
+        private final InternetAddress address;
 
         private final int port;
 
@@ -287,8 +295,23 @@ public class Bytestream extends IQ {
          * @param port port of the stream host.
          */
         public StreamHost(final Jid jid, final String address, int port) {
+            this(jid, InternetAddress.from(address), port);
+        }
+
+        public StreamHost(Jid jid, InetAddress address, int port) {
+            this(jid, InternetAddress.from(address), port);
+        }
+
+        /**
+         * Stream Host constructor.
+         *
+         * @param jid The JID of the stream host.
+         * @param address The internet address of the stream host.
+         * @param port port of the stream host.
+         */
+        public StreamHost(Jid jid, InternetAddress address, int port) {
             this.jid = Objects.requireNonNull(jid, "StreamHost JID must not be null");
-            this.address = StringUtils.requireNotNullNorEmpty(address, "StreamHost address must not be null");
+            this.address = Objects.requireNonNull(address);
             this.port = port;
         }
 
@@ -306,7 +329,7 @@ public class Bytestream extends IQ {
          *
          * @return Returns the internet address of the stream host.
          */
-        public String getAddress() {
+        public InternetAddress getAddress() {
             return address;
         }
 
@@ -326,9 +349,9 @@ public class Bytestream extends IQ {
 
         @Override
         public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
-            XmlStringBuilder xml = new XmlStringBuilder(this);
+            XmlStringBuilder xml = new XmlStringBuilder(this, enclosingNamespace);
             xml.attribute("jid", getJID());
-            xml.attribute("host", getAddress());
+            xml.attribute("host", address);
             if (getPort() != 0) {
                 xml.attribute("port", Integer.toString(getPort()));
             } else {
@@ -336,6 +359,11 @@ public class Bytestream extends IQ {
             }
             xml.closeEmptyElement();
             return xml;
+        }
+
+        @Override
+        public String toString() {
+            return "SOCKS5 Stream Host: " + jid + "[" + address + ":" + port + "]";
         }
     }
 
@@ -345,7 +373,7 @@ public class Bytestream extends IQ {
      *
      * @author Alexander Wenckus
      */
-    public static class StreamHostUsed implements NamedElement {
+    public static class StreamHostUsed extends BytestreamExtensionElement {
 
         public static String ELEMENTNAME = "streamhost-used";
 
@@ -376,7 +404,7 @@ public class Bytestream extends IQ {
 
         @Override
         public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
-            XmlStringBuilder xml = new XmlStringBuilder(this);
+            XmlStringBuilder xml = new XmlStringBuilder(this, enclosingNamespace);
             xml.attribute("jid", getJID());
             xml.closeEmptyElement();
             return xml;
@@ -388,7 +416,7 @@ public class Bytestream extends IQ {
      *
      * @author Alexander Wenckus
      */
-    public static class Activate implements NamedElement {
+    public static class Activate extends BytestreamExtensionElement {
 
         public static String ELEMENTNAME = "activate";
 
@@ -419,12 +447,13 @@ public class Bytestream extends IQ {
 
         @Override
         public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
-            XmlStringBuilder xml = new XmlStringBuilder(this);
+            XmlStringBuilder xml = new XmlStringBuilder(this, enclosingNamespace);
             xml.rightAngleBracket();
             xml.escape(getTarget());
             xml.closeElement(this);
             return xml;
         }
+
     }
 
     /**

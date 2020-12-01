@@ -23,9 +23,9 @@ import java.security.NoSuchProviderException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Observable;
 
 import org.jivesoftware.smack.util.Objects;
+
 import org.jivesoftware.smackx.ox.OpenPgpContact;
 import org.jivesoftware.smackx.ox.callback.SecretKeyPassphraseCallback;
 import org.jivesoftware.smackx.ox.exception.MissingUserIdOnKeyException;
@@ -45,7 +45,7 @@ import org.pgpainless.key.collection.PGPKeyRing;
 import org.pgpainless.key.protection.SecretKeyRingProtector;
 import org.pgpainless.key.protection.UnprotectedKeysProtector;
 
-public abstract class AbstractOpenPgpStore extends Observable implements OpenPgpStore {
+public abstract class AbstractOpenPgpStore implements OpenPgpStore {
 
     protected final OpenPgpKeyStore keyStore;
     protected final OpenPgpMetadataStore metadataStore;

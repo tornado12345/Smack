@@ -16,14 +16,16 @@
  */
 package org.jivesoftware.smackx.jingle;
 
-import static junit.framework.TestCase.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.jivesoftware.smack.test.util.SmackTestSuite;
 import org.jivesoftware.smack.test.util.TestUtils;
+
 import org.jivesoftware.smackx.jingle.element.JingleError;
 import org.jivesoftware.smackx.jingle.provider.JingleErrorProvider;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test the JingleError class.
@@ -58,9 +60,11 @@ public class JingleErrorTest extends SmackTestSuite {
         assertEquals(xml, error.toXML().toString());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void illegalArgumentTest() {
-        JingleError.fromString("inexistent-error");
+        assertThrows(IllegalArgumentException.class, () -> {
+            JingleError.fromString("inexistent-error");
+        });
     }
 
 

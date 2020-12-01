@@ -23,12 +23,16 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.Locale;
 
-import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 
+import org.jivesoftware.smack.datatypes.UInt16;
+import org.jivesoftware.smack.datatypes.UInt32;
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.parsing.SmackParsingException;
 import org.jivesoftware.smack.parsing.SmackParsingException.SmackTextParseException;
 import org.jivesoftware.smack.parsing.SmackParsingException.SmackUriSyntaxParsingException;
+import org.jivesoftware.smack.xml.XmlPullParser;
+import org.jivesoftware.smack.xml.XmlPullParserException;
 
 import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.EntityFullJid;
@@ -38,8 +42,6 @@ import org.jxmpp.jid.impl.JidCreate;
 import org.jxmpp.jid.parts.Resourcepart;
 import org.jxmpp.stringprep.XmppStringprepException;
 import org.jxmpp.util.XmppDateTime;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
 
 public class ParserUtils {
 
@@ -49,7 +51,7 @@ public class ParserUtils {
     public static final String JID = "jid";
 
     public static void assertAtStartTag(XmlPullParser parser) throws XmlPullParserException {
-        assert (parser.getEventType() == XmlPullParser.START_TAG);
+        assert parser.getEventType() == XmlPullParser.Event.START_ELEMENT;
     }
 
     public static void assertAtStartTag(XmlPullParser parser, String name) throws XmlPullParserException {
@@ -58,13 +60,24 @@ public class ParserUtils {
     }
 
     public static void assertAtEndTag(XmlPullParser parser) throws XmlPullParserException {
-        assert (parser.getEventType() == XmlPullParser.END_TAG);
+        assert parser.getEventType() == XmlPullParser.Event.END_ELEMENT;
+    }
+
+    public static void forwardToStartElement(XmlPullParser parser) throws XmlPullParserException, IOException {
+         // Wind the parser forward to the first start tag
+        XmlPullParser.Event event = parser.getEventType();
+        while (event != XmlPullParser.Event.START_ELEMENT) {
+            if (event == XmlPullParser.Event.END_DOCUMENT) {
+                throw new IllegalArgumentException("Document contains no start tag");
+            }
+            event = parser.next();
+        }
     }
 
     public static void forwardToEndTagOfDepth(XmlPullParser parser, int depth)
                     throws XmlPullParserException, IOException {
-        int event = parser.getEventType();
-        while (!(event == XmlPullParser.END_TAG && parser.getDepth() == depth)) {
+        XmlPullParser.Event event = parser.getEventType();
+        while (!(event == XmlPullParser.Event.END_ELEMENT && parser.getDepth() == depth)) {
             event = parser.next();
         }
     }
@@ -155,8 +168,8 @@ public class ParserUtils {
     /**
      * Get the boolean value of an argument.
      *
-     * @param parser
-     * @param name
+     * @param parser TODO javadoc me please
+     * @param name TODO javadoc me please
      * @return the boolean value or null of no argument of the given name exists
      */
     public static Boolean getBooleanAttribute(XmlPullParser parser, String name) {
@@ -176,6 +189,11 @@ public class ParserUtils {
         else {
             return bool;
         }
+    }
+
+    public static Byte getByteAttributeFromNextText(XmlPullParser parser) throws IOException, XmlPullParserException {
+        String nextText = parser.nextText();
+        return Byte.valueOf(nextText);
     }
 
     public static int getIntegerAttributeOrThrow(XmlPullParser parser, String name, String throwMessage)
@@ -205,6 +223,14 @@ public class ParserUtils {
         }
     }
 
+    public static UInt16 getUInt16Attribute(XmlPullParser parser, String name) {
+        Integer integer = getIntegerAttribute(parser, name);
+        if (integer == null) {
+            return null;
+        }
+        return UInt16.from(integer);
+    }
+
     public static int getIntegerFromNextText(XmlPullParser parser) throws XmlPullParserException, IOException {
         String intString = parser.nextText();
         return Integer.valueOf(intString);
@@ -225,6 +251,14 @@ public class ParserUtils {
         else {
             return l;
         }
+    }
+
+    public static UInt32 getUInt32Attribute(XmlPullParser parser, String name) {
+        Long l = getLongAttribute(parser, name);
+        if (l == null) {
+            return null;
+        }
+        return UInt32.from(l);
     }
 
     public static double getDoubleFromNextText(XmlPullParser parser) throws XmlPullParserException, IOException {
@@ -319,17 +353,28 @@ public class ParserUtils {
         return text;
     }
 
+    public static String getXmlLang(XmlPullParser parser, XmlEnvironment xmlEnvironment) {
+        String currentXmlLang = getXmlLang(parser);
+        if (currentXmlLang != null) {
+            return currentXmlLang;
+        }
+        return xmlEnvironment.getEffectiveLanguage();
+    }
+
     public static String getXmlLang(XmlPullParser parser) {
         return parser.getAttributeValue("http://www.w3.org/XML/1998/namespace", "lang");
     }
 
+    /**
+     * Get the QName of the current element.
+     *
+     * @param parser the parser.
+     * @return the Qname.
+     * @deprecated use {@link XmlPullParser#getQName()} instead.
+     */
+    @Deprecated
+    // TODO: Remove in Smack 4.5
     public static QName getQName(XmlPullParser parser) {
-        String elementName = parser.getName();
-        String prefix = parser.getPrefix();
-        if (prefix == null) {
-            prefix = XMLConstants.DEFAULT_NS_PREFIX;
-        }
-        String namespace = parser.getNamespace();
-        return new QName(namespace, elementName, prefix);
+        return parser.getQName();
     }
 }

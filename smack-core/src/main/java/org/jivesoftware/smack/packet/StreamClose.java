@@ -16,7 +16,7 @@
  */
 package org.jivesoftware.smack.packet;
 
-public final class StreamClose implements Nonza {
+public final class StreamClose extends AbstractStreamClose {
 
     public static final StreamClose INSTANCE = new StreamClose();
 

@@ -19,7 +19,6 @@ package org.jivesoftware.smackx.ox.crypto;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.Security;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.logging.Level;
@@ -28,6 +27,7 @@ import java.util.logging.Logger;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.util.Objects;
 import org.jivesoftware.smack.util.stringencoder.Base64;
+
 import org.jivesoftware.smackx.ox.OpenPgpContact;
 import org.jivesoftware.smackx.ox.OpenPgpMessage;
 import org.jivesoftware.smackx.ox.OpenPgpSelf;
@@ -37,7 +37,6 @@ import org.jivesoftware.smackx.ox.element.SignElement;
 import org.jivesoftware.smackx.ox.element.SigncryptElement;
 import org.jivesoftware.smackx.ox.store.definition.OpenPgpStore;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
@@ -52,18 +51,9 @@ public class PainlessOpenPgpProvider implements OpenPgpProvider {
 
     private static final Logger LOGGER = Logger.getLogger(PainlessOpenPgpProvider.class.getName());
 
-    static {
-        // Remove any BC providers and add a fresh one.
-        // This is done, since older Android versions ship with a crippled BC provider.
-        Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME);
-        Security.addProvider(new BouncyCastleProvider());
-    }
-
-    private final XMPPConnection connection;
     private final OpenPgpStore store;
 
-    public PainlessOpenPgpProvider(XMPPConnection connection, OpenPgpStore store) {
-        this.connection = Objects.requireNonNull(connection);
+    public PainlessOpenPgpProvider(OpenPgpStore store) {
         this.store = Objects.requireNonNull(store);
     }
 
@@ -166,7 +156,7 @@ public class PainlessOpenPgpProvider implements OpenPgpProvider {
     }
 
     @Override
-    public OpenPgpMessage decryptAndOrVerify(OpenPgpElement element, final OpenPgpSelf self, final OpenPgpContact sender) throws IOException, PGPException {
+    public OpenPgpMessage decryptAndOrVerify(XMPPConnection connection, OpenPgpElement element, final OpenPgpSelf self, final OpenPgpContact sender) throws IOException, PGPException {
         ByteArrayOutputStream plainText = new ByteArrayOutputStream();
         InputStream cipherText = element.toInputStream();
 

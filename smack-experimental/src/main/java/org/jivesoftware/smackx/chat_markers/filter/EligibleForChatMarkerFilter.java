@@ -19,6 +19,7 @@ package org.jivesoftware.smackx.chat_markers.filter;
 import org.jivesoftware.smack.filter.StanzaExtensionFilter;
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.Stanza;
+
 import org.jivesoftware.smackx.chatstates.ChatState;
 import org.jivesoftware.smackx.chatstates.ChatStateManager;
 
@@ -41,7 +42,7 @@ public final class EligibleForChatMarkerFilter extends StanzaExtensionFilter {
      * From XEP-0333, Protocol Format: The Chat Marker MUST have an 'id' which is the 'id' of the
      * message being marked.<br>
      * In order to make Chat Markers works together with XEP-0085 as it said in
-     * 8.5 Interaction with Chat States, only messages with <tt>active</tt> chat
+     * 8.5 Interaction with Chat States, only messages with <code>active</code> chat
      * state are accepted.
      *
      * @param message to be analyzed.
@@ -61,7 +62,7 @@ public final class EligibleForChatMarkerFilter extends StanzaExtensionFilter {
             ChatState state;
             try {
                 state = ChatState.valueOf(chatStateElementName);
-                return (state == ChatState.active);
+                return state == ChatState.active;
             }
             catch (Exception ex) {
                 return false;

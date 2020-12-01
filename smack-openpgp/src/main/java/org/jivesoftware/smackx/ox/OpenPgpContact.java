@@ -31,6 +31,7 @@ import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.util.stringencoder.Base64;
+
 import org.jivesoftware.smackx.ox.element.PubkeyElement;
 import org.jivesoftware.smackx.ox.element.PublicKeysListElement;
 import org.jivesoftware.smackx.ox.exception.MissingUserIdOnKeyException;
@@ -76,7 +77,7 @@ public class OpenPgpContact {
     /**
      * Return the jid of the contact.
      *
-     * @return jid
+     * @return jid TODO javadoc me please
      */
     public BareJid getJid() {
         return jid;

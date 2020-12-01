@@ -269,8 +269,8 @@ public abstract class OmemoStoreTest<T_IdKeyPair, T_IdKey, T_PreKey, T_SigPreKey
 
     @Test
     public void loadStoreCachedDeviceList() throws IOException {
-        Integer[] active = new Integer[] {1,5,999,10};
-        Integer[] inactive = new Integer[] {6,7,8};
+        Integer[] active = new Integer[] {1, 5, 999, 10};
+        Integer[] inactive = new Integer[] {6, 7, 8};
         OmemoCachedDeviceList before = new OmemoCachedDeviceList(
                 new HashSet<>(Arrays.asList(active)),
                 new HashSet<>(Arrays.asList(inactive)));
@@ -302,20 +302,20 @@ public abstract class OmemoStoreTest<T_IdKeyPair, T_IdKey, T_PreKey, T_SigPreKey
     }
 
     @Test
-    public void loadAllRawSessionsReturnsEmptyMapTest() {
+    public void loadAllRawSessionsReturnsEmptyMapTest() throws IOException {
         HashMap<Integer, T_Sess> sessions = store.loadAllRawSessionsOf(alice, bob.getJid());
         assertNotNull(sessions);
         assertEquals(0, sessions.size());
     }
 
     @Test
-    public void loadNonExistentRawSessionReturnsNullTest() {
+    public void loadNonExistentRawSessionReturnsNullTest() throws IOException {
         T_Sess session = store.loadRawSession(alice, bob);
         assertNull(session);
     }
 
     @Test
-    public void loadStoreMessageCounterTest() {
+    public void loadStoreMessageCounterTest() throws IOException {
         assertEquals(0, store.loadOmemoMessageCounter(alice, bob));
         store.storeOmemoMessageCounter(alice, bob, 20);
         assertEquals(20, store.loadOmemoMessageCounter(alice, bob));

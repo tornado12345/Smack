@@ -34,9 +34,12 @@ import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.test.util.FileTestUtil;
+import org.jivesoftware.smack.packet.MessageBuilder;
+import org.jivesoftware.smack.packet.StanzaBuilder;
 import org.jivesoftware.smack.test.util.SmackTestSuite;
 import org.jivesoftware.smack.util.StringUtils;
+import org.jivesoftware.smack.xml.XmlPullParserException;
+
 import org.jivesoftware.smackx.eme.element.ExplicitMessageEncryptionElement;
 import org.jivesoftware.smackx.ox.OpenPgpContact;
 import org.jivesoftware.smackx.ox.OpenPgpManager;
@@ -51,41 +54,33 @@ import org.jivesoftware.smackx.ox.store.filebased.FileBasedOpenPgpStore;
 import org.bouncycastle.openpgp.PGPException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jxmpp.jid.EntityBareJid;
-import org.jxmpp.jid.JidTestUtil;
 import org.pgpainless.decryption_verification.OpenPgpMetadata;
-import org.xmlpull.v1.XmlPullParserException;
 
 public class OXInstantMessagingManagerTest extends SmackTestSuite {
 
     private static final File basePath;
 
     static {
-        basePath = FileTestUtil.getTempDir("ox_im_test_" + StringUtils.randomString(10));
+        basePath = new File(org.apache.commons.io.FileUtils.getTempDirectory(), "ox_im_test_" + StringUtils.randomString(10));
     }
 
     @Test
     public void test() throws IOException, PGPException, InvalidAlgorithmParameterException, NoSuchAlgorithmException,
             NoSuchProviderException, SmackException, MissingUserIdOnKeyException, InterruptedException, XMPPException,
             XmlPullParserException {
-        DummyConnection aliceCon = new DummyConnection(
-                DummyConnection.DummyConnectionConfiguration.builder()
-                        .setXmppDomain(JidTestUtil.EXAMPLE_ORG)
-                        .setUsernameAndPassword("alice", "dummypass").build());
+        DummyConnection aliceCon = new DummyConnection();
         aliceCon.connect().login();
 
-        DummyConnection bobCon = new DummyConnection(
-                DummyConnection.DummyConnectionConfiguration.builder()
-                        .setXmppDomain(JidTestUtil.EXAMPLE_ORG)
-                        .setUsernameAndPassword("bob", "dummypass").build());
+        DummyConnection bobCon = new DummyConnection();
         bobCon.connect().login();
 
         FileBasedOpenPgpStore aliceStore = new FileBasedOpenPgpStore(new File(basePath, "alice"));
         FileBasedOpenPgpStore bobStore = new FileBasedOpenPgpStore(new File(basePath, "bob"));
 
-        PainlessOpenPgpProvider aliceProvider = new PainlessOpenPgpProvider(aliceCon, aliceStore);
-        PainlessOpenPgpProvider bobProvider = new PainlessOpenPgpProvider(bobCon, bobStore);
+        PainlessOpenPgpProvider aliceProvider = new PainlessOpenPgpProvider(aliceStore);
+        PainlessOpenPgpProvider bobProvider = new PainlessOpenPgpProvider(bobStore);
 
         OpenPgpManager aliceOpenPgp = OpenPgpManager.getInstanceFor(aliceCon);
         OpenPgpManager bobOpenPgp = OpenPgpManager.getInstanceFor(bobCon);
@@ -94,7 +89,6 @@ public class OXInstantMessagingManagerTest extends SmackTestSuite {
         bobOpenPgp.setOpenPgpProvider(bobProvider);
 
         OXInstantMessagingManager aliceOxim = OXInstantMessagingManager.getInstanceFor(aliceCon);
-        OXInstantMessagingManager bobOxim = OXInstantMessagingManager.getInstanceFor(bobCon);
 
         OpenPgpSelf aliceSelf = aliceOpenPgp.getOpenPgpSelf();
         OpenPgpSelf bobSelf = bobOpenPgp.getOpenPgpSelf();
@@ -139,11 +133,13 @@ public class OXInstantMessagingManagerTest extends SmackTestSuite {
         assertFalse(aliceForBob.hasUndecidedKeys());
         assertFalse(bobForAlice.hasUndecidedKeys());
 
-        Message message = new Message();
-        assertFalse(ExplicitMessageEncryptionElement.hasProtocol(message, ExplicitMessageEncryptionElement.ExplicitMessageEncryptionProtocol.openpgpV0));
+        MessageBuilder messageBuilder = StanzaBuilder.buildMessage();
+        assertFalse(ExplicitMessageEncryptionElement.hasProtocol(messageBuilder.build(), ExplicitMessageEncryptionElement.ExplicitMessageEncryptionProtocol.openpgpV0));
 
-        aliceOxim.addOxMessage(message, bobForAlice,
+        aliceOxim.addOxMessage(messageBuilder, bobForAlice,
                 Collections.<ExtensionElement>singletonList(new Message.Body(null, "Hello World!")));
+
+        Message message = messageBuilder.build();
         assertTrue(ExplicitMessageEncryptionElement.hasProtocol(message, ExplicitMessageEncryptionElement.ExplicitMessageEncryptionProtocol.openpgpV0));
         assertNotNull(OpenPgpElement.fromStanza(message));
 
@@ -169,7 +165,7 @@ public class OXInstantMessagingManagerTest extends SmackTestSuite {
 
     @AfterClass
     @BeforeClass
-    public static void deleteDirs() {
-        FileTestUtil.deleteDirectory(basePath);
+    public static void deleteDirs() throws IOException {
+        org.apache.commons.io.FileUtils.deleteDirectory(basePath);
     }
 }

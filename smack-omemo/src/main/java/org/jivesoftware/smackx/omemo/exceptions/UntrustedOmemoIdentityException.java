@@ -56,6 +56,7 @@ public class UntrustedOmemoIdentityException extends Exception {
 
     /**
      * Return the device which sent the message.
+     *
      * @return omemoDevice.
      */
     public OmemoDevice getDevice() {
@@ -65,7 +66,8 @@ public class UntrustedOmemoIdentityException extends Exception {
     /**
      * Return the fingerprint of the key we expected.
      * This might return null in case this exception got thrown during encryption process.
-     * @return
+     *
+     * @return the trusted fingerprint.
      */
     public OmemoFingerprint getTrustedFingerprint() {
         return trustedKey;
@@ -73,14 +75,15 @@ public class UntrustedOmemoIdentityException extends Exception {
 
     /**
      * Return the fingerprint of the unexpected untrusted key.
-     * @return
+     *
+     * @return the OMEMO fingerprint.
      */
     public OmemoFingerprint getUntrustedFingerprint() {
         return untrustedKey;
     }
 
     @Override
-    public String toString() {
+    public String getMessage() {
         if (trustedKey != null) {
             return "Untrusted OMEMO Identity encountered:\n" +
                     "Fingerprint of trusted key:\n" + trustedKey.blocksOf8Chars() + "\n" +

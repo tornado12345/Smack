@@ -24,9 +24,11 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.packet.NamedElement;
 import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.util.EqualsUtil;
+import org.jivesoftware.smack.util.HashCode;
 import org.jivesoftware.smack.util.Objects;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.XmlStringBuilder;
@@ -110,7 +112,7 @@ public final class RosterPacket extends IQ {
      * the groups the roster item belongs to.
      */
     // TODO Make this class immutable.
-    public static final class Item implements NamedElement {
+    public static final class Item implements ExtensionElement {
 
         /**
          * The constant value "{@value}".
@@ -135,8 +137,8 @@ public final class RosterPacket extends IQ {
         /**
          * Creates a new roster item.
          *
-         * @param jid
-         * @param name
+         * @param jid TODO javadoc me please
+         * @param name TODO javadoc me please
          */
         public Item(BareJid jid, String name) {
             this(jid, name, false);
@@ -147,7 +149,7 @@ public final class RosterPacket extends IQ {
          *
          * @param jid the jid.
          * @param name the user's name.
-         * @param subscriptionPending
+         * @param subscriptionPending TODO javadoc me please
          */
         public Item(BareJid jid, String name, boolean subscriptionPending) {
             this.jid = Objects.requireNonNull(jid);
@@ -159,6 +161,11 @@ public final class RosterPacket extends IQ {
         @Override
         public String getElementName() {
             return ELEMENT;
+        }
+
+        @Override
+        public String getNamespace() {
+            return NAMESPACE;
         }
 
         /**
@@ -273,7 +280,7 @@ public final class RosterPacket extends IQ {
 
         @Override
         public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
-            XmlStringBuilder xml = new XmlStringBuilder(this);
+            XmlStringBuilder xml = new XmlStringBuilder(this, enclosingNamespace);
             xml.attribute("jid", jid);
             xml.optAttribute("name", name);
             xml.optAttribute("subscription", itemType);
@@ -292,51 +299,26 @@ public final class RosterPacket extends IQ {
 
         @Override
         public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + ((groupNames == null) ? 0 : groupNames.hashCode());
-            result = prime * result + (subscriptionPending ? 0 : 1);
-            result = prime * result + ((itemType == null) ? 0 : itemType.hashCode());
-            result = prime * result + ((name == null) ? 0 : name.hashCode());
-            result = prime * result + ((jid == null) ? 0 : jid.hashCode());
-            result = prime * result + ((approved == false) ? 0 : 1);
-            return result;
+            return HashCode.builder()
+                .append(groupNames)
+                .append(subscriptionPending)
+                .append(itemType)
+                .append(name)
+                .append(jid)
+                .append(approved)
+                .build();
         }
 
         @Override
         public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
-            if (obj == null)
-                return false;
-            if (getClass() != obj.getClass())
-                return false;
-            Item other = (Item) obj;
-            if (groupNames == null) {
-                if (other.groupNames != null)
-                    return false;
-            }
-            else if (!groupNames.equals(other.groupNames))
-                return false;
-            if (subscriptionPending != other.subscriptionPending)
-                return false;
-            if (itemType != other.itemType)
-                return false;
-            if (name == null) {
-                if (other.name != null)
-                    return false;
-            }
-            else if (!name.equals(other.name))
-                return false;
-            if (jid == null) {
-                if (other.jid != null)
-                    return false;
-            }
-            else if (!jid.equals(other.jid))
-                return false;
-            if (approved != other.approved)
-                return false;
-            return true;
+            return EqualsUtil.equals(this, obj, (e, o) ->
+                e.append(groupNames, o.groupNames)
+                 .append(subscriptionPending, o.subscriptionPending)
+                 .append(itemType, o.itemType)
+                 .append(name, o.name)
+                 .append(jid, o.jid)
+                 .append(approved, o.approved)
+            );
         }
 
     }

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2017 Florian Schmaus, 2018 Paul Schaub.
+ * Copyright 2017-2020 Florian Schmaus, 2018 Paul Schaub.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,13 @@ package org.jivesoftware.smackx.ox.element;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
+import javax.xml.namespace.QName;
+
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.XmlStringBuilder;
+
 import org.jivesoftware.smackx.ox.util.Util;
 
 /**
@@ -37,6 +40,7 @@ public class OpenPgpElement implements ExtensionElement {
 
     public static final String ELEMENT = "openpgp";
     public static final String NAMESPACE = "urn:xmpp:openpgp:0";
+    public static final QName QNAME = new QName(NAMESPACE, ELEMENT);
 
     // Represents the OpenPGP message, but encoded using base64.
     private final String base64EncodedOpenPgpMessage;
@@ -70,6 +74,11 @@ public class OpenPgpElement implements ExtensionElement {
     }
 
     @Override
+    public QName getQName() {
+        return QNAME;
+    }
+
+    @Override
     public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.rightAngleBracket().append(base64EncodedOpenPgpMessage).closeElement(this);
@@ -77,6 +86,6 @@ public class OpenPgpElement implements ExtensionElement {
     }
 
     public static OpenPgpElement fromStanza(Stanza stanza) {
-        return stanza.getExtension(ELEMENT, NAMESPACE);
+        return stanza.getExtension(OpenPgpElement.class);
     }
 }

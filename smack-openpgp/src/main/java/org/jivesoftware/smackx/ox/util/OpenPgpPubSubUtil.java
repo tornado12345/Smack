@@ -29,6 +29,7 @@ import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.StanzaError;
+
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.ox.OpenPgpManager;
 import org.jivesoftware.smackx.ox.element.PubkeyElement;
@@ -36,14 +37,14 @@ import org.jivesoftware.smackx.ox.element.PublicKeysListElement;
 import org.jivesoftware.smackx.ox.element.SecretkeyElement;
 import org.jivesoftware.smackx.pep.PepManager;
 import org.jivesoftware.smackx.pubsub.AccessModel;
-import org.jivesoftware.smackx.pubsub.ConfigureForm;
 import org.jivesoftware.smackx.pubsub.Item;
 import org.jivesoftware.smackx.pubsub.LeafNode;
 import org.jivesoftware.smackx.pubsub.Node;
 import org.jivesoftware.smackx.pubsub.PayloadItem;
 import org.jivesoftware.smackx.pubsub.PubSubException;
 import org.jivesoftware.smackx.pubsub.PubSubManager;
-import org.jivesoftware.smackx.xdata.packet.DataForm;
+import org.jivesoftware.smackx.pubsub.form.ConfigureForm;
+import org.jivesoftware.smackx.pubsub.form.FillableConfigureForm;
 
 import org.jxmpp.jid.BareJid;
 import org.pgpainless.key.OpenPgpV4Fingerprint;
@@ -100,7 +101,7 @@ public class OpenPgpPubSubUtil {
             SmackException.NoResponseException {
         ConfigureForm current = node.getNodeConfiguration();
         if (current.getAccessModel() != accessModel) {
-            ConfigureForm updateConfig = new ConfigureForm(DataForm.Type.submit);
+            FillableConfigureForm updateConfig = current.getFillableForm();
             updateConfig.setAccessModel(accessModel);
             node.sendConfigurationForm(updateConfig);
         }
@@ -110,7 +111,7 @@ public class OpenPgpPubSubUtil {
      * Publish the users OpenPGP public key to the public key node if necessary.
      * Also announce the key to other users by updating the metadata node.
      *
-     * @see <a href="https://xmpp.org/extensions/xep-0373.html#annoucning-pubkey">XEP-0373 §4.1</a>
+     * @see <a href="https://xmpp.org/extensions/xep-0373.html#announcing-pubkey">XEP-0373 §4.1</a>
      *
      * @param pepManager The PEP manager.
      * @param pubkeyElement {@link PubkeyElement} containing the public key
@@ -204,7 +205,7 @@ public class OpenPgpPubSubUtil {
     public static PublicKeysListElement fetchPubkeysList(XMPPConnection connection, BareJid contact)
             throws InterruptedException, XMPPException.XMPPErrorException, SmackException.NoResponseException,
             PubSubException.NotALeafNodeException, SmackException.NotConnectedException, PubSubException.NotAPubSubNodeException {
-        PubSubManager pm = PubSubManager.getInstance(connection, contact);
+        PubSubManager pm = PubSubManager.getInstanceFor(connection, contact);
 
         LeafNode node = getLeafNode(pm, PEP_NODE_PUBLIC_KEYS);
         List<PayloadItem<PublicKeysListElement>> list = node.getItems(1);
@@ -274,7 +275,7 @@ public class OpenPgpPubSubUtil {
     public static PubkeyElement fetchPubkey(XMPPConnection connection, BareJid contact, OpenPgpV4Fingerprint v4_fingerprint)
             throws InterruptedException, XMPPException.XMPPErrorException, PubSubException.NotAPubSubNodeException,
             PubSubException.NotALeafNodeException, SmackException.NotConnectedException, SmackException.NoResponseException {
-        PubSubManager pm = PubSubManager.getInstance(connection, contact);
+        PubSubManager pm = PubSubManager.getInstanceFor(connection, contact);
         String nodeName = PEP_NODE_PUBLIC_KEY(v4_fingerprint);
 
         LeafNode node = getLeafNode(pm, nodeName);
@@ -294,7 +295,7 @@ public class OpenPgpPubSubUtil {
      *
      * @param pm PubSubManager
      * @param nodeName name of the node
-     * @return node
+     * @return node TODO javadoc me please
      *
      * @throws XMPPException.XMPPErrorException in case of an XMPP protocol error.
      * @throws PubSubException.NotALeafNodeException if the queried node is not a {@link LeafNode}.
@@ -416,7 +417,7 @@ public class OpenPgpPubSubUtil {
      *
      * @param pubSubManager pubsub manager
      * @param nodeName name of the node
-     * @return leafNode
+     * @return leafNode TODO javadoc me please
      *
      * @throws PubSubException.NotALeafNodeException in case we already have the node cached, but it is not a LeafNode.
      */
@@ -429,7 +430,7 @@ public class OpenPgpPubSubUtil {
             // Get access to the PubSubManager's nodeMap
             Field field = pubSubManager.getClass().getDeclaredField("nodeMap");
             field.setAccessible(true);
-            Map<String, Node> nodeMap = (Map) field.get(pubSubManager);
+            Map<String, Node> nodeMap = (Map<String, Node>) field.get(pubSubManager);
 
             // Check, if the node already exists
             Node existingNode = nodeMap.get(nodeName);

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright © 2017-2018 Florian Schmaus, 2016-2017 Fernando Ramirez
+ * Copyright © 2017-2020 Florian Schmaus, 2016-2017 Fernando Ramirez
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,19 +21,21 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.WeakHashMap;
 
 import org.jivesoftware.smack.ConnectionCreationListener;
 import org.jivesoftware.smack.Manager;
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.SmackException.NotLoggedInException;
 import org.jivesoftware.smack.StanzaCollector;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPConnectionRegistry;
+import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.filter.IQReplyFilter;
 import org.jivesoftware.smack.packet.IQ;
@@ -42,7 +44,10 @@ import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.util.Objects;
 import org.jivesoftware.smack.util.StringUtils;
 
+import org.jivesoftware.smackx.commands.AdHocCommandManager;
+import org.jivesoftware.smackx.commands.RemoteCommand;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
+import org.jivesoftware.smackx.disco.packet.DiscoverItems;
 import org.jivesoftware.smackx.forward.packet.Forwarded;
 import org.jivesoftware.smackx.mam.element.MamElements;
 import org.jivesoftware.smackx.mam.element.MamElements.MamResultExtension;
@@ -56,7 +61,6 @@ import org.jivesoftware.smackx.rsm.packet.RSMSet;
 import org.jivesoftware.smackx.xdata.FormField;
 import org.jivesoftware.smackx.xdata.packet.DataForm;
 
-import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.EntityFullJid;
 import org.jxmpp.jid.Jid;
 
@@ -172,13 +176,17 @@ public final class MamManager extends Manager {
 
     private static final Map<XMPPConnection, Map<Jid, MamManager>> INSTANCES = new WeakHashMap<>();
 
+    private static final String ADVANCED_CONFIG_NODE = "urn:xmpp:mam#configure";
+
     /**
      * Get a MamManager for the MAM archive of the local entity (the "user") of the given connection.
      *
      * @param connection the XMPP connection to get the archive for.
      * @return the instance of MamManager.
      */
+    // CHECKSTYLE:OFF:RegexpSingleline
     public static MamManager getInstanceFor(XMPPConnection connection) {
+    // CHECKSTYLE:ON:RegexpSingleline
         return getInstanceFor(connection, (Jid) null);
     }
 
@@ -214,10 +222,13 @@ public final class MamManager extends Manager {
 
     private final ServiceDiscoveryManager serviceDiscoveryManager;
 
+    private final AdHocCommandManager adHocCommandManager;
+
     private MamManager(XMPPConnection connection, Jid archiveAddress) {
         super(connection);
         this.archiveAddress = archiveAddress;
         serviceDiscoveryManager = ServiceDiscoveryManager.getInstanceFor(connection);
+        adHocCommandManager = AdHocCommandManager.getAddHocCommandsManager(connection);
     }
 
     /**
@@ -267,8 +278,9 @@ public final class MamManager extends Manager {
             if (dataForm != null) {
                 return dataForm;
             }
-            dataForm = getNewMamForm();
-            dataForm.addFields(formFields.values());
+            DataForm.Builder dataFormBuilder = getNewMamForm();
+            dataFormBuilder.addFields(formFields.values());
+            dataForm = dataFormBuilder.build();
             return dataForm;
         }
 
@@ -295,7 +307,7 @@ public final class MamManager extends Manager {
         public static final class Builder {
             private String node;
 
-            private final Map<String, FormField> formFields = new HashMap<>(8);
+            private final Map<String, FormField> formFields = new LinkedHashMap<>(8);
 
             private int maxResults = -1;
 
@@ -319,7 +331,7 @@ public final class MamManager extends Manager {
                 }
 
                 FormField formField = getWithFormField(withJid);
-                formFields.put(formField.getVariable(), formField);
+                formFields.put(formField.getFieldName(), formField);
 
                 return this;
             }
@@ -329,9 +341,10 @@ public final class MamManager extends Manager {
                     return this;
                 }
 
-                FormField formField = new FormField(FORM_FIELD_START);
-                formField.addValue(start);
-                formFields.put(formField.getVariable(), formField);
+                FormField formField = FormField.builder(FORM_FIELD_START)
+                                .setValue(start)
+                                .build();
+                formFields.put(formField.getFieldName(), formField);
 
                 FormField endFormField = formFields.get(FORM_FIELD_END);
                 if (endFormField != null) {
@@ -356,9 +369,10 @@ public final class MamManager extends Manager {
                     return this;
                 }
 
-                FormField formField = new FormField(FORM_FIELD_END);
-                formField.addValue(end);
-                formFields.put(formField.getVariable(), formField);
+                FormField formField = FormField.builder(FORM_FIELD_END)
+                    .setValue(end)
+                    .build();
+                formFields.put(formField.getFieldName(), formField);
 
                 FormField startFormField = formFields.get(FORM_FIELD_START);
                 if (startFormField != null) {
@@ -405,7 +419,7 @@ public final class MamManager extends Manager {
             }
 
             public Builder withAdditionalFormField(FormField formField) {
-                formFields.put(formField.getVariable(), formField);
+                formFields.put(formField.getFieldName(), formField);
                 return this;
             }
 
@@ -455,7 +469,7 @@ public final class MamManager extends Manager {
 
     public MamQuery queryArchive(MamQueryArgs mamQueryArgs) throws NoResponseException, XMPPErrorException,
                     NotConnectedException, NotLoggedInException, InterruptedException {
-        String queryId = UUID.randomUUID().toString();
+        String queryId = StringUtils.secureUniqueRandomString();
         String node = mamQueryArgs.node;
         DataForm dataForm = mamQueryArgs.getDataForm();
 
@@ -469,17 +483,9 @@ public final class MamManager extends Manager {
     }
 
     private static FormField getWithFormField(Jid withJid) {
-        FormField formField = new FormField(FORM_FIELD_WITH);
-        formField.addValue(withJid.toString());
-        return formField;
-    }
-
-    private static void addWithJid(Jid withJid, DataForm dataForm) {
-        if (withJid == null) {
-            return;
-        }
-        FormField formField = getWithFormField(withJid);
-        dataForm.addField(formField);
+        return FormField.builder(FORM_FIELD_WITH)
+                        .setValue(withJid.toString())
+                        .build();
     }
 
     public MamQuery queryMostRecentPage(Jid jid, int max) throws NoResponseException, XMPPErrorException,
@@ -497,11 +503,11 @@ public final class MamManager extends Manager {
      * Get the form fields supported by the server.
      *
      * @return the list of form fields.
-     * @throws NoResponseException
-     * @throws XMPPErrorException
-     * @throws NotConnectedException
-     * @throws InterruptedException
-     * @throws NotLoggedInException
+     * @throws NoResponseException if there was no response from the remote entity.
+     * @throws XMPPErrorException if there was an XMPP error returned.
+     * @throws NotConnectedException if the XMPP connection is not connected.
+     * @throws InterruptedException if the calling thread was interrupted.
+     * @throws NotLoggedInException if the XMPP connection is not authenticated.
      */
     public List<FormField> retrieveFormFields() throws NoResponseException, XMPPErrorException, NotConnectedException,
                     InterruptedException, NotLoggedInException {
@@ -513,16 +519,16 @@ public final class MamManager extends Manager {
      *
      * @param node The PubSub node name, can be null
      * @return the list of form fields.
-     * @throws NoResponseException
-     * @throws XMPPErrorException
-     * @throws NotConnectedException
-     * @throws InterruptedException
-     * @throws NotLoggedInException
+     * @throws NoResponseException if there was no response from the remote entity.
+     * @throws XMPPErrorException if there was an XMPP error returned.
+     * @throws NotConnectedException if the XMPP connection is not connected.
+     * @throws InterruptedException if the calling thread was interrupted.
+     * @throws NotLoggedInException if the XMPP connection is not authenticated.
      */
     public List<FormField> retrieveFormFields(String node)
                     throws NoResponseException, XMPPErrorException, NotConnectedException,
             InterruptedException, NotLoggedInException {
-        String queryId = UUID.randomUUID().toString();
+        String queryId = StringUtils.secureUniqueRandomString();
         MamQueryIQ mamQueryIq = new MamQueryIQ(queryId, node, null);
         mamQueryIq.setTo(archiveAddress);
 
@@ -557,29 +563,6 @@ public final class MamManager extends Manager {
         return new MamQueryPage(cancelledResultCollector, mamFinIQ);
     }
 
-    /**
-     * MAM query result class.
-     *
-     */
-    @Deprecated
-    public static final class MamQueryResult {
-        public final List<Forwarded> forwardedMessages;
-        public final MamFinIQ mamFin;
-        private final String node;
-        private final DataForm form;
-
-        private MamQueryResult(MamQuery mamQuery) {
-            this(mamQuery.mamQueryPage.forwardedMessages, mamQuery.mamQueryPage.mamFin, mamQuery.node, mamQuery.form);
-        }
-
-        private MamQueryResult(List<Forwarded> forwardedMessages, MamFinIQ mamFin, String node, DataForm form) {
-            this.forwardedMessages = forwardedMessages;
-            this.mamFin = mamFin;
-            this.node = node;
-            this.form = form;
-        }
-    }
-
     public final class MamQuery {
         private final String node;
         private final DataForm form;
@@ -607,7 +590,8 @@ public final class MamManager extends Manager {
 
         private List<Message> page(RSMSet requestRsmSet) throws NoResponseException, XMPPErrorException,
                         NotConnectedException, NotLoggedInException, InterruptedException {
-            MamQueryIQ mamQueryIQ = new MamQueryIQ(UUID.randomUUID().toString(), node, form);
+            String queryId = StringUtils.secureUniqueRandomString();
+            MamQueryIQ mamQueryIQ = new MamQueryIQ(queryId, node, form);
             mamQueryIQ.setType(IQ.Type.set);
             mamQueryIQ.setTo(archiveAddress);
             mamQueryIQ.addExtension(requestRsmSet);
@@ -648,7 +632,7 @@ public final class MamManager extends Manager {
         private final MamFinIQ mamFin;
         private final List<Message> mamResultCarrierMessages;
         private final List<MamResultExtension> mamResultExtensions;
-        private final List<Forwarded> forwardedMessages;
+        private final List<Forwarded<Message>> forwardedMessages;
         private final List<Message> messages;
 
         private MamQueryPage(StanzaCollector stanzaCollector, MamFinIQ mamFin) {
@@ -658,7 +642,7 @@ public final class MamManager extends Manager {
 
             List<Message> mamResultCarrierMessages = new ArrayList<>(mamResultCarrierStanzas.size());
             List<MamResultExtension> mamResultExtensions = new ArrayList<>(mamResultCarrierStanzas.size());
-            List<Forwarded> forwardedMessages = new ArrayList<>(mamResultCarrierStanzas.size());
+            List<Forwarded<Message>> forwardedMessages = new ArrayList<>(mamResultCarrierStanzas.size());
 
             for (Stanza mamResultStanza : mamResultCarrierStanzas) {
                 Message resultMessage = (Message) mamResultStanza;
@@ -681,7 +665,7 @@ public final class MamManager extends Manager {
             return messages;
         }
 
-        public List<Forwarded> getForwarded() {
+        public List<Forwarded<Message>> getForwarded() {
             return forwardedMessages;
         }
 
@@ -698,39 +682,15 @@ public final class MamManager extends Manager {
         }
     }
 
-    private void ensureMamQueryResultMatchesThisManager(MamQueryResult mamQueryResult) {
-        EntityFullJid localAddress = connection().getUser();
-        EntityBareJid localBareAddress = null;
-        if (localAddress != null) {
-            localBareAddress = localAddress.asEntityBareJid();
-        }
-        boolean isLocalUserArchive = archiveAddress == null || archiveAddress.equals(localBareAddress);
-
-        Jid finIqFrom = mamQueryResult.mamFin.getFrom();
-
-        if (finIqFrom != null) {
-            if (finIqFrom.equals(archiveAddress) || (isLocalUserArchive && finIqFrom.equals(localBareAddress))) {
-                return;
-            }
-            throw new IllegalArgumentException("The given MamQueryResult is from the MAM archive '" + finIqFrom
-                            + "' whereas this MamManager is responsible for '" + archiveAddress + '\'');
-        }
-        else if (!isLocalUserArchive) {
-            throw new IllegalArgumentException(
-                            "The given MamQueryResult is from the local entity (user) MAM archive, whereas this MamManager is responsible for '"
-                                            + archiveAddress + '\'');
-        }
-    }
-
     /**
      * Check if this MamManager's archive address supports MAM.
      *
      * @return true if MAM is supported, <code>false</code>otherwise.
      *
-     * @throws NoResponseException
-     * @throws XMPPErrorException
-     * @throws NotConnectedException
-     * @throws InterruptedException
+     * @throws NoResponseException if there was no response from the remote entity.
+     * @throws XMPPErrorException if there was an XMPP error returned.
+     * @throws NotConnectedException if the XMPP connection is not connected.
+     * @throws InterruptedException if the calling thread was interrupted.
      * @since 4.2.1
      * @see <a href="https://xmpp.org/extensions/xep-0313.html#support">XEP-0313 § 7. Determining support</a>
      */
@@ -740,11 +700,28 @@ public final class MamManager extends Manager {
         return serviceDiscoveryManager.supportsFeature(archiveAddress, MamElements.NAMESPACE);
     }
 
-    private static DataForm getNewMamForm() {
-        FormField field = new FormField(FormField.FORM_TYPE);
-        field.setType(FormField.Type.hidden);
-        field.addValue(MamElements.NAMESPACE);
-        DataForm form = new DataForm(DataForm.Type.submit);
+    public boolean isAdvancedConfigurationSupported() throws InterruptedException, XMPPException, SmackException {
+        DiscoverItems discoverItems = adHocCommandManager.discoverCommands(archiveAddress);
+        for (DiscoverItems.Item item : discoverItems.getItems()) {
+            if (item.getNode().equals(ADVANCED_CONFIG_NODE)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public RemoteCommand getAdvancedConfigurationCommand() throws InterruptedException, XMPPException, SmackException {
+        DiscoverItems discoverItems = adHocCommandManager.discoverCommands(archiveAddress);
+        for (DiscoverItems.Item item : discoverItems.getItems()) {
+            if (item.getNode().equals(ADVANCED_CONFIG_NODE))
+                return adHocCommandManager.getRemoteCommand(archiveAddress, item.getNode());
+        }
+        throw new SmackException.FeatureNotSupportedException(ADVANCED_CONFIG_NODE, archiveAddress);
+    }
+
+    private static DataForm.Builder getNewMamForm() {
+        FormField field = FormField.buildHiddenFormType(MamElements.NAMESPACE);
+        DataForm.Builder form = DataForm.builder();
         form.addField(field);
         return form;
     }
@@ -754,11 +731,11 @@ public final class MamManager extends Manager {
      * empty.
      *
      * @return the ID of the lastest message or {@code null}.
-     * @throws NoResponseException
-     * @throws XMPPErrorException
-     * @throws NotConnectedException
-     * @throws NotLoggedInException
-     * @throws InterruptedException
+     * @throws NoResponseException if there was no response from the remote entity.
+     * @throws XMPPErrorException if there was an XMPP error returned.
+     * @throws NotConnectedException if the XMPP connection is not connected.
+     * @throws NotLoggedInException if the XMPP connection is not authenticated.
+     * @throws InterruptedException if the calling thread was interrupted.
      * @since 4.3.0
      */
     public String getMessageUidOfLatestMessage() throws NoResponseException, XMPPErrorException, NotConnectedException, NotLoggedInException, InterruptedException {
@@ -779,11 +756,11 @@ public final class MamManager extends Manager {
      * Get the preferences stored in the server.
      *
      * @return the MAM preferences result
-     * @throws NoResponseException
-     * @throws XMPPErrorException
-     * @throws NotConnectedException
-     * @throws InterruptedException
-     * @throws NotLoggedInException
+     * @throws NoResponseException if there was no response from the remote entity.
+     * @throws XMPPErrorException if there was an XMPP error returned.
+     * @throws NotConnectedException if the XMPP connection is not connected.
+     * @throws InterruptedException if the calling thread was interrupted.
+     * @throws NotLoggedInException if the XMPP connection is not authenticated.
      */
     public MamPrefsResult retrieveArchivingPreferences() throws NoResponseException, XMPPErrorException,
             NotConnectedException, InterruptedException, NotLoggedInException {
@@ -794,41 +771,13 @@ public final class MamManager extends Manager {
     /**
      * Update the preferences in the server.
      *
-     * @param alwaysJids
-     *            is the list of JIDs that should always have messages to/from
-     *            archived in the user's store
-     * @param neverJids
-     *            is the list of JIDs that should never have messages to/from
-     *            archived in the user's store
-     * @param defaultBehavior
-     *            can be "roster", "always", "never" (see XEP-0313)
-     * @return the MAM preferences result
-     * @throws NoResponseException
-     * @throws XMPPErrorException
-     * @throws NotConnectedException
-     * @throws InterruptedException
-     * @throws NotLoggedInException
-     * @deprecated use {@link #updateArchivingPreferences(MamPrefs)} instead.
-     */
-    @Deprecated
-    public MamPrefsResult updateArchivingPreferences(List<Jid> alwaysJids, List<Jid> neverJids, DefaultBehavior defaultBehavior)
-            throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException,
-            NotLoggedInException {
-        Objects.requireNonNull(defaultBehavior, "Default behavior must be set");
-        MamPrefsIQ mamPrefIQ = new MamPrefsIQ(alwaysJids, neverJids, defaultBehavior);
-        return queryMamPrefs(mamPrefIQ);
-    }
-
-    /**
-     * Update the preferences in the server.
-     *
-     * @param mamPrefs
+     * @param mamPrefs the MAM preferences to set the archive to
      * @return the currently active preferences after the operation.
-     * @throws NoResponseException
-     * @throws XMPPErrorException
-     * @throws NotConnectedException
-     * @throws InterruptedException
-     * @throws NotLoggedInException
+     * @throws NoResponseException if there was no response from the remote entity.
+     * @throws XMPPErrorException if there was an XMPP error returned.
+     * @throws NotConnectedException if the XMPP connection is not connected.
+     * @throws InterruptedException if the calling thread was interrupted.
+     * @throws NotLoggedInException if the XMPP connection is not authenticated.
      * @since 4.3.0
      */
     public MamPrefsResult updateArchivingPreferences(MamPrefs mamPrefs) throws NoResponseException, XMPPErrorException,

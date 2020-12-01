@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2003-2007 Jive Software, 2016-2018 Florian Schmaus.
+ * Copyright 2003-2007 Jive Software, 2016-2019 Florian Schmaus.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ import org.jivesoftware.smack.packet.Stanza;
  * @see XMPPConnection#createStanzaCollector(StanzaFilter)
  * @author Matt Tucker
  */
-public class StanzaCollector implements AutoCloseable {
+public final class StanzaCollector implements AutoCloseable {
 
     private final StanzaFilter packetFilter;
 
@@ -63,13 +63,13 @@ public class StanzaCollector implements AutoCloseable {
     private Exception connectionException;
 
     /**
-     * Creates a new stanza collector. If the stanza filter is <tt>null</tt>, then
+     * Creates a new stanza collector. If the stanza filter is <code>null</code>, then
      * all packets will match this collector.
      *
      * @param connection the connection the collector is tied to.
      * @param configuration the configuration used to construct this collector
      */
-    protected StanzaCollector(XMPPConnection connection, Configuration configuration) {
+    StanzaCollector(XMPPConnection connection, Configuration configuration) {
         this.connection = connection;
         this.packetFilter = configuration.packetFilter;
         this.resultQueue = new ArrayDeque<>(configuration.size);
@@ -99,18 +99,6 @@ public class StanzaCollector implements AutoCloseable {
     }
 
     /**
-     * Returns the stanza filter associated with this stanza collector. The packet
-     * filter is used to determine what packets are queued as results.
-     *
-     * @return the stanza filter.
-     * @deprecated use {@link #getStanzaFilter()} instead.
-     */
-    @Deprecated
-    public StanzaFilter getPacketFilter() {
-        return getStanzaFilter();
-    }
-
-    /**
      * Returns the stanza filter associated with this stanza collector. The stanza
      * filter is used to determine what stanzas are queued as results.
      *
@@ -122,11 +110,11 @@ public class StanzaCollector implements AutoCloseable {
 
     /**
      * Polls to see if a stanza is currently available and returns it, or
-     * immediately returns <tt>null</tt> if no packets are currently in the
+     * immediately returns <code>null</code> if no packets are currently in the
      * result queue.
      *
      * @param <P> type of the result stanza.
-     * @return the next stanza result, or <tt>null</tt> if there are no more
+     * @return the next stanza result, or <code>null</code> if there are no more
      *      results.
      */
     @SuppressWarnings("unchecked")
@@ -136,7 +124,7 @@ public class StanzaCollector implements AutoCloseable {
 
     /**
      * Polls to see if a stanza is currently available and returns it, or
-     * immediately returns <tt>null</tt> if no packets are currently in the
+     * immediately returns <code>null</code> if no packets are currently in the
      * result queue.
      * <p>
      * Throws an XMPPErrorException in case the polled stanzas did contain an XMPPError.
@@ -160,7 +148,7 @@ public class StanzaCollector implements AutoCloseable {
      *
      * @param <P> type of the result stanza.
      * @return the next available packet.
-     * @throws InterruptedException
+     * @throws InterruptedException if the calling thread was interrupted.
      */
     @SuppressWarnings("unchecked")
     // TODO: Consider removing this method as it is hardly ever useful.
@@ -185,7 +173,7 @@ public class StanzaCollector implements AutoCloseable {
      *
      * @param <P> type of the result stanza.
      * @return the next available packet.
-     * @throws InterruptedException
+     * @throws InterruptedException if the calling thread was interrupted.
      */
     public <P extends Stanza> P nextResult() throws InterruptedException {
         return nextResult(connection.getReplyTimeout());
@@ -195,13 +183,13 @@ public class StanzaCollector implements AutoCloseable {
 
     /**
      * Returns the next available stanza. The method call will block (not return) until a stanza is available or the
-     * <tt>timeout</tt> has elapsed or if the connection was terminated because of an error. If the timeout elapses without a
-     * result or if there was an connection error, <tt>null</tt> will be returned.
+     * <code>timeout</code> has elapsed or if the connection was terminated because of an error. If the timeout elapses without a
+     * result or if there was an connection error, <code>null</code> will be returned.
      *
      * @param <P> type of the result stanza.
      * @param timeout the timeout in milliseconds.
      * @return the next available stanza or <code>null</code> on timeout or connection error.
-     * @throws InterruptedException
+     * @throws InterruptedException if the calling thread was interrupted.
      */
     @SuppressWarnings("unchecked")
     public <P extends Stanza> P nextResult(long timeout) throws InterruptedException {
@@ -231,8 +219,8 @@ public class StanzaCollector implements AutoCloseable {
      * @return the next available stanza.
      * @throws XMPPErrorException in case an error response was received.
      * @throws NoResponseException if there was no response from the server.
-     * @throws InterruptedException
-     * @throws NotConnectedException
+     * @throws InterruptedException if the calling thread was interrupted.
+     * @throws NotConnectedException if the XMPP connection is not connected.
      * @see #nextResultOrThrow(long)
      */
     public <P extends Stanza> P nextResultOrThrow() throws NoResponseException, XMPPErrorException,
@@ -242,7 +230,7 @@ public class StanzaCollector implements AutoCloseable {
 
     /**
      * Returns the next available stanza. The method call will block until a stanza is
-     * available or the <tt>timeout</tt> has elapsed. This method does also cancel the
+     * available or the <code>timeout</code> has elapsed. This method does also cancel the
      * collector in every case.
      * <p>
      * Three things can happen when waiting for an response:
@@ -290,7 +278,7 @@ public class StanzaCollector implements AutoCloseable {
             if (!connection.isConnected()) {
                 throw new NotConnectedException(connection, packetFilter);
             }
-            throw NoResponseException.newWith(connection, this, cancelled);
+            throw NoResponseException.newWith(timeout, this, cancelled);
         }
 
         XMPPErrorException.ifHasErrorThenThrow(result);
@@ -327,6 +315,21 @@ public class StanzaCollector implements AutoCloseable {
      */
     public synchronized int getCollectedCount() {
         return resultQueue.size();
+    }
+
+    private String stringCache;
+
+    @Override
+    public String toString() {
+        if (stringCache == null) {
+            StringBuilder sb = new StringBuilder(128);
+            sb.append("Stanza Collector filter='").append(packetFilter).append('\'');
+            if (request != null) {
+                sb.append(" request='").append(request).append('\'');
+            }
+            stringCache = sb.toString();
+        }
+        return stringCache;
     }
 
     synchronized void notifyConnectionError(Exception exception) {
@@ -381,23 +384,10 @@ public class StanzaCollector implements AutoCloseable {
         }
 
         /**
-         * Set the stanza filter used by this collector. If <code>null</code>, then all packets will
-         * get collected by this collector.
-         *
-         * @param packetFilter
-         * @return a reference to this configuration.
-         * @deprecated use {@link #setStanzaFilter(StanzaFilter)} instead.
-         */
-        @Deprecated
-        public Configuration setPacketFilter(StanzaFilter packetFilter) {
-            return setStanzaFilter(packetFilter);
-        }
-
-        /**
          * Set the stanza filter used by this collector. If <code>null</code>, then all stanzas will
          * get collected by this collector.
          *
-         * @param stanzaFilter
+         * @param stanzaFilter TODO javadoc me please
          * @return a reference to this configuration.
          */
         public Configuration setStanzaFilter(StanzaFilter stanzaFilter) {
@@ -409,7 +399,7 @@ public class StanzaCollector implements AutoCloseable {
          * Set the maximum size of this collector, i.e. how many stanzas this collector will collect
          * before dropping old ones.
          *
-         * @param size
+         * @param size TODO javadoc me please
          * @return a reference to this configuration.
          */
         public Configuration setSize(int size) {
@@ -421,7 +411,7 @@ public class StanzaCollector implements AutoCloseable {
          * Set the collector which timeout for the next result is reset once this collector collects
          * a packet.
          *
-         * @param collector
+         * @param collector TODO javadoc me please
          * @return a reference to this configuration.
          */
         public Configuration setCollectorToReset(StanzaCollector collector) {

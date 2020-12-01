@@ -43,7 +43,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 
-import org.jivesoftware.smack.SmackConfiguration;
+import org.jivesoftware.smack.Smack;
 import org.jivesoftware.smack.provider.ProviderManager;
 
 /**
@@ -143,6 +143,7 @@ public final class EnhancedDebuggerWindow {
         debugger.tabbedPane.setName("XMPPConnection_" + tabbedPane.getComponentCount());
         tabbedPane.add(debugger.tabbedPane, tabbedPane.getComponentCount() - 1);
         tabbedPane.setIconAt(tabbedPane.indexOfComponent(debugger.tabbedPane), connectionCreatedIcon);
+        tabbedPane.setSelectedIndex(tabbedPane.indexOfComponent(debugger.tabbedPane));
         frame.setTitle(
                 "Smack Debug Window -- Total connections: " + (tabbedPane.getComponentCount() - 1));
         // Keep the added debugger for later access
@@ -231,7 +232,7 @@ public final class EnhancedDebuggerWindow {
         versionPanel.setLayout(new BoxLayout(versionPanel, BoxLayout.X_AXIS));
         versionPanel.setMaximumSize(new Dimension(2000, 31));
         versionPanel.add(new JLabel(" Smack version: "));
-        JFormattedTextField field = new JFormattedTextField(SmackConfiguration.getVersion());
+        JFormattedTextField field = new JFormattedTextField(Smack.getVersion());
         field.setEditable(false);
         field.setBorder(null);
         versionPanel.add(field);
@@ -346,6 +347,7 @@ public final class EnhancedDebuggerWindow {
      *
      * @param evt the event that indicates that the root window is closing
      */
+    @SuppressWarnings("UnusedVariable")
     private synchronized void rootWindowClosing(WindowEvent evt) {
         // Notify to all the debuggers to stop debugging
         for (EnhancedDebugger debugger : debuggers) {

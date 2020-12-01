@@ -18,6 +18,7 @@ package org.jivesoftware.smackx.omemo;
 
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Stanza;
+
 import org.jivesoftware.smackx.carbons.packet.CarbonExtension;
 import org.jivesoftware.smackx.omemo.listener.OmemoMessageListener;
 
@@ -41,9 +42,9 @@ public class AbstractOmemoMessageListener implements OmemoMessageListener {
     }
 
     private static class SyncPointListener extends AbstractOmemoMessageListener {
-        protected final ResultSyncPoint<?,?> syncPoint;
+        protected final ResultSyncPoint<?, ?> syncPoint;
 
-        SyncPointListener(ResultSyncPoint<?,?> syncPoint) {
+        SyncPointListener(ResultSyncPoint<?, ?> syncPoint) {
             this.syncPoint = syncPoint;
         }
 

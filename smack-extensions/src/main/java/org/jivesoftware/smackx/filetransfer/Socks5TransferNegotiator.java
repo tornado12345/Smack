@@ -26,6 +26,7 @@ import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.Stanza;
+
 import org.jivesoftware.smackx.bytestreams.socks5.Socks5BytestreamManager;
 import org.jivesoftware.smackx.bytestreams.socks5.Socks5BytestreamRequest;
 import org.jivesoftware.smackx.bytestreams.socks5.Socks5BytestreamSession;
@@ -87,8 +88,8 @@ public class Socks5TransferNegotiator extends StreamNegotiator {
     }
 
     @Override
-    public String[] getNamespaces() {
-        return new String[] { Bytestream.NAMESPACE };
+    public String getNamespace() {
+        return Bytestream.NAMESPACE;
     }
 
     @Override

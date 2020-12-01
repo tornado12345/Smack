@@ -27,6 +27,7 @@ import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.IQ;
+
 import org.jivesoftware.smackx.bytestreams.socks5.Socks5BytestreamManager;
 import org.jivesoftware.smackx.bytestreams.socks5.Socks5Proxy;
 import org.jivesoftware.smackx.bytestreams.socks5.packet.Bytestream;
@@ -63,7 +64,7 @@ public final class JingleS5BTransportManager extends JingleTransportManager<Jing
         JingleContentProviderManager.addJingleContentTransportProvider(getNamespace(), new JingleS5BTransportProvider());
     }
 
-    public static JingleS5BTransportManager getInstanceFor(XMPPConnection connection) {
+    public static synchronized JingleS5BTransportManager getInstanceFor(XMPPConnection connection) {
         JingleS5BTransportManager manager = INSTANCES.get(connection);
         if (manager == null) {
             manager = new JingleS5BTransportManager(connection);

@@ -16,22 +16,25 @@
  */
 package org.jivesoftware.smackx.jingle.transports.jingle_s5b;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertNull;
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.net.UnknownHostException;
 
 import org.jivesoftware.smack.test.util.SmackTestSuite;
-
 import org.jivesoftware.smack.test.util.TestUtils;
+
 import org.jivesoftware.smackx.bytestreams.socks5.packet.Bytestream;
 import org.jivesoftware.smackx.jingle.transports.jingle_s5b.elements.JingleS5BTransport;
 import org.jivesoftware.smackx.jingle.transports.jingle_s5b.elements.JingleS5BTransportCandidate;
 import org.jivesoftware.smackx.jingle.transports.jingle_s5b.elements.JingleS5BTransportInfo;
 import org.jivesoftware.smackx.jingle.transports.jingle_s5b.provider.JingleS5BTransportProvider;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jxmpp.jid.FullJid;
 import org.jxmpp.jid.impl.JidCreate;
 import org.jxmpp.stringprep.XmppStringprepException;
@@ -89,7 +92,7 @@ public class JingleS5BTransportTest extends SmackTestSuite {
         assertNotNull(candidate1.getStreamHost());
         assertEquals(JingleS5BTransportCandidate.Type.direct.getWeight(), candidate1.getType().getWeight());
         assertEquals("hft54dqy", candidate1.getCandidateId());
-        assertEquals("192.168.4.1", candidate1.getHost());
+        assertEquals("192.168.4.1", candidate1.getHost().toString());
         assertEquals(JidCreate.from("romeo@montague.lit/orchard"), candidate1.getJid());
         assertEquals(5086, candidate1.getPort());
         assertEquals(8257636, candidate1.getPriority());
@@ -98,7 +101,7 @@ public class JingleS5BTransportTest extends SmackTestSuite {
         JingleS5BTransportCandidate candidate2 =
                 (JingleS5BTransportCandidate) transport.getCandidates().get(1);
         assertEquals("hutr46fe", candidate2.getCandidateId());
-        assertEquals("24.24.24.1", candidate2.getHost());
+        assertEquals("24.24.24.1", candidate2.getHost().toString());
         assertEquals(JidCreate.from("romeo@montague.lit/orchard"), candidate2.getJid());
         assertEquals(5087, candidate2.getPort());
         assertEquals(8258636, candidate2.getPriority());
@@ -107,7 +110,7 @@ public class JingleS5BTransportTest extends SmackTestSuite {
         JingleS5BTransportCandidate candidate3 =
                 (JingleS5BTransportCandidate) transport.getCandidates().get(2);
         assertEquals("xmdh4b7i", candidate3.getCandidateId());
-        assertEquals("123.456.7.8", candidate3.getHost());
+        assertEquals("123.456.7.8", candidate3.getHost().toString());
         assertEquals(JidCreate.domainBareFrom("streamer.shakespeare.lit"), candidate3.getJid());
         assertEquals(7625, candidate3.getPort());
         assertEquals(7878787, candidate3.getPriority());
@@ -176,36 +179,42 @@ public class JingleS5BTransportTest extends SmackTestSuite {
         assertEquals(candidateActivated, candidateActivatedTransport.toXML().toString());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void candidateBuilderInvalidPortTest() {
-        JingleS5BTransportCandidate.getBuilder().setPort(-5);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void candidateBuilderInvalidPriorityTest() {
-        JingleS5BTransportCandidate.getBuilder().setPriority(-1000);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void transportCandidateIllegalPriorityTest() throws XmppStringprepException {
-        FullJid jid = JidCreate.fullFrom("test@test.test/test");
-        @SuppressWarnings("unused")
-        JingleS5BTransportCandidate candidate = new JingleS5BTransportCandidate(
-                "cid", "host", jid, 5555, -30, JingleS5BTransportCandidate.Type.proxy);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void transportCandidateIllegalPortTest() throws XmppStringprepException {
-        FullJid jid = JidCreate.fullFrom("test@test.test/test");
-        @SuppressWarnings("unused")
-        JingleS5BTransportCandidate candidate = new JingleS5BTransportCandidate(
-                "cid", "host", jid, -5555, 30, JingleS5BTransportCandidate.Type.proxy);
+        assertThrows(IllegalArgumentException.class, () -> {
+            JingleS5BTransportCandidate.getBuilder().setPort(-5);
+        });
     }
 
     @Test
-    public void candidateFromStreamHostTest() throws XmppStringprepException {
+    public void candidateBuilderInvalidPriorityTest() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            JingleS5BTransportCandidate.getBuilder().setPriority(-1000);
+        });
+    }
+
+    @Test
+    public void transportCandidateIllegalPriorityTest() throws XmppStringprepException, UnknownHostException {
         FullJid jid = JidCreate.fullFrom("test@test.test/test");
-        String host = "host.address";
+        assertThrows(IllegalArgumentException.class, () -> {
+            new JingleS5BTransportCandidate(
+                    "cid", "localhost", jid, 5555, -30, JingleS5BTransportCandidate.Type.proxy);
+        });
+    }
+
+    @Test
+    public void transportCandidateIllegalPortTest() throws XmppStringprepException, UnknownHostException {
+        FullJid jid = JidCreate.fullFrom("test@test.test/test");
+        assertThrows(IllegalArgumentException.class, () -> {
+            new JingleS5BTransportCandidate(
+                    "cid", "host", jid, -5555, 30, JingleS5BTransportCandidate.Type.proxy);
+        });
+    }
+
+    @Test
+    public void candidateFromStreamHostTest() throws XmppStringprepException, UnknownHostException {
+        FullJid jid = JidCreate.fullFrom("test@test.test/test");
+        String host = "localhost";
         int port = 1234;
         Bytestream.StreamHost streamHost = new Bytestream.StreamHost(jid, host, port);
 
@@ -213,14 +222,16 @@ public class JingleS5BTransportTest extends SmackTestSuite {
 
         assertEquals(2000, candidate.getPriority());
         assertEquals(jid, candidate.getJid());
-        assertEquals(host, candidate.getHost());
+        assertEquals(host, candidate.getHost().toString());
         assertEquals(port, candidate.getPort());
 
         assertEquals(streamHost.toXML().toString(), candidate.getStreamHost().toXML().toString());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void typeFromIllegalStringTest() {
-        JingleS5BTransportCandidate.Type.fromString("illegal-type");
+        assertThrows(IllegalArgumentException.class, () -> {
+            JingleS5BTransportCandidate.Type.fromString("illegal-type");
+        });
     }
 }

@@ -30,10 +30,12 @@ import java.util.Date;
 import java.util.List;
 
 import org.jivesoftware.smack.DummyConnection;
+import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.test.util.FileTestUtil;
 import org.jivesoftware.smack.test.util.SmackTestSuite;
+import org.jivesoftware.smack.xml.XmlPullParserException;
+
 import org.jivesoftware.smackx.ox.crypto.OpenPgpElementAndMetadata;
 import org.jivesoftware.smackx.ox.crypto.PainlessOpenPgpProvider;
 import org.jivesoftware.smackx.ox.element.CryptElement;
@@ -46,14 +48,13 @@ import org.jivesoftware.smackx.ox.store.filebased.FileBasedOpenPgpStore;
 import org.bouncycastle.openpgp.PGPException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.JidTestUtil;
 import org.pgpainless.key.OpenPgpV4Fingerprint;
 import org.pgpainless.key.collection.PGPKeyRing;
 import org.pgpainless.key.protection.UnprotectedKeysProtector;
-import org.xmlpull.v1.XmlPullParserException;
 
 public class PainlessOpenPgpProviderTest extends SmackTestSuite {
 
@@ -62,13 +63,13 @@ public class PainlessOpenPgpProviderTest extends SmackTestSuite {
     private static final BareJid bob = JidTestUtil.BARE_JID_2;
 
     static {
-        storagePath = FileTestUtil.getTempDir("smack-painlessprovidertest");
+        storagePath = new File(org.apache.commons.io.FileUtils.getTempDirectory(), "smack-painlessprovidertest");
     }
 
     @BeforeClass
     @AfterClass
-    public static void deletePath() {
-        FileTestUtil.deleteDirectory(storagePath);
+    public static void deletePath() throws IOException {
+        org.apache.commons.io.FileUtils.deleteDirectory(storagePath);
     }
 
     @Test
@@ -82,8 +83,10 @@ public class PainlessOpenPgpProviderTest extends SmackTestSuite {
         aliceStore.setKeyRingProtector(new UnprotectedKeysProtector());
         bobStore.setKeyRingProtector(new UnprotectedKeysProtector());
 
-        PainlessOpenPgpProvider aliceProvider = new PainlessOpenPgpProvider(new DummyConnection(), aliceStore);
-        PainlessOpenPgpProvider bobProvider = new PainlessOpenPgpProvider(new DummyConnection(), bobStore);
+        XMPPConnection bobConnection = new DummyConnection();
+
+        PainlessOpenPgpProvider aliceProvider = new PainlessOpenPgpProvider(aliceStore);
+        PainlessOpenPgpProvider bobProvider = new PainlessOpenPgpProvider(bobStore);
 
         PGPKeyRing aliceKeys = aliceStore.generateKeyRing(alice);
         PGPKeyRing bobKeys = bobStore.generateKeyRing(bob);
@@ -134,11 +137,11 @@ public class PainlessOpenPgpProviderTest extends SmackTestSuite {
         encrypted = aliceProvider.signAndEncrypt(signcryptElement, aliceSelf, Collections.singleton(bobForAlice));
 
         // Decrypt and Verify
-        decrypted = bobProvider.decryptAndOrVerify(encrypted.getElement(), bobSelf, aliceForBob);
+        decrypted = bobProvider.decryptAndOrVerify(bobConnection, encrypted.getElement(), bobSelf, aliceForBob);
 
         OpenPgpV4Fingerprint decryptionFingerprint = decrypted.getMetadata().getDecryptionFingerprint();
         assertTrue(bobSelf.getSecretKeys().contains(decryptionFingerprint.getKeyId()));
-        assertTrue(decrypted.getMetadata().getVerifiedSignaturesFingerprints().contains(aliceFingerprint));
+        assertTrue(decrypted.getMetadata().getVerifiedSignatureKeyFingerprints().contains(aliceFingerprint));
 
         assertEquals(OpenPgpMessage.State.signcrypt, decrypted.getState());
         SigncryptElement decryptedSignCrypt = (SigncryptElement) decrypted.getOpenPgpContentElement();
@@ -154,11 +157,11 @@ public class PainlessOpenPgpProviderTest extends SmackTestSuite {
         // Encrypt
         encrypted = aliceProvider.encrypt(cryptElement, aliceSelf, Collections.singleton(bobForAlice));
 
-        decrypted = bobProvider.decryptAndOrVerify(encrypted.getElement(), bobSelf, aliceForBob);
+        decrypted = bobProvider.decryptAndOrVerify(bobConnection, encrypted.getElement(), bobSelf, aliceForBob);
 
         decryptionFingerprint = decrypted.getMetadata().getDecryptionFingerprint();
         assertTrue(bobSelf.getSecretKeys().contains(decryptionFingerprint.getKeyId()));
-        assertTrue(decrypted.getMetadata().getVerifiedSignaturesFingerprints().isEmpty());
+        assertTrue(decrypted.getMetadata().getVerifiedSignatureKeyFingerprints().isEmpty());
 
         assertEquals(OpenPgpMessage.State.crypt, decrypted.getState());
         CryptElement decryptedCrypt = (CryptElement) decrypted.getOpenPgpContentElement();
@@ -174,10 +177,10 @@ public class PainlessOpenPgpProviderTest extends SmackTestSuite {
         // Sign
         encrypted = aliceProvider.sign(signElement, aliceSelf);
 
-        decrypted = bobProvider.decryptAndOrVerify(encrypted.getElement(), bobSelf, aliceForBob);
+        decrypted = bobProvider.decryptAndOrVerify(bobConnection, encrypted.getElement(), bobSelf, aliceForBob);
 
         assertNull(decrypted.getMetadata().getDecryptionFingerprint());
-        assertTrue(decrypted.getMetadata().getVerifiedSignaturesFingerprints().contains(aliceFingerprint));
+        assertTrue(decrypted.getMetadata().getVerifiedSignatureKeyFingerprints().contains(aliceFingerprint));
 
         assertEquals(OpenPgpMessage.State.sign, decrypted.getState());
         SignElement decryptedSign = (SignElement) decrypted.getOpenPgpContentElement();

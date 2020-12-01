@@ -21,13 +21,13 @@ import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.File;
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.Security;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -35,15 +35,14 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jivesoftware.smack.test.util.FileTestUtil;
 import org.jivesoftware.smack.test.util.SmackTestSuite;
+
 import org.jivesoftware.smackx.ox.callback.SecretKeyPassphraseCallback;
 import org.jivesoftware.smackx.ox.exception.MissingUserIdOnKeyException;
 import org.jivesoftware.smackx.ox.store.definition.OpenPgpStore;
 import org.jivesoftware.smackx.ox.store.definition.OpenPgpTrustStore;
 import org.jivesoftware.smackx.ox.store.filebased.FileBasedOpenPgpStore;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
@@ -78,8 +77,7 @@ public class OpenPgpStoreTest extends SmackTestSuite {
     private final OpenPgpStore openPgpStoreInstance2;
 
     static {
-        storagePath = FileTestUtil.getTempDir("storeTest");
-        Security.addProvider(new BouncyCastleProvider());
+        storagePath = new File(org.apache.commons.io.FileUtils.getTempDirectory(), "storeTest");
     }
 
     @Parameterized.Parameters
@@ -100,8 +98,8 @@ public class OpenPgpStoreTest extends SmackTestSuite {
 
     @Before
     @After
-    public void deletePath() {
-        FileTestUtil.deleteDirectory(storagePath);
+    public void deletePath() throws IOException {
+        org.apache.commons.io.FileUtils.deleteDirectory(storagePath);
     }
 
     /*
@@ -199,18 +197,20 @@ public class OpenPgpStoreTest extends SmackTestSuite {
         openPgpStoreInstance1.deleteSecretKeyRing(alice, fingerprint);
     }
 
-    @Test(expected = MissingUserIdOnKeyException.class)
+    @Test
     public void t04_key_wrongBareJidOnSecretKeyImportTest() throws PGPException, NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException, IOException, MissingUserIdOnKeyException {
         PGPSecretKeyRing secretKeys = openPgpStoreInstance1.generateKeyRing(alice).getSecretKeys();
 
-        openPgpStoreInstance1.importSecretKey(bob, secretKeys);
+        assertThrows(MissingUserIdOnKeyException.class, () ->
+        openPgpStoreInstance1.importSecretKey(bob, secretKeys));
     }
 
-    @Test(expected = MissingUserIdOnKeyException.class)
+    @Test
     public void t05_key_wrongBareJidOnPublicKeyImportTest() throws PGPException, NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException, IOException, MissingUserIdOnKeyException {
         PGPPublicKeyRing publicKeys = openPgpStoreInstance1.generateKeyRing(alice).getPublicKeys();
 
-        openPgpStoreInstance1.importPublicKey(bob, publicKeys);
+        assertThrows(MissingUserIdOnKeyException.class, () ->
+        openPgpStoreInstance1.importPublicKey(bob, publicKeys));
     }
 
     @Test

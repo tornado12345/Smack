@@ -16,11 +16,16 @@
  */
 package org.jivesoftware.smackx.mood.element;
 
+import javax.xml.namespace.QName;
+
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.FullyQualifiedElement;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.NamedElement;
+import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.util.Objects;
 import org.jivesoftware.smack.util.XmlStringBuilder;
+
 import org.jivesoftware.smackx.mood.Mood;
 
 /**
@@ -33,6 +38,8 @@ public class MoodElement implements ExtensionElement {
 
     public static final String NAMESPACE = "http://jabber.org/protocol/mood";
     public static final String ELEMENT = "mood";
+    public static final QName QNAME = new QName(NAMESPACE, ELEMENT);
+
     public static final String ELEM_TEXT = "text";
 
     private final MoodSubjectElement mood;
@@ -106,8 +113,8 @@ public class MoodElement implements ExtensionElement {
     }
 
     @Override
-    public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
-        XmlStringBuilder xml = new XmlStringBuilder(this);
+    public XmlStringBuilder toXML(XmlEnvironment xmlEnvironment) {
+        XmlStringBuilder xml = new XmlStringBuilder(this, xmlEnvironment);
 
         if (mood == null && text == null) {
             // Empty mood element used as STOP signal
@@ -133,7 +140,7 @@ public class MoodElement implements ExtensionElement {
      * @return {@link MoodElement} or null.
      */
     public static MoodElement fromMessage(Message message) {
-        return message.getExtension(ELEMENT, NAMESPACE);
+        return message.getExtension(MoodElement.class);
     }
 
     /**
@@ -151,7 +158,7 @@ public class MoodElement implements ExtensionElement {
      * {@link NamedElement} which represents the mood.
      * This element has the element name of the mood selected from {@link Mood}.
      */
-    public static class MoodSubjectElement implements NamedElement {
+    public static class MoodSubjectElement implements FullyQualifiedElement {
 
         private final Mood mood;
         private final MoodConcretisation concretisation;
@@ -167,16 +174,17 @@ public class MoodElement implements ExtensionElement {
         }
 
         @Override
-        public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
-            XmlStringBuilder xml = new XmlStringBuilder();
+        public XmlStringBuilder toXML(XmlEnvironment xmlEnvironment) {
+            XmlStringBuilder xml = new XmlStringBuilder(this, xmlEnvironment);
 
             if (concretisation == null) {
-                return xml.emptyElement(getElementName());
+                return xml.closeEmptyElement();
             }
 
-            return xml.openElement(getElementName())
-                    .append(concretisation.toXML())
-                    .closeElement(getElementName());
+            xml.rightAngleBracket()
+                .append(concretisation)
+                .closeElement(this);
+            return xml;
         }
 
         /**
@@ -195,6 +203,11 @@ public class MoodElement implements ExtensionElement {
          */
         public MoodConcretisation getConcretisation() {
             return concretisation;
+        }
+
+        @Override
+        public String getNamespace() {
+            return NAMESPACE;
         }
     }
 }

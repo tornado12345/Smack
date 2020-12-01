@@ -18,16 +18,13 @@
 package org.jivesoftware.smack.provider;
 
 import java.io.IOException;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 
 import org.jivesoftware.smack.packet.Element;
 import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.parsing.SmackParsingException;
 import org.jivesoftware.smack.util.ParserUtils;
-
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
+import org.jivesoftware.smack.xml.XmlPullParser;
+import org.jivesoftware.smack.xml.XmlPullParserException;
 
 /**
  * Smack provider are the parsers used to deserialize raw XMPP into the according Java {@link Element}s.
@@ -40,27 +37,7 @@ import org.xmlpull.v1.XmlPullParserException;
  * @author Florian Schmaus
  * @param <E> the type of the resulting element.
  */
-public abstract class Provider<E extends Element> {
-
-    private final Class<E> elementClass;
-
-    @SuppressWarnings("unchecked")
-    protected Provider() {
-        Type currentType = getClass().getGenericSuperclass();
-        while (!(currentType instanceof ParameterizedType)) {
-            Class<?> currentClass = (Class<?>) currentType;
-            currentType = currentClass.getGenericSuperclass();
-        }
-        ParameterizedType parameterizedGenericSuperclass = (ParameterizedType) currentType;
-        Type[] actualTypeArguments = parameterizedGenericSuperclass.getActualTypeArguments();
-        Type elementType = actualTypeArguments[0];
-
-        elementClass =  (Class<E>) elementType;
-    }
-
-    public final Class<E> getElementClass() {
-        return elementClass;
-    }
+public abstract class Provider<E extends Element> extends AbstractProvider<E> {
 
     public final E parse(XmlPullParser parser) throws IOException, XmlPullParserException, SmackParsingException {
         return parse(parser, null);

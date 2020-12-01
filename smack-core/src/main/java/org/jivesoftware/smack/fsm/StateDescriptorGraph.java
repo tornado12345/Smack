@@ -30,7 +30,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import org.jivesoftware.smack.fsm.AbstractXmppStateMachineConnection.DisconnectedStateDescriptor;
+import org.jivesoftware.smack.c2s.ModularXmppClientToServerConnection.DisconnectedStateDescriptor;
+import org.jivesoftware.smack.c2s.internal.ModularXmppClientToServerConnectionInternal;
+import org.jivesoftware.smack.util.Consumer;
 import org.jivesoftware.smack.util.MultiMap;
 
 /**
@@ -133,7 +135,7 @@ public class StateDescriptorGraph {
 
         // The preference graph is the graph where the precedence information of all successors is stored, which we will
         // topologically sort to find out which successor we should try first. It is a further new graph we use solely in
-        // this step for every node. The graph is representent as map. There is no special marker for the initial node
+        // this step for every node. The graph is represented as map. There is no special marker for the initial node
         // as it is not required for the topological sort performed later.
         Map<Class<? extends StateDescriptor>, GraphVertex<Class<? extends StateDescriptor>>> preferenceGraph = new HashMap<>(numSuccessors);
 
@@ -170,7 +172,8 @@ public class StateDescriptorGraph {
             }
         }
 
-        // Perform a topological sort which returns the state descriptor classes in their priority.
+        // Perform a topological sort which returns the state descriptor classes sorted by their priority. Highest
+        // priority state descriptors first.
         List<GraphVertex<Class<? extends StateDescriptor>>> sortedSuccessors = topologicalSort(preferenceGraph.values());
 
         // Handle the successor nodes which have not preference information available. Simply append them to the end of
@@ -221,19 +224,19 @@ public class StateDescriptorGraph {
         return initialNode;
     }
 
-    private static GraphVertex<AbstractXmppStateMachineConnection.State> convertToStateGraph(GraphVertex<StateDescriptor> stateDescriptorVertex,
-                    AbstractXmppStateMachineConnection connection, Map<StateDescriptor, GraphVertex<AbstractXmppStateMachineConnection.State>> handledStateDescriptors) {
+    private static GraphVertex<State> convertToStateGraph(GraphVertex<StateDescriptor> stateDescriptorVertex,
+                    ModularXmppClientToServerConnectionInternal connectionInternal, Map<StateDescriptor, GraphVertex<State>> handledStateDescriptors) {
         StateDescriptor stateDescriptor = stateDescriptorVertex.getElement();
-        GraphVertex<AbstractXmppStateMachineConnection.State> stateVertex = handledStateDescriptors.get(stateDescriptor);
+        GraphVertex<State> stateVertex = handledStateDescriptors.get(stateDescriptor);
         if (stateVertex != null) {
             return stateVertex;
         }
 
-        AbstractXmppStateMachineConnection.State state = stateDescriptor.constructState(connection);
+        State state = stateDescriptor.constructState(connectionInternal);
         stateVertex = new GraphVertex<>(state);
         handledStateDescriptors.put(stateDescriptor, stateVertex);
         for (GraphVertex<StateDescriptor> successorStateDescriptorVertex : stateDescriptorVertex.getOutgoingEdges()) {
-            GraphVertex<AbstractXmppStateMachineConnection.State> successorStateVertex = convertToStateGraph(successorStateDescriptorVertex, connection, handledStateDescriptors);
+            GraphVertex<State> successorStateVertex = convertToStateGraph(successorStateDescriptorVertex, connectionInternal, handledStateDescriptors);
             // It is important that we keep the order of the edges. This should do it.
             stateVertex.addOutgoingEdge(successorStateVertex);
         }
@@ -241,10 +244,10 @@ public class StateDescriptorGraph {
         return stateVertex;
     }
 
-    static GraphVertex<AbstractXmppStateMachineConnection.State> convertToStateGraph(GraphVertex<StateDescriptor> initialStateDescriptor,
-                    AbstractXmppStateMachineConnection connection) {
-        Map<StateDescriptor, GraphVertex<AbstractXmppStateMachineConnection.State>> handledStateDescriptors = new HashMap<>();
-        GraphVertex<AbstractXmppStateMachineConnection.State> initialState = convertToStateGraph(initialStateDescriptor, connection,
+    public static GraphVertex<State> convertToStateGraph(GraphVertex<StateDescriptor> initialStateDescriptor,
+                    ModularXmppClientToServerConnectionInternal connectionInternal) {
+        Map<StateDescriptor, GraphVertex<State>> handledStateDescriptors = new HashMap<>();
+        GraphVertex<State> initialState = convertToStateGraph(initialStateDescriptor, connectionInternal,
                         handledStateDescriptors);
         return initialState;
     }
@@ -326,11 +329,12 @@ public class StateDescriptorGraph {
 
     private static <E> List<GraphVertex<E>> topologicalSort(Collection<GraphVertex<E>> vertexes) {
         List<GraphVertex<E>> res = new ArrayList<>();
-        dfs(vertexes, (vertex) -> res.add(0, vertex), null);
+        dfs(vertexes, vertex -> res.add(0, vertex), null);
         return res;
     }
 
-    private static <E> void dfsVisit(GraphVertex<E> vertex, DfsFinishedVertex<E> dfsFinishedVertex, DfsEdgeFound<E> dfsEdgeFound) {
+    private static <E> void dfsVisit(GraphVertex<E> vertex, Consumer<GraphVertex<E>> dfsFinishedVertex,
+                    DfsEdgeFound<E> dfsEdgeFound) {
         vertex.color = GraphVertex.VertexColor.grey;
 
         final int totalEdgeCount = vertex.getOutgoingEdges().size();
@@ -349,11 +353,12 @@ public class StateDescriptorGraph {
 
         vertex.color = GraphVertex.VertexColor.black;
         if (dfsFinishedVertex != null) {
-            dfsFinishedVertex.onVertexFinished(vertex);
+            dfsFinishedVertex.accept(vertex);
         }
     }
 
-    private static <E> void dfs(Collection<GraphVertex<E>> vertexes, DfsFinishedVertex<E> dfsFinishedVertex, DfsEdgeFound<E> dfsEdgeFound) {
+    private static <E> void dfs(Collection<GraphVertex<E>> vertexes, Consumer<GraphVertex<E>> dfsFinishedVertex,
+                    DfsEdgeFound<E> dfsEdgeFound) {
         for (GraphVertex<E> vertex : vertexes) {
             if (vertex.color == GraphVertex.VertexColor.white) {
                 dfsVisit(vertex, dfsFinishedVertex, dfsEdgeFound);
@@ -365,7 +370,7 @@ public class StateDescriptorGraph {
                     PrintWriter dotOut, boolean breakStateName) {
         dotOut.append("digraph {\n");
         dfs(vertexes,
-               (finishedVertex) -> {
+                finishedVertex -> {
                    boolean isMultiVisitState = finishedVertex.element.isMultiVisitState();
                    boolean isFinalState = finishedVertex.element.isFinalState();
                    boolean isNotImplemented = finishedVertex.element.isNotImplemented();
@@ -407,12 +412,6 @@ public class StateDescriptorGraph {
         dotOut.append("}\n");
     }
 
-    // TODO: Replace with java.util.function.Consumer<GraphVertex<E>> once Smack's minimum Android SDK level is 24 or higher.
-    private interface DfsFinishedVertex<E> {
-        void onVertexFinished(GraphVertex<E> vertex);
-    }
-
-    // TODO: Replace with java.util.function.Consumer<GraphVertex<E>> once Smack's minimum Android SDK level is 24 or higher.
     private interface DfsEdgeFound<E> {
         void onEdgeFound(GraphVertex<E> from, GraphVertex<E> to, int edgeId, int totalEdgeCount);
     }

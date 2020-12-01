@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2018 Paul Schaub.
+ * Copyright 2018-2020 Paul Schaub.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,15 @@ package org.jivesoftware.smackx.ox;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertArrayEquals;
 
 import java.io.File;
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.util.Arrays;
 import java.util.Collections;
 
-import org.jivesoftware.smack.DummyConnection;
-import org.jivesoftware.smack.test.util.FileTestUtil;
 import org.jivesoftware.smack.test.util.SmackTestSuite;
 import org.jivesoftware.smackx.ox.crypto.PainlessOpenPgpProvider;
 import org.jivesoftware.smackx.ox.element.SecretkeyElement;
@@ -42,7 +40,7 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.impl.JidCreate;
 import org.pgpainless.PGPainless;
@@ -54,14 +52,14 @@ public class SecretKeyBackupHelperTest extends SmackTestSuite {
     private static final File basePath;
 
     static {
-        basePath = FileTestUtil.getTempDir("ox_secret_keys");
+        basePath = new File(org.apache.commons.io.FileUtils.getTempDirectory(), "ox_secret_keys");
     }
 
     @Test
     public void backupPasswordGenerationTest() {
         final String alphabet = "123456789ABCDEFGHIJKLMNPQRSTUVWXYZ";
 
-        String backupCode = SecretKeyBackupHelper.generateBackupPassword();
+        OpenPgpSecretKeyBackupPassphrase backupCode = SecretKeyBackupHelper.generateBackupPassword();
         assertEquals(29, backupCode.length());
         for (int i = 0; i < backupCode.length(); i++) {
             if ((i + 1) % 5 == 0) {
@@ -79,7 +77,7 @@ public class SecretKeyBackupHelperTest extends SmackTestSuite {
 
         // Prepare store and provider and so on...
         FileBasedOpenPgpStore store = new FileBasedOpenPgpStore(basePath);
-        PainlessOpenPgpProvider provider = new PainlessOpenPgpProvider(new DummyConnection(), store);
+        PainlessOpenPgpProvider provider = new PainlessOpenPgpProvider(store);
 
         // Generate and import key
         PGPKeyRing keyRing = PGPainless.generateKeyRing().simpleEcKeyRing("xmpp:alice@wonderland.lit");
@@ -87,17 +85,18 @@ public class SecretKeyBackupHelperTest extends SmackTestSuite {
         provider.getStore().importSecretKey(jid, keyRing.getSecretKeys());
 
         // Create encrypted backup
-        String backupCode = SecretKeyBackupHelper.generateBackupPassword();
-        SecretkeyElement element = SecretKeyBackupHelper.createSecretkeyElement(provider, jid, Collections.singleton(new OpenPgpV4Fingerprint(keyRing.getSecretKeys())), backupCode);
+        OpenPgpSecretKeyBackupPassphrase backupCode = SecretKeyBackupHelper.generateBackupPassword();
+        SecretkeyElement element = SecretKeyBackupHelper.createSecretkeyElement(provider, jid,
+                Collections.singleton(new OpenPgpV4Fingerprint(keyRing.getSecretKeys())), backupCode);
 
         // Decrypt backup and compare
         PGPSecretKeyRing secretKeyRing = SecretKeyBackupHelper.restoreSecretKeyBackup(element, backupCode);
-        assertTrue(Arrays.equals(keyRing.getSecretKeys().getEncoded(), secretKeyRing.getEncoded()));
+        assertArrayEquals(keyRing.getSecretKeys().getEncoded(), secretKeyRing.getEncoded());
     }
 
     @AfterClass
     @BeforeClass
-    public static void deleteDirs() {
-        FileTestUtil.deleteDirectory(basePath);
+    public static void deleteDirs() throws IOException {
+        org.apache.commons.io.FileUtils.deleteDirectory(basePath);
     }
 }

@@ -27,6 +27,7 @@ import java.util.TreeMap;
 
 import org.jivesoftware.smack.test.util.SmackTestSuite;
 import org.jivesoftware.smack.test.util.TestUtils;
+
 import org.jivesoftware.smackx.omemo.element.OmemoBundleElement_VAxolotl;
 import org.jivesoftware.smackx.omemo.exceptions.CorruptedOmemoKeyException;
 import org.jivesoftware.smackx.omemo.internal.OmemoDevice;
@@ -122,7 +123,7 @@ extends SmackTestSuite {
         int high = Integer.MAX_VALUE - 2;
         int max = Integer.MAX_VALUE;
         assertEquals(OmemoKeyUtil.addInBounds(high, 3), 1);
-        assertEquals(OmemoKeyUtil.addInBounds(1,2), 3);
+        assertEquals(OmemoKeyUtil.addInBounds(1, 2), 3);
         assertEquals(OmemoKeyUtil.addInBounds(max, 5), 5);
     }
 

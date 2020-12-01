@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.HashSet;
 
 import org.jivesoftware.smack.test.util.SmackTestSuite;
+
 import org.jivesoftware.smackx.omemo.internal.OmemoDevice;
 
 import org.junit.Test;
@@ -46,7 +47,7 @@ public class OmemoServiceTest extends SmackTestSuite {
 
     /**
      * Test correct functionality of isStale method.
-     * @throws XmppStringprepException
+     * @throws XmppStringprepException if the provided string is invalid.
      */
     @Test
     public void isStaleDeviceTest() throws XmppStringprepException {

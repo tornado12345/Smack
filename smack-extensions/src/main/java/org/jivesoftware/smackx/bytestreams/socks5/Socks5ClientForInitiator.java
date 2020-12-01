@@ -79,8 +79,7 @@ public class Socks5ClientForInitiator extends Socks5Client {
 
         // check if stream host is the local SOCKS5 proxy
         if (this.streamHost.getJID().equals(this.connection.get().getUser())) {
-            Socks5Proxy socks5Server = Socks5Proxy.getSocks5Proxy();
-            socket = socks5Server.getSocket(this.digest);
+            socket = Socks5Proxy.getSocketForDigest(this.digest);
             if (socket == null) {
                 throw new SmackException.SmackMessageException("target is not connected to SOCKS5 proxy");
             }
@@ -108,10 +107,10 @@ public class Socks5ClientForInitiator extends Socks5Client {
     /**
      * Activates the SOCKS5 Bytestream by sending an XMPP SOCKS5 Bytestream activation stanza to the
      * SOCKS5 proxy.
-     * @throws XMPPErrorException
-     * @throws NoResponseException
-     * @throws NotConnectedException
-     * @throws InterruptedException
+     * @throws XMPPErrorException if there was an XMPP error returned.
+     * @throws NoResponseException if there was no response from the remote entity.
+     * @throws NotConnectedException if the XMPP connection is not connected.
+     * @throws InterruptedException if the calling thread was interrupted.
      */
     private void activate() throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         Bytestream activate = createStreamHostActivation();

@@ -22,10 +22,9 @@ import java.util.Locale;
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
+import org.jivesoftware.smack.xml.XmlPullParser;
 
 import org.jivesoftware.smackx.jingleold.media.ContentInfo;
-
-import org.xmlpull.v1.XmlPullParser;
 
 public class JingleError implements ExtensionElement {
 
@@ -90,6 +89,9 @@ public class JingleError implements ExtensionElement {
 
     /**
      * Returns a Action instance associated with the String value.
+     *
+     * @param value the input string.
+     * @return the jingle error.
      */
     public static JingleError fromString(String value) {
         if (value != null) {

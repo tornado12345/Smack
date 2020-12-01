@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2017 Florian Schmaus, 2018 Paul Schaub.
+ * Copyright 2017-2019 Florian Schmaus, 2018 Paul Schaub.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
  */
 package org.jivesoftware.smackx.ox.element;
 
-import java.security.SecureRandom;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.util.Objects;
+import org.jivesoftware.smack.util.RandomUtil;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 
@@ -38,14 +38,14 @@ public abstract class EncryptedOpenPgpContentElement extends OpenPgpContentEleme
 
     private final String rpad;
 
-    protected EncryptedOpenPgpContentElement(Set<Jid> to, String rpad, Date timestamp, List<ExtensionElement> payload) {
+    protected EncryptedOpenPgpContentElement(Set<? extends Jid> to, String rpad, Date timestamp, List<ExtensionElement> payload) {
         super(Objects.requireNonNullNorEmpty(
                 to, "Encrypted OpenPGP content elements must have at least one 'to' attribute."),
                 timestamp, payload);
         this.rpad = Objects.requireNonNull(rpad);
     }
 
-    protected EncryptedOpenPgpContentElement(Set<Jid> to, List<ExtensionElement> payload) {
+    protected EncryptedOpenPgpContentElement(Set<? extends Jid> to, List<ExtensionElement> payload) {
         super(Objects.requireNonNullNorEmpty(
                 to, "Encrypted OpenPGP content elements must have at least one 'to' attribute."),
                 new Date(), payload);
@@ -53,8 +53,7 @@ public abstract class EncryptedOpenPgpContentElement extends OpenPgpContentEleme
     }
 
     private static String createRandomPadding() {
-        SecureRandom secRan = new SecureRandom();
-        int len = secRan.nextInt(256);
+        int len = RandomUtil.nextSecureRandomInt(256);
         return StringUtils.randomString(len);
     }
 

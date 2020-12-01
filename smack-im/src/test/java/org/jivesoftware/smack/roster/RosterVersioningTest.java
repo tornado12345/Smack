@@ -95,8 +95,10 @@ public class RosterVersioningTest {
     /**
      * Tests that receiving an empty roster result causes the roster to be populated
      * by all entries of the roster store.
-     * @throws SmackException
-     * @throws XMPPException
+     * @throws SmackException if Smack detected an exceptional situation.
+     * @throws XMPPException if an XMPP protocol error was received.
+     * @throws InterruptedException if interrupted.
+     * @throws IOException if IO exception.
      */
     @Test(timeout = 300000)
     public void testEqualVersionStored() throws InterruptedException, IOException, XMPPException, SmackException {
@@ -129,9 +131,9 @@ public class RosterVersioningTest {
 
     /**
      * Tests that a non-empty roster result empties the store.
-     * @throws SmackException
-     * @throws XMPPException
-     * @throws XmppStringprepException
+     * @throws SmackException if Smack detected an exceptional situation.
+     * @throws XMPPException if an XMPP protocol error was received.
+     * @throws XmppStringprepException if the provided string is invalid.
      */
     @Test(timeout = 5000)
     public void testOtherVersionStored() throws XMPPException, SmackException, XmppStringprepException {
@@ -172,6 +174,7 @@ public class RosterVersioningTest {
 
     /**
      * Test roster versioning with roster pushes.
+     * @throws Throwable in case a throwable is thrown.
      */
     @SuppressWarnings("UndefinedEquals")
     @Test(timeout = 5000)

@@ -17,18 +17,19 @@
 package org.jivesoftware.smackx.ox;
 
 import static junit.framework.TestCase.assertTrue;
-import static org.custommonkey.xmlunit.XMLAssert.assertXMLEqual;
+import static org.jivesoftware.smack.test.util.XmlAssertUtil.assertXmlSimilar;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
 
 import org.jivesoftware.smack.test.util.SmackTestSuite;
 import org.jivesoftware.smack.test.util.TestUtils;
+import org.jivesoftware.smack.xml.XmlPullParser;
+
 import org.jivesoftware.smackx.ox.element.SecretkeyElement;
 import org.jivesoftware.smackx.ox.provider.SecretkeyElementProvider;
 
-import org.junit.Test;
-import org.xmlpull.v1.XmlPullParser;
+import org.junit.jupiter.api.Test;
 
 public class SecretkeyElementTest extends SmackTestSuite {
 
@@ -42,7 +43,7 @@ public class SecretkeyElementTest extends SmackTestSuite {
 
         SecretkeyElement element = new SecretkeyElement(key);
 
-        assertXMLEqual(expected, element.toXML().toString());
+        assertXmlSimilar(expected, element.toXML().toString());
 
         XmlPullParser parser = TestUtils.getParser(expected);
         SecretkeyElement parsed = SecretkeyElementProvider.TEST_INSTANCE.parse(parser);

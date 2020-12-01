@@ -22,9 +22,8 @@ import java.io.IOException;
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
-
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
+import org.jivesoftware.smack.xml.XmlPullParser;
+import org.jivesoftware.smack.xml.XmlPullParserException;
 
 /**
  * OfflineMessageInfo is an extension included in the retrieved offline messages requested by
@@ -100,8 +99,8 @@ public class OfflineMessageInfo implements ExtensionElement {
          *
          * @param parser the XML parser, positioned at the starting element of the extension.
          * @return a PacketExtension.
-         * @throws IOException
-         * @throws XmlPullParserException
+         * @throws IOException if an I/O error occurred.
+         * @throws XmlPullParserException if an error in the XML parser occurred.
          */
         @Override
         public OfflineMessageInfo parse(XmlPullParser parser,
@@ -110,11 +109,11 @@ public class OfflineMessageInfo implements ExtensionElement {
             OfflineMessageInfo info = new OfflineMessageInfo();
             boolean done = false;
             while (!done) {
-                int eventType = parser.next();
-                if (eventType == XmlPullParser.START_TAG) {
+                XmlPullParser.Event eventType = parser.next();
+                if (eventType == XmlPullParser.Event.START_ELEMENT) {
                     if (parser.getName().equals("item"))
                         info.setNode(parser.getAttributeValue("", "node"));
-                } else if (eventType == XmlPullParser.END_TAG) {
+                } else if (eventType == XmlPullParser.Event.END_ELEMENT) {
                     if (parser.getName().equals("offline")) {
                         done = true;
                     }

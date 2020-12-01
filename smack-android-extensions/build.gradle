@@ -6,12 +6,7 @@ Extra Smack extensions for Android."""
 dependencies {
 	compile project(':smack-android')
 	compile project(':smack-extensions')
-}
 
-if (JavaVersion.current().isJava8Compatible()) {
-	tasks.withType(Javadoc) {
-		// Treat warnings as errors.
-		// See also https://bugs.openjdk.java.net/browse/JDK-8200363
-		options.addStringOption('Xwerror', '-quiet')
-	}
+	// Add the Android jar to the Eclipse .classpath.
+	compileClasspath files(androidBootClasspath)
 }

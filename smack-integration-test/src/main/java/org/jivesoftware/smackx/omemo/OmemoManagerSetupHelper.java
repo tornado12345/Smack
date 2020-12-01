@@ -16,10 +16,11 @@
  */
 package org.jivesoftware.smackx.omemo;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.util.HashMap;
 
 import org.jivesoftware.smack.SmackException;
@@ -27,18 +28,17 @@ import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.roster.RosterEntry;
+
 import org.jivesoftware.smackx.omemo.exceptions.CannotEstablishOmemoSessionException;
 import org.jivesoftware.smackx.omemo.exceptions.CorruptedOmemoKeyException;
 import org.jivesoftware.smackx.omemo.internal.OmemoCachedDeviceList;
 import org.jivesoftware.smackx.omemo.internal.OmemoDevice;
 import org.jivesoftware.smackx.omemo.trust.OmemoFingerprint;
-import org.jivesoftware.smackx.omemo.util.EphemeralTrustCallback;
 import org.jivesoftware.smackx.omemo.util.OmemoConstants;
 import org.jivesoftware.smackx.pubsub.PubSubException;
 import org.jivesoftware.smackx.pubsub.PubSubManager;
 
 import com.google.common.collect.Maps;
-
 
 public class OmemoManagerSetupHelper {
 
@@ -46,7 +46,7 @@ public class OmemoManagerSetupHelper {
     public static void trustAllIdentities(OmemoManager alice, OmemoManager bob)
             throws InterruptedException, SmackException.NotConnectedException, SmackException.NotLoggedInException,
             SmackException.NoResponseException, CannotEstablishOmemoSessionException, CorruptedOmemoKeyException,
-            XMPPException.XMPPErrorException, PubSubException.NotALeafNodeException {
+            XMPPException.XMPPErrorException, PubSubException.NotALeafNodeException, IOException {
         Roster roster = Roster.getInstanceFor(alice.getConnection());
 
         if (alice.getOwnJid() != bob.getOwnJid() &&
@@ -66,7 +66,7 @@ public class OmemoManagerSetupHelper {
     public static void trustAllIdentitiesWithTests(OmemoManager alice, OmemoManager bob)
             throws InterruptedException, SmackException.NotConnectedException, SmackException.NotLoggedInException,
             SmackException.NoResponseException, CannotEstablishOmemoSessionException, CorruptedOmemoKeyException,
-            XMPPException.XMPPErrorException, PubSubException.NotALeafNodeException {
+            XMPPException.XMPPErrorException, PubSubException.NotALeafNodeException, IOException {
         alice.requestDeviceListUpdateFor(bob.getOwnJid());
         HashMap<OmemoDevice, OmemoFingerprint> fps1 = alice.getActiveFingerprints(bob.getOwnJid());
 
@@ -124,8 +124,8 @@ public class OmemoManagerSetupHelper {
         }
     }
 
-    public static void cleanUpPubSub(OmemoManager omemoManager) {
-        PubSubManager pm = PubSubManager.getInstance(omemoManager.getConnection(),omemoManager.getOwnJid());
+    public static void cleanUpPubSub(OmemoManager omemoManager) throws IOException {
+        PubSubManager pm = PubSubManager.getInstanceFor(omemoManager.getConnection(), omemoManager.getOwnJid());
         try {
             omemoManager.requestDeviceListUpdateFor(omemoManager.getOwnJid());
         } catch (SmackException.NotConnectedException | InterruptedException | SmackException.NoResponseException | PubSubException.NotALeafNodeException | XMPPException.XMPPErrorException e) {

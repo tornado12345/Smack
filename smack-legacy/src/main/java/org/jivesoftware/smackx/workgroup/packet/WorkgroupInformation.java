@@ -23,10 +23,10 @@ import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.jivesoftware.smack.util.ParserUtils;
+import org.jivesoftware.smack.xml.XmlPullParser;
+import org.jivesoftware.smack.xml.XmlPullParserException;
 
 import org.jxmpp.jid.EntityBareJid;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
 
 /**
  * A stanza extension that contains information about the user and agent in a
@@ -79,8 +79,8 @@ public class WorkgroupInformation implements ExtensionElement {
 
         /**
          * PacketExtensionProvider implementation.
-         * @throws IOException
-         * @throws XmlPullParserException
+         * @throws IOException if an I/O error occurred.
+         * @throws XmlPullParserException if an error in the XML parser occurred.
          */
         @Override
         public WorkgroupInformation parse(XmlPullParser parser,

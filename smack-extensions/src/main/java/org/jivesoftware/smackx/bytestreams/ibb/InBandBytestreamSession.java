@@ -34,6 +34,7 @@ import org.jivesoftware.smack.filter.StanzaTypeFilter;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.packet.StanzaBuilder;
 import org.jivesoftware.smack.packet.StanzaError;
 import org.jivesoftware.smack.util.stringencoder.Base64;
 
@@ -168,8 +169,8 @@ public class InBandBytestreamSession implements BytestreamSession {
      * This method is invoked if a request to close the In-Band Bytestream has been received.
      *
      * @param closeRequest the close request from the remote peer
-     * @throws NotConnectedException
-     * @throws InterruptedException
+     * @throws NotConnectedException if the XMPP connection is not connected.
+     * @throws InterruptedException if the calling thread was interrupted.
      */
     protected void closeByPeer(Close closeRequest) throws NotConnectedException, InterruptedException {
 
@@ -534,8 +535,7 @@ public class InBandBytestreamSession implements BytestreamSession {
                 public void processStanza(Stanza packet) {
                     // get data packet extension
                     DataPacketExtension data = packet.getExtension(
-                                    DataPacketExtension.ELEMENT,
-                                    DataPacketExtension.NAMESPACE);
+                                    DataPacketExtension.class);
 
                     // check if encoded data is valid
                     if (data.getDecodedData() == null) {
@@ -589,8 +589,7 @@ public class InBandBytestreamSession implements BytestreamSession {
             } else {
                 // stanza contains data packet extension
                 data = packet.getExtension(
-                        DataPacketExtension.ELEMENT,
-                        DataPacketExtension.NAMESPACE);
+                        DataPacketExtension.class);
                 if (data == null) {
                     return false;
                 }
@@ -636,8 +635,8 @@ public class InBandBytestreamSession implements BytestreamSession {
          *
          * @param data the data packet
          * @throws IOException if an I/O error occurred while sending or if the stream is closed
-         * @throws NotConnectedException
-         * @throws InterruptedException
+         * @throws NotConnectedException if the XMPP connection is not connected.
+         * @throws InterruptedException if the calling thread was interrupted.
          */
         protected abstract void writeToXML(DataPacketExtension data) throws IOException, NotConnectedException, InterruptedException;
 
@@ -757,7 +756,7 @@ public class InBandBytestreamSession implements BytestreamSession {
             bufferPointer = 0;
 
             // increment sequence, considering sequence overflow
-            this.seq = (this.seq + 1 == 65535 ? 0 : this.seq + 1);
+            this.seq = this.seq + 1 == 65535 ? 0 : this.seq + 1;
 
         }
 
@@ -835,8 +834,9 @@ public class InBandBytestreamSession implements BytestreamSession {
         @Override
         protected synchronized void writeToXML(DataPacketExtension data) throws NotConnectedException, InterruptedException {
             // create message stanza containing data packet
-            Message message = new Message(remoteJID);
-            message.addExtension(data);
+            Message message = StanzaBuilder.buildMessage().to(remoteJID)
+                    .addExtension(data)
+                    .build();
 
             connection.sendStanza(message);
 
@@ -846,10 +846,10 @@ public class InBandBytestreamSession implements BytestreamSession {
 
     /**
      * Process IQ stanza.
-     * @param data
-     * @throws NotConnectedException
-     * @throws InterruptedException
-     * @throws NotLoggedInException
+     * @param data TODO javadoc me please
+     * @throws NotConnectedException if the XMPP connection is not connected.
+     * @throws InterruptedException if the calling thread was interrupted.
+     * @throws NotLoggedInException if the XMPP connection is not authenticated.
      */
     public void processIQPacket(Data data) throws NotConnectedException, InterruptedException, NotLoggedInException {
         inputStream.dataPacketListener.processStanza(data);

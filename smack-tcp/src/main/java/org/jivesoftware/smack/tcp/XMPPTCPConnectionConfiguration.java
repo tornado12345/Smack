@@ -26,7 +26,7 @@ import org.jivesoftware.smack.ConnectionConfiguration;
  * </p>
  * <pre>
  * {@code
- * XMPPTCPConnectionConfiguration conf = XMPPConnectionConfiguration.builder()
+ * XMPPTCPConnectionConfiguration conf = XMPPTCPConnectionConfiguration.builder()
  *     .setXmppDomain("example.org").setUsernameAndPassword("user", "password")
  *     .setCompressionEnabled(false).build();
  * XMPPTCPConnection connection = new XMPPTCPConnection(conf);
@@ -69,7 +69,6 @@ public final class XMPPTCPConnectionConfiguration extends ConnectionConfiguratio
      * obtain a new instance and {@link #build} to build the configuration.
      */
     public static final class Builder extends ConnectionConfiguration.Builder<Builder, XMPPTCPConnectionConfiguration> {
-        private boolean compressionEnabled = false;
         private int connectTimeout = DEFAULT_CONNECT_TIMEOUT;
 
         private Builder() {

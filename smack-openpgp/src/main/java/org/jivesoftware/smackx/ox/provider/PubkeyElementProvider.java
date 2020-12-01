@@ -16,43 +16,38 @@
  */
 package org.jivesoftware.smackx.ox.provider;
 
-import static org.xmlpull.v1.XmlPullParser.START_TAG;
-
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.Date;
 
 import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.parsing.SmackParsingException.SmackTextParseException;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.jivesoftware.smack.util.ParserUtils;
-import org.jivesoftware.smackx.ox.element.PubkeyElement;
+import org.jivesoftware.smack.xml.XmlPullParser;
+import org.jivesoftware.smack.xml.XmlPullParserException;
 
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
+import org.jivesoftware.smackx.ox.element.PubkeyElement;
 
 /**
  * {@link ExtensionElementProvider} implementation for the {@link PubkeyElement}.
  */
 public class PubkeyElementProvider extends ExtensionElementProvider<PubkeyElement> {
 
-    public static final PubkeyElementProvider TEST_INSTANCE = new PubkeyElementProvider();
+    public static final PubkeyElementProvider INSTANCE = new PubkeyElementProvider();
 
     @Override
     public PubkeyElement parse(XmlPullParser parser, int initialDepth, XmlEnvironment xmlEnvironment) throws XmlPullParserException, IOException, SmackTextParseException {
         String dateString = parser.getAttributeValue(null, PubkeyElement.ATTR_DATE);
         Date date = ParserUtils.getDateFromOptionalXep82String(dateString);
         while (true) {
-            int tag = parser.next();
+            XmlPullParser.Event tag = parser.next();
             String name = parser.getName();
-            if (tag == START_TAG) {
+            if (tag == XmlPullParser.Event.START_ELEMENT) {
                 switch (name) {
                     case PubkeyElement.PubkeyDataElement.ELEMENT:
-                        String data = parser.nextText();
-                        if (data != null) {
-                            byte[] bytes = data.getBytes(Charset.forName("UTF-8"));
-                            return new PubkeyElement(new PubkeyElement.PubkeyDataElement(bytes), date);
-                        }
+                        String base64EncodedOpenPgpPubKey = parser.nextText();
+                        PubkeyElement.PubkeyDataElement pubkeyDataElement = new PubkeyElement.PubkeyDataElement(base64EncodedOpenPgpPubKey);
+                        return new PubkeyElement(pubkeyDataElement, date);
                 }
             }
         }

@@ -21,14 +21,15 @@ import static org.junit.Assert.assertTrue;
 import org.jivesoftware.smack.SmackConfiguration;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.XmlEnvironment;
+import org.jivesoftware.smack.xml.XmlPullParser;
 
 import org.junit.Test;
-import org.xmlpull.v1.XmlPullParser;
 
 public class ProviderManagerTest {
 
     /**
      * This test should be run in a clean (e.g. forked) VM
+     * @throws Exception if exception.
      */
     @Test
     public void shouldInitializeSmackTest() throws Exception {

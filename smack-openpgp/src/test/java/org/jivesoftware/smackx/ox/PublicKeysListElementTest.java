@@ -17,20 +17,21 @@
 package org.jivesoftware.smackx.ox;
 
 import static junit.framework.TestCase.assertEquals;
-import static org.custommonkey.xmlunit.XMLAssert.assertXMLEqual;
+import static org.jivesoftware.smack.test.util.XmlAssertUtil.assertXmlSimilar;
 
 import java.util.Date;
 
 import org.jivesoftware.smack.test.util.SmackTestSuite;
 import org.jivesoftware.smack.test.util.TestUtils;
+import org.jivesoftware.smack.xml.XmlPullParser;
+
 import org.jivesoftware.smackx.ox.element.PublicKeysListElement;
 import org.jivesoftware.smackx.ox.provider.PublicKeysListElementProvider;
 
 import org.bouncycastle.openpgp.PGPException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jxmpp.util.XmppDateTime;
 import org.pgpainless.key.OpenPgpV4Fingerprint;
-import org.xmlpull.v1.XmlPullParser;
 
 public class PublicKeysListElementTest extends SmackTestSuite {
 
@@ -62,7 +63,7 @@ public class PublicKeysListElementTest extends SmackTestSuite {
                 .addMetadata(child2)
                 .build();
 
-        assertXMLEqual(expected, element.toXML().toString());
+        assertXmlSimilar(expected, element.toXML().toString());
 
         XmlPullParser parser = TestUtils.getParser(expected);
         PublicKeysListElement parsed = PublicKeysListElementProvider.TEST_INSTANCE.parse(parser);

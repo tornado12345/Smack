@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2015-2019 Florian Schmaus
+ * Copyright 2015-2020 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import org.jivesoftware.smack.SmackException;
@@ -28,8 +28,8 @@ import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.util.StringUtils;
 
 import org.igniterealtime.smack.inttest.AbstractSmackIntegrationTest;
-import org.igniterealtime.smack.inttest.SmackIntegrationTest;
 import org.igniterealtime.smack.inttest.SmackIntegrationTestEnvironment;
+import org.igniterealtime.smack.inttest.annotations.SmackIntegrationTest;
 import org.igniterealtime.smack.inttest.util.ResultSyncPoint;
 
 public class FileTransferIntegrationTest extends AbstractSmackIntegrationTest {
@@ -39,7 +39,7 @@ public class FileTransferIntegrationTest extends AbstractSmackIntegrationTest {
     private final FileTransferManager ftManagerOne;
     private final FileTransferManager ftManagerTwo;
 
-    public FileTransferIntegrationTest(SmackIntegrationTestEnvironment<?> environment) {
+    public FileTransferIntegrationTest(SmackIntegrationTestEnvironment environment) {
         super(environment);
         ftManagerOne = FileTransferManager.getInstanceFor(conOne);
         ftManagerTwo = FileTransferManager.getInstanceFor(conTwo);
@@ -48,12 +48,7 @@ public class FileTransferIntegrationTest extends AbstractSmackIntegrationTest {
     private static final byte[] dataToSend;
 
     static {
-        try {
-            dataToSend = StringUtils.insecureRandomString(1024 * 4 * 5).getBytes(StringUtils.UTF8);
-        }
-        catch (UnsupportedEncodingException e) {
-            throw new AssertionError(e);
-        }
+        dataToSend = StringUtils.insecureRandomString(1024 * 4 * 5).getBytes(StandardCharsets.UTF_8);
     }
 
     @SmackIntegrationTest

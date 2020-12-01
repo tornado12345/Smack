@@ -31,6 +31,7 @@ import org.jivesoftware.smack.filter.AndFilter;
 import org.jivesoftware.smack.filter.MessageTypeFilter;
 import org.jivesoftware.smack.filter.StanzaExtensionFilter;
 import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.packet.MessageBuilder;
 import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.util.Async;
 import org.jivesoftware.smack.util.BooleansUtils;
@@ -86,18 +87,19 @@ public class XmppConnectionStressTest {
             MultiMap<XMPPConnection, Message> toConnectionMessages = new MultiMap<>();
             for (XMPPConnection toConnection : connections) {
                 for (int i = 0; i < configuration.messagesPerConnection; i++) {
-                    Message message = new Message();
-                    message.setTo(toConnection.getUser());
+                    MessageBuilder messageBuilder = fromConnection.getStanzaFactory().buildMessageStanza();
+                    messageBuilder.to(toConnection.getUser());
 
                     int payloadChunkCount = random.nextInt(configuration.maxPayloadChunks) + 1;
                     for (int c = 0; c < payloadChunkCount; c++) {
                         int payloadChunkSize = random.nextInt(configuration.maxPayloadChunkSize) + 1;
                         String payloadCunk = StringUtils.randomString(payloadChunkSize, random);
-                        JivePropertiesManager.addProperty(message, "payload-chunk-" + c, payloadCunk);
+                        JivePropertiesManager.addProperty(messageBuilder, "payload-chunk-" + c, payloadCunk);
                     }
 
-                    JivePropertiesManager.addProperty(message, MESSAGE_NUMBER_PROPERTY, i);
+                    JivePropertiesManager.addProperty(messageBuilder, MESSAGE_NUMBER_PROPERTY, i);
 
+                    Message message = messageBuilder.build();
                     toConnectionMessages.put(toConnection, message);
                 }
             }
@@ -151,18 +153,37 @@ public class XmppConnectionStressTest {
 
                     // Sanity check: All markers before must be true, all markers including the messageNumber marker must be false.
                     for (int i = 0; i < fromMarkers.length; i++) {
-                        if ((i < messageNumber && !fromMarkers[i])
-                                || (i >= messageNumber && fromMarkers[i])) {
-                            // TODO: Better exception.
-                            Exception exception = new Exception("out of order");
-                            receiveExceptions.put(connection, exception);
-                            // TODO: Current Smack design does not guarantee that the listener won't be invoked again.
-                            // This is because the decission to invoke a sync listeners is done at a different place
-                            // then invoking the listener.
-                            connection.removeSyncStanzaListener(this);
-                            receivedSemaphore.release();
-                            return;
+                        final String inOrderViolation;
+                        if (i < messageNumber && !fromMarkers[i]) {
+                            // A previous message was missing.
+                            inOrderViolation = "not yet message #";
+                        } else if (i >= messageNumber && fromMarkers[i]) {
+                            // We already received a new message.
+                            // TODO: Can it ever happen that this is taken? Wouldn't we prior run into the "a previous
+                            // message is missing" case?
+                            inOrderViolation = "we already received a later (or the same) message #";
+                        } else {
+                            continue;
                         }
+
+
+                        StringBuilder exceptionMessage = new StringBuilder();
+                        exceptionMessage.append("We received message #").append(messageNumber).append(" but ");
+                        exceptionMessage.append(inOrderViolation);
+                        exceptionMessage.append(i);
+                        exceptionMessage.append("\nMessage with id ").append(stanza.getStanzaId())
+                            .append(" from ").append(from)
+                            .append(" to ").append(stanza.getTo());
+
+                        Exception exception = new Exception(exceptionMessage.toString());
+                        receiveExceptions.put(connection, exception);
+                        // TODO: Current Smack design does not guarantee that the listener won't be invoked again.
+                        // This is because the decission to invoke a sync listeners is done at a different place
+                        // then invoking the listener.
+                        connection.removeSyncStanzaListener(this);
+                        receivedSemaphore.release();
+                        // TODO: Do not return here?
+                        return;
                     }
 
                     fromMarkers[messageNumber] = true;
@@ -299,9 +320,31 @@ public class XmppConnectionStressTest {
 
             private ErrorsWhileSendingOrReceivingException(Map<XMPPConnection, Exception> sendExceptions,
                     Map<XMPPConnection, Exception> receiveExceptions) {
-                super("Exceptions while sending and/or receiving");
+                super(createMessageFrom(sendExceptions, receiveExceptions));
                 this.sendExceptions = sendExceptions;
                 this.receiveExceptions = receiveExceptions;
+            }
+
+            private static String createMessageFrom(Map<XMPPConnection, Exception> sendExceptions,
+                            Map<XMPPConnection, Exception> receiveExceptions) {
+                StringBuilder sb = new StringBuilder(1024);
+                sb.append("Exceptions while sending and/or receiving.");
+
+                if (!sendExceptions.isEmpty()) {
+                    sb.append(" Send exxceptions: ");
+                    for (Map.Entry<XMPPConnection, Exception> entry : sendExceptions.entrySet()) {
+                        sb.append(entry.getKey()).append(": ").append(entry.getValue()).append(';');
+                    }
+                }
+
+                if (!receiveExceptions.isEmpty()) {
+                    sb.append(" Receive exceptions: ");
+                    for (Map.Entry<XMPPConnection, Exception> entry : receiveExceptions.entrySet()) {
+                        sb.append(entry.getKey()).append(": ").append(entry.getValue());
+                    }
+                }
+
+                return sb.toString();
             }
         }
     }

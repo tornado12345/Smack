@@ -16,13 +16,19 @@
  */
 package org.jivesoftware.smackx.sid.element;
 
+import javax.xml.namespace.QName;
+
 import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.packet.MessageBuilder;
 import org.jivesoftware.smack.util.XmlStringBuilder;
+
 import org.jivesoftware.smackx.sid.StableUniqueStanzaIdManager;
 
 public class OriginIdElement extends StableAndUniqueIdElement {
 
     public static final String ELEMENT = "origin-id";
+    public static final String NAMESPACE = StableUniqueStanzaIdManager.NAMESPACE;
+    public static final QName QNAME = new QName(NAMESPACE, ELEMENT);
 
     public OriginIdElement() {
         super();
@@ -36,10 +42,28 @@ public class OriginIdElement extends StableAndUniqueIdElement {
      * Add an origin-id element to a message and set the stanzas id to the same id as in the origin-id element.
      *
      * @param message message.
+     * @return the added origin-id element.
+     * @deprecated use {@link #addTo(MessageBuilder)} instead.
      */
+    @Deprecated
+    // TODO: Remove in Smack 4.5.
     public static OriginIdElement addOriginId(Message message) {
         OriginIdElement originId = new OriginIdElement();
         message.addExtension(originId);
+        // TODO: Find solution to have both the originIds stanzaId and a nice to look at incremental stanzaID.
+        // message.setStanzaId(originId.getId());
+        return originId;
+    }
+
+    /**
+     * Add an origin-id element to a message and set the stanzas id to the same id as in the origin-id element.
+     *
+     * @param messageBuilder the message builder to add an origin ID to.
+     * @return the added origin-id element.
+     */
+    public static OriginIdElement addTo(MessageBuilder messageBuilder) {
+        OriginIdElement originId = new OriginIdElement();
+        messageBuilder.addExtension(originId);
         // TODO: Find solution to have both the originIds stanzaId and a nice to look at incremental stanzaID.
         // message.setStanzaId(originId.getId());
         return originId;
@@ -62,7 +86,7 @@ public class OriginIdElement extends StableAndUniqueIdElement {
      * @return origin-id element
      */
     public static OriginIdElement getOriginId(Message message) {
-        return message.getExtension(OriginIdElement.ELEMENT, StableUniqueStanzaIdManager.NAMESPACE);
+        return (OriginIdElement) message.getExtensionElement(OriginIdElement.ELEMENT, StableUniqueStanzaIdManager.NAMESPACE);
     }
 
     @Override
@@ -80,5 +104,26 @@ public class OriginIdElement extends StableAndUniqueIdElement {
         return new XmlStringBuilder(this)
                 .attribute(ATTR_ID, getId())
                 .closeEmptyElement();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (other == null) {
+            return false;
+        }
+        if (!(other instanceof OriginIdElement)) {
+            return false;
+        }
+
+        OriginIdElement otherId = (OriginIdElement) other;
+        return getId().equals(otherId.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
     }
 }

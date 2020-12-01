@@ -22,11 +22,9 @@ import javax.xml.namespace.QName;
 
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.util.PacketParserUtils;
-import org.jivesoftware.smack.util.ParserUtils;
 import org.jivesoftware.smack.util.StringUtils;
-
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
+import org.jivesoftware.smack.xml.XmlPullParser;
+import org.jivesoftware.smack.xml.XmlPullParserException;
 
 /**
  * The default payload representation for {@link PayloadItem#getPayload()}.  It simply
@@ -40,7 +38,7 @@ public class SimplePayload implements ExtensionElement {
     private final String payload;
 
     /**
-     * Construct a <tt>SimplePayload</tt> object with the specified element name,
+     * Construct a <code>SimplePayload</code> object with the specified element name,
      * namespace and content.  The content must be well formed XML.
      *
      * @param xmlPayload The payload data
@@ -53,7 +51,7 @@ public class SimplePayload implements ExtensionElement {
         catch (XmlPullParserException | IOException e) {
             throw new AssertionError(e);
         }
-        QName qname = ParserUtils.getQName(parser);
+        QName qname = parser.getQName();
 
         payload = xmlPayload;
 
@@ -62,7 +60,7 @@ public class SimplePayload implements ExtensionElement {
     }
 
     /**
-     * Construct a <tt>SimplePayload</tt> object with the specified element name,
+     * Construct a <code>SimplePayload</code> object with the specified element name,
      * namespace and content.  The content must be well formed XML.
      *
      * @param elementName The root element name (of the payload)

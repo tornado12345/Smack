@@ -16,6 +16,10 @@
  */
 package org.jivesoftware.smackx.mam;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,23 +31,22 @@ import org.jivesoftware.smackx.mam.element.MamQueryIQ;
 import org.jivesoftware.smackx.xdata.FormField;
 import org.jivesoftware.smackx.xdata.packet.DataForm;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class MamQueryIQProviderTest {
 
-    private static final String exampleMamQueryIQ1 = "<iq type='set' id='query4'>" + "<query xmlns='urn:xmpp:mam:1' queryid='test'>"
+    private static final String exampleMamQueryIQ1 = "<iq type='set' id='query4'>" + "<query xmlns='urn:xmpp:mam:2' queryid='test'>"
             + "<x xmlns='jabber:x:data' type='submit'>" + "<field type='hidden' var='FORM_TYPE'>"
-            + "<value>urn:xmpp:mam:1</value>" + "</field>"
+            + "<value>urn:xmpp:mam:2</value>" + "</field>"
             + "<field type='text-single' var='urn:example:xmpp:free-text-search'>"
             + "<value>Where arth thou, my Juliet?</value>" + "</field>"
             + "<field type='text-single' var='urn:example:xmpp:stanza-content'>"
             + "<value>{http://jabber.org/protocol/mood}mood/lonely</value>" + "</field>" + "</x>" + "</query>"
             + "</iq>";
 
-    private static final String exampleMamQueryIQ2 = "<iq type='result' id='form1'>" + "<query xmlns='urn:xmpp:mam:1'>"
+    private static final String exampleMamQueryIQ2 = "<iq type='result' id='form1'>" + "<query xmlns='urn:xmpp:mam:2'>"
             + "<x xmlns='jabber:x:data' type='form'>" + "<field type='hidden' var='FORM_TYPE'>"
-            + "<value>urn:xmpp:mam:1</value>" + "</field>" + "<field type='jid-single' var='with'/>"
+            + "<value>urn:xmpp:mam:2</value>" + "</field>" + "<field type='jid-single' var='with'/>"
             + "<field type='text-single' var='start'/>" + "<field type='text-single' var='end'/>"
             + "<field type='text-single' var='urn:example:xmpp:free-text-search'/>"
             + "<field type='text-single' var='urn:example:xmpp:stanza-content'/>" + "</x>" + "</query>" + "</iq>";
@@ -54,35 +57,35 @@ public class MamQueryIQProviderTest {
         IQ iq1 = PacketParserUtils.parseStanza(exampleMamQueryIQ1);
         MamQueryIQ mamQueryIQ1 = (MamQueryIQ) iq1;
 
-        Assert.assertEquals(mamQueryIQ1.getType(), Type.set);
-        Assert.assertEquals(mamQueryIQ1.getQueryId(), "test");
+        assertEquals(mamQueryIQ1.getType(), Type.set);
+        assertEquals(mamQueryIQ1.getQueryId(), "test");
 
         DataForm dataForm1 = (DataForm) mamQueryIQ1.getExtension(DataForm.NAMESPACE);
-        Assert.assertEquals(dataForm1.getType(), DataForm.Type.submit);
+        assertEquals(dataForm1.getType(), DataForm.Type.submit);
 
         List<FormField> fields1 = dataForm1.getFields();
-        Assert.assertEquals(fields1.get(0).getType(), FormField.Type.hidden);
-        Assert.assertEquals(fields1.get(1).getType(), FormField.Type.text_single);
-        Assert.assertEquals(fields1.get(1).getValues().get(0).toString(), "Where arth thou, my Juliet?");
-        Assert.assertEquals(fields1.get(2).getValues().get(0).toString(), "{http://jabber.org/protocol/mood}mood/lonely");
+        assertEquals(fields1.get(0).getType(), FormField.Type.hidden);
+        assertEquals(fields1.get(1).getType(), FormField.Type.text_single);
+        assertEquals(fields1.get(1).getValues().get(0).toString(), "Where arth thou, my Juliet?");
+        assertEquals(fields1.get(2).getValues().get(0).toString(), "{http://jabber.org/protocol/mood}mood/lonely");
 
         // example2
         IQ iq2 = PacketParserUtils.parseStanza(exampleMamQueryIQ2);
         MamQueryIQ mamQueryIQ2 = (MamQueryIQ) iq2;
 
-        Assert.assertEquals(mamQueryIQ2.getType(), Type.result);
-        Assert.assertNull(mamQueryIQ2.getQueryId());
+        assertEquals(mamQueryIQ2.getType(), Type.result);
+        assertNull(mamQueryIQ2.getQueryId());
 
         DataForm dataForm2 = (DataForm) mamQueryIQ2.getExtension(DataForm.NAMESPACE);
-        Assert.assertEquals(dataForm2.getType(), DataForm.Type.form);
+        assertEquals(dataForm2.getType(), DataForm.Type.form);
 
         List<FormField> fields2 = dataForm2.getFields();
-        Assert.assertEquals(fields2.get(0).getValues().get(0).toString(), "urn:xmpp:mam:1");
-        Assert.assertTrue(fields2.get(0).getValues().size() == 1);
-        Assert.assertEquals(fields2.get(1).getType(), FormField.Type.jid_single);
-        Assert.assertEquals(fields2.get(2).getType(), FormField.Type.text_single);
-        Assert.assertEquals(fields2.get(2).getValues(), new ArrayList<>());
-        Assert.assertEquals(fields2.get(4).getVariable(), "urn:example:xmpp:free-text-search");
+        assertEquals(fields2.get(0).getValues().get(0).toString(), "urn:xmpp:mam:2");
+        assertTrue(fields2.get(0).getValues().size() == 1);
+        assertEquals(fields2.get(1).getType(), FormField.Type.jid_single);
+        assertEquals(fields2.get(2).getType(), FormField.Type.text_single);
+        assertEquals(fields2.get(2).getValues(), new ArrayList<>());
+        assertEquals(fields2.get(4).getFieldName(), "urn:example:xmpp:free-text-search");
     }
 
 }

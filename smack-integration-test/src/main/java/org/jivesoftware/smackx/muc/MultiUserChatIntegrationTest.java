@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2015-2019 Florian Schmaus
+ * Copyright 2015-2020 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
  */
 package org.jivesoftware.smackx.muc;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 
 import org.jivesoftware.smack.MessageListener;
 import org.jivesoftware.smack.SmackException.NoResponseException;
@@ -28,16 +31,18 @@ import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.util.StringUtils;
+
 import org.jivesoftware.smackx.muc.MultiUserChat.MucCreateConfigFormHandle;
 import org.jivesoftware.smackx.muc.MultiUserChatException.MucNotJoinedException;
 import org.jivesoftware.smackx.muc.MultiUserChatException.NotAMucServiceException;
 import org.jivesoftware.smackx.muc.packet.MUCUser;
 
 import org.igniterealtime.smack.inttest.AbstractSmackIntegrationTest;
-import org.igniterealtime.smack.inttest.SmackIntegrationTest;
 import org.igniterealtime.smack.inttest.SmackIntegrationTestEnvironment;
 import org.igniterealtime.smack.inttest.TestNotPossibleException;
+import org.igniterealtime.smack.inttest.annotations.SmackIntegrationTest;
 import org.igniterealtime.smack.inttest.util.ResultSyncPoint;
+import org.igniterealtime.smack.inttest.util.SimpleResultSyncPoint;
 import org.jxmpp.jid.DomainBareJid;
 import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.impl.JidCreate;
@@ -53,7 +58,7 @@ public class MultiUserChatIntegrationTest extends AbstractSmackIntegrationTest {
     private final MultiUserChatManager mucManagerTwo;
     private final DomainBareJid mucService;
 
-    public MultiUserChatIntegrationTest(SmackIntegrationTestEnvironment<?> environment)
+    public MultiUserChatIntegrationTest(SmackIntegrationTestEnvironment environment)
                     throws NoResponseException, XMPPErrorException, NotConnectedException,
                     InterruptedException, TestNotPossibleException {
         super(environment);
@@ -118,5 +123,42 @@ public class MultiUserChatIntegrationTest extends AbstractSmackIntegrationTest {
 
         mucAsSeenByOne.leave();
         mucAsSeenByTwo.leave();
+    }
+
+    @SmackIntegrationTest
+    public void mucDestroyTest() throws TimeoutException, Exception {
+
+        EntityBareJid mucAddress = JidCreate.entityBareFrom(Localpart.from("smack-inttest-join-leave-" + randomString),
+                                                            mucService.getDomain());
+
+        MultiUserChat muc = mucManagerOne.getMultiUserChat(mucAddress);
+        muc.join(Resourcepart.from("nick-one"));
+
+        final SimpleResultSyncPoint mucDestroyed = new SimpleResultSyncPoint();
+
+        @SuppressWarnings("deprecation")
+        DefaultUserStatusListener userStatusListener = new DefaultUserStatusListener() {
+            @Override
+            public void roomDestroyed(MultiUserChat alternateMUC, String reason) {
+                mucDestroyed.signal();
+            }
+        };
+
+        muc.addUserStatusListener(userStatusListener);
+
+        assertEquals(1, mucManagerOne.getJoinedRooms().size());
+        assertEquals(1, muc.getOccupantsCount());
+        assertNotNull(muc.getNickname());
+
+        try {
+            muc.destroy("Dummy reason", null);
+            mucDestroyed.waitForResult(timeout);
+        } finally {
+            muc.removeUserStatusListener(userStatusListener);
+        }
+
+        assertEquals(0, mucManagerOne.getJoinedRooms().size());
+        assertEquals(0, muc.getOccupantsCount());
+        assertNull(muc.getNickname());
     }
 }

@@ -25,6 +25,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.packet.MessageBuilder;
+
 import org.jivesoftware.smackx.eme.element.ExplicitMessageEncryptionElement;
 import org.jivesoftware.smackx.hints.element.StoreHint;
 import org.jivesoftware.smackx.omemo.element.OmemoElement;
@@ -47,7 +49,7 @@ public class OmemoMessage {
     /**
      * Return the original OmemoElement (&lt;encrypted/&gt;).
      *
-     * @return omemoElement
+     * @return omemoElement of the message
      */
     public OmemoElement getElement() {
         return element;
@@ -56,7 +58,7 @@ public class OmemoMessage {
     /**
      * Return the messageKey (or transported key in case of a KeyTransportMessage).
      *
-     * @return key
+     * @return encryption key that protects the message payload
      */
     public byte[] getKey() {
         return messageKey.clone();
@@ -64,6 +66,7 @@ public class OmemoMessage {
 
     /**
      * Return the initialization vector belonging to the key.
+     *
      * @return initialization vector
      */
     public byte[] getIv() {
@@ -79,6 +82,7 @@ public class OmemoMessage {
 
         /**
          * Create a new outgoing OMEMO message.
+         *
          * @param element OmemoElement
          * @param key messageKey (or transported key)
          * @param iv initialization vector belonging to key
@@ -94,6 +98,7 @@ public class OmemoMessage {
 
         /**
          * Return a list of all devices the sender originally intended to encrypt the message for.
+         *
          * @return list of intended recipients.
          */
         public Set<OmemoDevice> getIntendedDevices() {
@@ -102,6 +107,7 @@ public class OmemoMessage {
 
         /**
          * Return a map of all skipped recipients and the reasons for skipping.
+         *
          * @return map of skipped recipients and reasons for that.
          */
         public HashMap<OmemoDevice, Throwable> getSkippedDevices() {
@@ -110,6 +116,7 @@ public class OmemoMessage {
 
         /**
          * Determine, if some recipients were skipped during encryption.
+         *
          * @return true if recipients were skipped.
          */
         public boolean isMissingRecipients() {
@@ -122,22 +129,23 @@ public class OmemoMessage {
          * as well as an optional clear text hint as body, a MAM storage hint
          * and an EME hint about OMEMO encryption.
          *
+         * @param messageBuilder a message builder which will be used to build the message.
          * @param recipient recipient for the to-field of the message.
-         * @return Message
+         * @return the build message.
          */
-        public Message asMessage(Jid recipient) {
+        public Message buildMessage(MessageBuilder messageBuilder, Jid recipient) {
+            messageBuilder.ofType(Message.Type.chat).to(recipient);
 
-            Message messageStanza = new Message(recipient, Message.Type.chat);
-            messageStanza.addExtension(getElement());
+            messageBuilder.addExtension(getElement());
 
             if (OmemoConfiguration.getAddOmemoHintBody()) {
-                messageStanza.setBody(BODY_OMEMO_HINT);
+                messageBuilder.setBody(BODY_OMEMO_HINT);
             }
 
-            StoreHint.set(messageStanza);
-            messageStanza.addExtension(new ExplicitMessageEncryptionElement(OMEMO_NAMESPACE_V_AXOLOTL, OMEMO));
+            StoreHint.set(messageBuilder);
+            messageBuilder.addExtension(new ExplicitMessageEncryptionElement(OMEMO_NAMESPACE_V_AXOLOTL, OMEMO));
 
-            return messageStanza;
+            return messageBuilder.build();
         }
     }
 
@@ -152,6 +160,7 @@ public class OmemoMessage {
 
         /**
          * Create a new incoming OMEMO message.
+         *
          * @param element original OmemoElement
          * @param key message key (or transported key)
          * @param iv respective initialization vector
@@ -170,6 +179,7 @@ public class OmemoMessage {
 
         /**
          * Return the decrypted body of the message.
+         *
          * @return decrypted body
          */
         public String getBody() {
@@ -178,6 +188,7 @@ public class OmemoMessage {
 
         /**
          * Return the fingerprint of the messages sender device.
+         *
          * @return fingerprint of sender
          */
         public OmemoFingerprint getSendersFingerprint() {
@@ -186,7 +197,8 @@ public class OmemoMessage {
 
         /**
          * Return the OmemoDevice which sent the message.
-         * @return senderDevice
+         *
+         * @return OMEMO device that sent the message.
          */
         public OmemoDevice getSenderDevice() {
             return senderDevice;
@@ -194,6 +206,7 @@ public class OmemoMessage {
 
         /**
          * Return true, if this message was sent as a preKeyMessage.
+         *
          * @return preKeyMessage or not
          */
         boolean isPreKeyMessage() {
@@ -203,6 +216,7 @@ public class OmemoMessage {
         /**
          * Return true, if the message was a KeyTransportMessage.
          * A KeyTransportMessage is a OmemoMessage without a payload.
+         *
          * @return keyTransportMessage?
          */
         public boolean isKeyTransportMessage() {

@@ -19,8 +19,8 @@ package org.jivesoftware.smackx.attention.packet;
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.XmlEnvironment;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
-
-import org.xmlpull.v1.XmlPullParser;
+import org.jivesoftware.smack.util.XmlStringBuilder;
+import org.jivesoftware.smack.xml.XmlPullParser;
 
 /**
  * A PacketExtension that implements XEP-0224: Attention
@@ -70,11 +70,8 @@ public class AttentionExtension implements ExtensionElement {
      * @see org.jivesoftware.smack.packet.PacketExtension#toXML()
      */
     @Override
-    public String toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
-        final StringBuilder sb = new StringBuilder();
-        sb.append('<').append(getElementName()).append(" xmlns=\"").append(
-                getNamespace()).append("\"/>");
-        return sb.toString();
+    public XmlStringBuilder toXML(org.jivesoftware.smack.packet.XmlEnvironment enclosingNamespace) {
+        return new XmlStringBuilder(this).closeEmptyElement();
     }
 
     /**
